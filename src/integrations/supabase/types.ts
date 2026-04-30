@@ -14,7 +14,75 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      games: {
+        Row: {
+          created_at: string
+          description: string | null
+          developer: string | null
+          download_url: string | null
+          featured: boolean
+          genre: string | null
+          id: string
+          image_url: string | null
+          is_free: boolean
+          min_cpu: string | null
+          min_gpu: string | null
+          min_os: string | null
+          min_ram: string | null
+          min_storage: string | null
+          mode: string
+          price: number
+          publisher: string | null
+          release_date: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          developer?: string | null
+          download_url?: string | null
+          featured?: boolean
+          genre?: string | null
+          id?: string
+          image_url?: string | null
+          is_free?: boolean
+          min_cpu?: string | null
+          min_gpu?: string | null
+          min_os?: string | null
+          min_ram?: string | null
+          min_storage?: string | null
+          mode?: string
+          price?: number
+          publisher?: string | null
+          release_date?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          developer?: string | null
+          download_url?: string | null
+          featured?: boolean
+          genre?: string | null
+          id?: string
+          image_url?: string | null
+          is_free?: boolean
+          min_cpu?: string | null
+          min_gpu?: string | null
+          min_os?: string | null
+          min_ram?: string | null
+          min_storage?: string | null
+          mode?: string
+          price?: number
+          publisher?: string | null
+          release_date?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
