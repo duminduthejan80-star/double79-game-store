@@ -21,8 +21,6 @@ const Index = () => {
         (g.genre || "").toLowerCase().includes(q.toLowerCase());
       const matchesF =
         filter === "all" ||
-        (filter === "free" && g.is_free) ||
-        (filter === "paid" && !g.is_free) ||
         (filter === "online" && g.mode === "online") ||
         (filter === "offline" && g.mode === "offline");
       return matchesQ && matchesF;
