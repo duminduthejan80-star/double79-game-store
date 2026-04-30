@@ -41,9 +41,7 @@ const GameCard = ({ game }: { game: Game }) => {
           <p className="text-xs text-muted-foreground line-clamp-1">{game.genre}</p>
         )}
         <div className="mt-auto flex items-center justify-between pt-2">
-          <span className={`text-sm font-bold ${game.is_free ? "text-accent" : "text-primary-glow"}`}>
-            {game.is_free ? "Free to Play" : `$${Number(game.price).toFixed(2)}`}
-          </span>
+          <span className="text-sm font-bold text-accent">Free</span>
         </div>
       </div>
     </Link>

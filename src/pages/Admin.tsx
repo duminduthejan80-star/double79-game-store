@@ -154,10 +154,8 @@ const Admin = () => {
                     <div><Label>Developer</Label><Input value={form.developer ?? ""} onChange={(e) => setForm({ ...form, developer: e.target.value })} /></div>
                     <div><Label>Publisher</Label><Input value={form.publisher ?? ""} onChange={(e) => setForm({ ...form, publisher: e.target.value })} /></div>
                     <div><Label>Release Date</Label><Input type="date" value={form.release_date ?? ""} onChange={(e) => setForm({ ...form, release_date: e.target.value || null })} /></div>
-                    <div><Label>Price ($)</Label><Input type="number" step="0.01" min="0" value={form.price} onChange={(e) => setForm({ ...form, price: parseFloat(e.target.value) || 0 })} disabled={form.is_free} /></div>
 
                     <div className="col-span-2 flex gap-6 pt-2">
-                      <label className="flex items-center gap-2 text-sm"><Switch checked={form.is_free} onCheckedChange={(v) => setForm({ ...form, is_free: v, price: v ? 0 : form.price })} /> Free game</label>
                       <label className="flex items-center gap-2 text-sm"><Switch checked={form.featured} onCheckedChange={(v) => setForm({ ...form, featured: v })} /> Featured</label>
                     </div>
 
@@ -188,14 +186,13 @@ const Admin = () => {
               <tr>
                 <th className="p-3">Game</th>
                 <th className="p-3">Mode</th>
-                <th className="p-3">Price</th>
                 <th className="p-3">Featured</th>
                 <th className="p-3 w-32">Actions</th>
               </tr>
             </thead>
             <tbody>
               {games?.length === 0 && (
-                <tr><td colSpan={5} className="p-10 text-center text-muted-foreground">No games yet. Click "Add Game" to start.</td></tr>
+                <tr><td colSpan={4} className="p-10 text-center text-muted-foreground">No games yet. Click "Add Game" to start.</td></tr>
               )}
               {games?.map((g) => (
                 <tr key={g.id} className="border-t border-border/50 hover:bg-surface-2/50">
@@ -211,7 +208,6 @@ const Admin = () => {
                     </div>
                   </td>
                   <td className="p-3 capitalize">{g.mode}</td>
-                  <td className="p-3">{g.is_free ? <span className="text-accent">Free</span> : `$${Number(g.price).toFixed(2)}`}</td>
                   <td className="p-3">{g.featured ? "Yes" : "—"}</td>
                   <td className="p-3">
                     <div className="flex gap-1">

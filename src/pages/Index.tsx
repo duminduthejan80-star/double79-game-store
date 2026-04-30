@@ -21,8 +21,6 @@ const Index = () => {
         (g.genre || "").toLowerCase().includes(q.toLowerCase());
       const matchesF =
         filter === "all" ||
-        (filter === "free" && g.is_free) ||
-        (filter === "paid" && !g.is_free) ||
         (filter === "online" && g.mode === "online") ||
         (filter === "offline" && g.mode === "offline");
       return matchesQ && matchesF;
@@ -65,8 +63,6 @@ const Index = () => {
           <Tabs value={filter} onValueChange={setFilter}>
             <TabsList className="bg-surface-2">
               <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="free">Free</TabsTrigger>
-              <TabsTrigger value="paid">Paid</TabsTrigger>
               <TabsTrigger value="online">Online</TabsTrigger>
               <TabsTrigger value="offline">Offline</TabsTrigger>
             </TabsList>
