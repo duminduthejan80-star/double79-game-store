@@ -186,14 +186,13 @@ const Admin = () => {
               <tr>
                 <th className="p-3">Game</th>
                 <th className="p-3">Mode</th>
-                <th className="p-3">Price</th>
                 <th className="p-3">Featured</th>
                 <th className="p-3 w-32">Actions</th>
               </tr>
             </thead>
             <tbody>
               {games?.length === 0 && (
-                <tr><td colSpan={5} className="p-10 text-center text-muted-foreground">No games yet. Click "Add Game" to start.</td></tr>
+                <tr><td colSpan={4} className="p-10 text-center text-muted-foreground">No games yet. Click "Add Game" to start.</td></tr>
               )}
               {games?.map((g) => (
                 <tr key={g.id} className="border-t border-border/50 hover:bg-surface-2/50">
