@@ -1,10 +1,11 @@
 import { Link, NavLink } from "react-router-dom";
-import { Gamepad2, Library, Shield, Store } from "lucide-react";
+import { Gamepad2, Library, Shield, Store, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const links = [
   { to: "/", label: "Store", icon: Store },
   { to: "/library", label: "Library", icon: Library },
+  { to: "/downloads", label: "Downloads", icon: Download },
   { to: "/admin", label: "Admin", icon: Shield },
 ];
 

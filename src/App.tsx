@@ -8,6 +8,9 @@ import NotFound from "./pages/NotFound.tsx";
 import Library from "./pages/Library.tsx";
 import Admin from "./pages/Admin.tsx";
 import GameDetail from "./pages/GameDetail.tsx";
+import Downloads from "./pages/Downloads.tsx";
+import { DownloadsProvider } from "@/lib/downloads";
+import DownloadWidget from "@/components/DownloadWidget";
 
 const queryClient = new QueryClient();
 
@@ -17,13 +20,17 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/library" element={<Library />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/game/:id" element={<GameDetail />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <DownloadsProvider>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/library" element={<Library />} />
+            <Route path="/admin" element={<Admin />} />
+            <Route path="/downloads" element={<Downloads />} />
+            <Route path="/game/:id" element={<GameDetail />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <DownloadWidget />
+        </DownloadsProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
