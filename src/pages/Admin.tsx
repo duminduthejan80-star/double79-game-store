@@ -154,10 +154,8 @@ const Admin = () => {
                     <div><Label>Developer</Label><Input value={form.developer ?? ""} onChange={(e) => setForm({ ...form, developer: e.target.value })} /></div>
                     <div><Label>Publisher</Label><Input value={form.publisher ?? ""} onChange={(e) => setForm({ ...form, publisher: e.target.value })} /></div>
                     <div><Label>Release Date</Label><Input type="date" value={form.release_date ?? ""} onChange={(e) => setForm({ ...form, release_date: e.target.value || null })} /></div>
-                    <div><Label>Price ($)</Label><Input type="number" step="0.01" min="0" value={form.price} onChange={(e) => setForm({ ...form, price: parseFloat(e.target.value) || 0 })} disabled={form.is_free} /></div>
 
                     <div className="col-span-2 flex gap-6 pt-2">
-                      <label className="flex items-center gap-2 text-sm"><Switch checked={form.is_free} onCheckedChange={(v) => setForm({ ...form, is_free: v, price: v ? 0 : form.price })} /> Free game</label>
                       <label className="flex items-center gap-2 text-sm"><Switch checked={form.featured} onCheckedChange={(v) => setForm({ ...form, featured: v })} /> Featured</label>
                     </div>
 
