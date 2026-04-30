@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { addToLibrary, inLibrary } from "@/lib/library";
+import { useDownloads } from "@/lib/downloads";
 import { toast } from "sonner";
 import { useState } from "react";
 
@@ -21,6 +22,7 @@ const GameDetail = () => {
   const { id } = useParams();
   const { data: game, isLoading } = useGame(id);
   const [owned, setOwned] = useState(id ? inLibrary(id) : false);
+  const { startDownload } = useDownloads();
 
   if (isLoading) return <div className="min-h-screen"><Navbar /><div className="container mx-auto p-10">Loading...</div></div>;
   if (!game) return <div className="min-h-screen"><Navbar /><div className="container mx-auto p-10">Game not found.</div></div>;
@@ -32,8 +34,16 @@ const GameDetail = () => {
   };
 
   const handleDownload = () => {
-    if (game.download_url) window.open(game.download_url, "_blank");
-    else toast.error("No download link available");
+    if (!game.download_url) {
+      toast.error("No download link available");
+      return;
+    }
+    startDownload({
+      url: game.download_url,
+      title: game.title,
+      gameId: game.id,
+      imageUrl: game.image_url || undefined,
+    });
   };
 
   return (
