@@ -76,13 +76,11 @@ const GameDetail = () => {
           <aside className="space-y-4">
             <div className="rounded-lg border border-border bg-card-gradient p-6 shadow-card sticky top-20">
               <div className="text-sm text-muted-foreground mb-1">Price</div>
-              <div className={`text-3xl font-bold mb-4 ${game.is_free ? "text-accent" : "text-primary-glow"}`}>
-                {game.is_free ? "Free to Play" : `$${Number(game.price).toFixed(2)}`}
-              </div>
+              <div className="text-3xl font-bold mb-4 text-accent">Free</div>
 
               {!owned ? (
                 <Button onClick={handleGet} className="w-full bg-primary-gradient text-primary-foreground hover:opacity-90" size="lg">
-                  {game.is_free ? "Add to Library" : "Buy & Add to Library"}
+                  Add to Library
                 </Button>
               ) : (
                 <div className="space-y-2">
