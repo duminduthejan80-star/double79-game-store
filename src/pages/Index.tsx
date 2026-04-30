@@ -63,8 +63,6 @@ const Index = () => {
           <Tabs value={filter} onValueChange={setFilter}>
             <TabsList className="bg-surface-2">
               <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="free">Free</TabsTrigger>
-              <TabsTrigger value="paid">Paid</TabsTrigger>
               <TabsTrigger value="online">Online</TabsTrigger>
               <TabsTrigger value="offline">Offline</TabsTrigger>
             </TabsList>
