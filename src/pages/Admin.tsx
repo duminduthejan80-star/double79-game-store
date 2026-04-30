@@ -208,7 +208,6 @@ const Admin = () => {
                     </div>
                   </td>
                   <td className="p-3 capitalize">{g.mode}</td>
-                  <td className="p-3">{g.is_free ? <span className="text-accent">Free</span> : `$${Number(g.price).toFixed(2)}`}</td>
                   <td className="p-3">{g.featured ? "Yes" : "—"}</td>
                   <td className="p-3">
                     <div className="flex gap-1">
