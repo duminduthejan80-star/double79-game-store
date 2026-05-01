@@ -180,14 +180,12 @@ export const DownloadsProvider = ({ children }: { children: ReactNode }) => {
   const cancel = (id: string) => {
     controllers.current.get(id)?.abort();
     controllers.current.delete(id);
-    stopSim(id);
     dispatch({ type: "update", id, patch: { status: "cancelled", speed: 0 } });
   };
 
   const remove = (id: string) => {
     controllers.current.get(id)?.abort();
     controllers.current.delete(id);
-    stopSim(id);
     dispatch({ type: "remove", id });
   };
 
@@ -196,7 +194,6 @@ export const DownloadsProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     return () => {
       controllers.current.forEach((c) => c.abort());
-      timers.current.forEach((t) => window.clearInterval(t));
     };
   }, []);
 

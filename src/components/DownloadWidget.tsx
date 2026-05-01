@@ -13,6 +13,7 @@ const statusLabel: Record<DownloadItem["status"], string> = {
   completed: "Completed",
   failed: "Failed",
   cancelled: "Cancelled",
+  external: "Handled by browser",
 };
 
 const Row = ({ item }: { item: DownloadItem }) => {
