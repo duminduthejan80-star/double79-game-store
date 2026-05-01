@@ -64,21 +64,11 @@ export const DownloadsProvider = ({ children }: { children: ReactNode }) => {
   const [state, dispatch] = useReducer(reducer, { items: [] });
   // controllers for real fetch downloads
   const controllers = useRef<Map<string, AbortController>>(new Map());
-  // simulated download timers
-  const timers = useRef<Map<string, number>>(new Map());
-
-  const stopSim = (id: string) => {
-    const t = timers.current.get(id);
-    if (t) {
-      window.clearInterval(t);
-      timers.current.delete(id);
-    }
-  };
 
   const triggerBrowserDownload = (url: string, title: string) => {
-    // Use anchor download attribute (works for same-origin / CORS-allowed). For
-    // external links it falls back to opening in a new tab — the browser will
-    // handle the actual file save.
+    // Hand off to the browser's native download manager. We cannot observe
+    // its progress from a web page (browser security), so we mark the item
+    // as "external" instead of showing fake numbers.
     try {
       const a = document.createElement("a");
       a.href = url;
@@ -91,50 +81,6 @@ export const DownloadsProvider = ({ children }: { children: ReactNode }) => {
     } catch {
       window.open(url, "_blank");
     }
-  };
-
-  const runSimulated = (item: DownloadItem) => {
-    // realistic-feeling progress: 5–25 MB/s with small jitter
-    const totalBytes = item.totalBytes || 1024 * 1024 * 1024 * 1.5; // assume 1.5GB if unknown
-    let received = 0;
-    const baseSpeed = (8 + Math.random() * 12) * 1024 * 1024; // 8–20 MB/s
-    const tickMs = 250;
-    let lastTick = performance.now();
-
-    dispatch({ type: "update", id: item.id, patch: { totalBytes, status: "downloading" } });
-
-    const interval = window.setInterval(() => {
-      const now = performance.now();
-      const dt = (now - lastTick) / 1000;
-      lastTick = now;
-      const jitter = 0.7 + Math.random() * 0.6; // 0.7x–1.3x
-      const speed = baseSpeed * jitter;
-      received = Math.min(totalBytes, received + speed * dt);
-
-      if (received >= totalBytes) {
-        dispatch({
-          type: "update",
-          id: item.id,
-          patch: {
-            receivedBytes: totalBytes,
-            speed: 0,
-            status: "completed",
-            finishedAt: Date.now(),
-          },
-        });
-        stopSim(item.id);
-        toast.success(`${item.title} download finished`);
-        return;
-      }
-
-      dispatch({
-        type: "update",
-        id: item.id,
-        patch: { receivedBytes: received, speed },
-      });
-    }, tickMs);
-
-    timers.current.set(item.id, interval);
   };
 
   const tryRealDownload = async (item: DownloadItem) => {
@@ -191,12 +137,17 @@ export const DownloadsProvider = ({ children }: { children: ReactNode }) => {
       toast.success(`${item.title} download finished`);
     } catch (err: any) {
       if (controller.signal.aborted) return;
-      // Real fetch failed (most likely CORS). Fall back to simulated UI and
-      // open the file via the browser so the user still gets the download.
-      console.warn("Real download failed, falling back to simulated:", err);
+      // Real fetch failed (most likely CORS). Hand off to the browser's
+      // native downloader and clearly mark the item as external — no fake
+      // progress numbers.
+      console.warn("Real progress unavailable, handing off to browser:", err);
       triggerBrowserDownload(item.url, item.title);
-      dispatch({ type: "update", id: item.id, patch: { simulated: true } });
-      runSimulated({ ...item, simulated: true });
+      dispatch({
+        type: "update",
+        id: item.id,
+        patch: { status: "external", speed: 0, finishedAt: Date.now() },
+      });
+      toast.info(`${item.title} is downloading via your browser (progress not available)`);
     } finally {
       controllers.current.delete(item.id);
     }
