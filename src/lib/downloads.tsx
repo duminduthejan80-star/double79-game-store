@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useReducer, useRef, ReactNode } from "react";
 import { toast } from "sonner";
 
-export type DownloadStatus = "queued" | "downloading" | "paused" | "completed" | "failed" | "cancelled";
+export type DownloadStatus = "queued" | "downloading" | "paused" | "completed" | "failed" | "cancelled" | "external";
 
 export interface DownloadItem {
   id: string;
