@@ -1,11 +1,19 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Search } from "lucide-react";
+import Autoplay from "embla-carousel-autoplay";
 import Navbar from "@/components/Navbar";
 import GameCard from "@/components/GameCard";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useGames } from "@/hooks/useGames";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 const Index = () => {
   const { data: games, isLoading } = useGames();
@@ -27,7 +35,8 @@ const Index = () => {
     });
   }, [games, q, filter]);
 
-  const featured = useMemo(() => games?.filter((g) => g.featured).slice(0, 3) ?? [], [games]);
+  const featured = useMemo(() => games?.filter((g) => g.featured) ?? [], [games]);
+  const autoplay = useRef(Autoplay({ delay: 5000, stopOnInteraction: false, stopOnMouseEnter: true }));
 
   return (
     <div className="min-h-screen">
@@ -72,9 +81,21 @@ const Index = () => {
         {featured.length > 0 && filter === "all" && !q && (
           <div className="mb-12">
             <h2 className="text-2xl font-bold mb-4">Featured</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {featured.map((g) => <GameCard key={g.id} game={g} />)}
-            </div>
+            <Carousel
+              opts={{ align: "start", loop: true }}
+              plugins={[autoplay.current]}
+              className="w-full"
+            >
+              <CarouselContent className="-ml-5">
+                {featured.map((g) => (
+                  <CarouselItem key={g.id} className="pl-5 md:basis-1/2 lg:basis-1/3">
+                    <GameCard game={g} />
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious className="hidden md:flex -left-4" />
+              <CarouselNext className="hidden md:flex -right-4" />
+            </Carousel>
           </div>
         )}
 
