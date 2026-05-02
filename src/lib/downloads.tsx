@@ -83,27 +83,12 @@ export const DownloadsProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const fetchWithFallback = async (url: string, signal: AbortSignal) => {
-    // 1. Try direct fetch (works when remote allows CORS)
-    try {
-      const direct = await fetch(url, { signal });
-      if (direct.ok && direct.body) return direct;
-    } catch (e) {
-      if (signal.aborted) throw e;
-      // fall through to proxy
-    }
-    // 2. Fallback through our edge function proxy
-    const proxyUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/download-proxy?url=${encodeURIComponent(url)}`;
-    const proxied = await fetch(proxyUrl, { signal });
-    if (!proxied.ok || !proxied.body) throw new Error(`Proxy HTTP ${proxied.status}`);
-    return proxied;
-  };
-
   const tryRealDownload = async (item: DownloadItem) => {
     const controller = new AbortController();
     controllers.current.set(item.id, controller);
     try {
-      const res = await fetchWithFallback(item.url, controller.signal);
+      const res = await fetch(item.url, { signal: controller.signal });
+      if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
       const totalBytes = Number(res.headers.get("Content-Length") || 0);
       dispatch({ type: "update", id: item.id, patch: { totalBytes, status: "downloading" } });
 
