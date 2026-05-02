@@ -5,10 +5,9 @@ import { useGame } from "@/hooks/useGames";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { addToLibrary, inLibrary } from "@/lib/library";
+import { useLibrary, useAddToLibrary } from "@/hooks/useLibrary";
 import { useDownloads } from "@/lib/downloads";
 import { toast } from "sonner";
-import { useState } from "react";
 
 const Row = ({ label, value }: { label: string; value: string | null }) =>
   value ? (
@@ -21,16 +20,21 @@ const Row = ({ label, value }: { label: string; value: string | null }) =>
 const GameDetail = () => {
   const { id } = useParams();
   const { data: game, isLoading } = useGame(id);
-  const [owned, setOwned] = useState(id ? inLibrary(id) : false);
+  const { data: ownedIds = [] } = useLibrary();
+  const addLib = useAddToLibrary();
+  const owned = id ? ownedIds.includes(id) : false;
   const { startDownload } = useDownloads();
 
   if (isLoading) return <div className="min-h-screen"><Navbar /><div className="container mx-auto p-10">Loading...</div></div>;
   if (!game) return <div className="min-h-screen"><Navbar /><div className="container mx-auto p-10">Game not found.</div></div>;
 
-  const handleGet = () => {
-    addToLibrary(game.id);
-    setOwned(true);
-    toast.success(`${game.title} added to your library`);
+  const handleGet = async () => {
+    try {
+      await addLib.mutateAsync(game.id);
+      toast.success(`${game.title} added to your library`);
+    } catch (e: any) {
+      toast.error(e.message);
+    }
   };
 
   const handleDownload = () => {
