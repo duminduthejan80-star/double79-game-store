@@ -1,19 +1,12 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
-import Autoplay from "embla-carousel-autoplay";
 import Navbar from "@/components/Navbar";
 import GameCard from "@/components/GameCard";
+import FeaturedShowcase from "@/components/FeaturedShowcase";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useGames } from "@/hooks/useGames";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
 
 const Index = () => {
   const { data: games, isLoading } = useGames();
