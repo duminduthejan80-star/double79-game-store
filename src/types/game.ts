@@ -17,6 +17,8 @@ export interface Game {
   min_gpu: string | null;
   min_storage: string | null;
   featured: boolean;
+  screenshots: string[];
+  trailer_url: string | null;
   created_at: string;
   updated_at: string;
 }

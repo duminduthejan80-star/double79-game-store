@@ -58,7 +58,9 @@ export type Database = {
           price: number
           publisher: string | null
           release_date: string | null
+          screenshots: string[]
           title: string
+          trailer_url: string | null
           updated_at: string
         }
         Insert: {
@@ -80,7 +82,9 @@ export type Database = {
           price?: number
           publisher?: string | null
           release_date?: string | null
+          screenshots?: string[]
           title: string
+          trailer_url?: string | null
           updated_at?: string
         }
         Update: {
@@ -102,7 +106,9 @@ export type Database = {
           price?: number
           publisher?: string | null
           release_date?: string | null
+          screenshots?: string[]
           title?: string
+          trailer_url?: string | null
           updated_at?: string
         }
         Relationships: []
