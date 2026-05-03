@@ -1,6 +1,7 @@
 import { Link, NavLink } from "react-router-dom";
-import { Gamepad2, Library, Shield, Store, Download, LogOut } from "lucide-react";
+import { Library, Shield, Store, Download, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
+import logo from "@/assets/logo.png";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,8 +29,8 @@ const Navbar = () => {
     <header className="sticky top-0 z-50 border-b border-border/60 bg-surface-1/80 backdrop-blur-xl">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 gap-2">
         <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary-gradient shadow-glow">
-            <Gamepad2 className="h-5 w-5 text-primary-foreground" />
+          <div className="h-10 w-10 rounded-full overflow-hidden ring-1 ring-primary/50 shadow-glow">
+            <img src={logo} alt="Double79" className="h-full w-full object-cover" />
           </div>
           <div className="leading-tight">
             <div className="text-sm font-bold tracking-widest text-foreground">DOUBLE79</div>
