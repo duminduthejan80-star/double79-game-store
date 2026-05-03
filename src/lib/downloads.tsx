@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useReducer, useRef, ReactNode } from "react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export type DownloadStatus = "queued" | "downloading" | "paused" | "completed" | "failed" | "cancelled" | "external";
 
@@ -173,6 +174,18 @@ export const DownloadsProvider = ({ children }: { children: ReactNode }) => {
     };
     dispatch({ type: "add", item });
     toast.info(`Starting download: ${title}`);
+    // log download event (best-effort)
+    if (gameId) {
+      supabase.auth.getUser().then(({ data }) => {
+        if (data.user) {
+          supabase.from("download_events").insert({
+            user_id: data.user.id,
+            game_id: gameId,
+            game_title: title,
+          }).then(({ error }) => { if (error) console.warn("download log failed", error.message); });
+        }
+      });
+    }
     // try real progress first; fallback handled inside
     tryRealDownload(item);
   };

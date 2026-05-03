@@ -1,1 +1,4 @@
 project_id = "tgbskrfbyvbigpxcbyim"
+
+[functions.admin-stats]
+verify_jwt = false
