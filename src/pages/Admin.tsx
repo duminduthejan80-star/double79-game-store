@@ -11,7 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useGames, useUpsertGame, useDeleteGame } from "@/hooks/useGames";
-import { Shield, Plus, Pencil, Trash2, LogOut, Users, ChevronDown, Download as DownloadIcon, Library as LibraryIcon } from "lucide-react";
+import { Shield, Plus, Pencil, Trash2, LogOut, Users, ChevronDown, Download as DownloadIcon, Library as LibraryIcon, Sparkles, Loader2 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Game, GameInput } from "@/types/game";
@@ -40,6 +41,83 @@ const Admin = () => {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Game | null>(null);
   const [form, setForm] = useState<GameInput>(empty);
+  const [autoUpscale, setAutoUpscale] = useState(true);
+  const [upscaling, setUpscaling] = useState(false);
+  const [bulkRunning, setBulkRunning] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState({ done: 0, total: 0, current: "" });
+
+  const upscaleOne = async (url: string): Promise<string> => {
+    const { data, error } = await supabase.functions.invoke("upscale-image", {
+      headers: { "x-admin-code": "7997" },
+      body: { imageUrl: url },
+    });
+    if (error) throw new Error(error.message);
+    if (!data?.url) throw new Error("No URL returned");
+    return data.url as string;
+  };
+
+  const upscaleField = async (field: "image_url" | "screenshots") => {
+    setUpscaling(true);
+    try {
+      if (field === "image_url" && form.image_url) {
+        const url = await upscaleOne(form.image_url);
+        setForm((f) => ({ ...f, image_url: url }));
+        toast.success("Cover upscaled to 4K");
+      } else if (field === "screenshots" && form.screenshots?.length) {
+        const out: string[] = [];
+        for (let i = 0; i < form.screenshots.length; i++) {
+          try { out.push(await upscaleOne(form.screenshots[i])); }
+          catch (e: any) { toast.error(`Screenshot ${i + 1}: ${e.message}`); out.push(form.screenshots[i]); }
+        }
+        setForm((f) => ({ ...f, screenshots: out }));
+        toast.success("Screenshots upscaled");
+      }
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setUpscaling(false);
+    }
+  };
+
+  const bulkUpscaleAll = async () => {
+    if (!games?.length) return;
+    if (!confirm(`Upscale all images for ${games.length} games? This uses AI credits.`)) return;
+    setBulkRunning(true);
+    const tasks: { game: Game; total: number }[] = games.map((g) => ({
+      game: g,
+      total: (g.image_url ? 1 : 0) + (g.screenshots?.length ?? 0),
+    }));
+    const total = tasks.reduce((a, t) => a + t.total, 0);
+    setBulkProgress({ done: 0, total, current: "" });
+    let done = 0;
+
+    for (const { game } of tasks) {
+      const updates: Partial<GameInput> = {};
+      if (game.image_url) {
+        setBulkProgress((p) => ({ ...p, current: `${game.title} (cover)` }));
+        try { updates.image_url = await upscaleOne(game.image_url); }
+        catch (e: any) { toast.error(`${game.title} cover: ${e.message}`); }
+        done++; setBulkProgress((p) => ({ ...p, done }));
+      }
+      const newShots: string[] = [];
+      for (let i = 0; i < (game.screenshots?.length ?? 0); i++) {
+        const s = game.screenshots[i];
+        setBulkProgress((p) => ({ ...p, current: `${game.title} (shot ${i + 1})` }));
+        try { newShots.push(await upscaleOne(s)); }
+        catch (e: any) { toast.error(`${game.title} shot ${i + 1}: ${e.message}`); newShots.push(s); }
+        done++; setBulkProgress((p) => ({ ...p, done }));
+      }
+      if (game.screenshots?.length) updates.screenshots = newShots;
+      if (Object.keys(updates).length) {
+        await supabase.from("games").update(updates).eq("id", game.id);
+      }
+    }
+    setBulkRunning(false);
+    setBulkProgress({ done: 0, total: 0, current: "" });
+    toast.success("Bulk upscale complete");
+    // refresh
+    window.location.reload();
+  };
 
   useEffect(() => {
     if (editing) {
@@ -68,11 +146,39 @@ const Admin = () => {
     e.preventDefault();
     if (!form.title.trim()) return toast.error("Title required");
     try {
-      await upsert.mutateAsync({ ...form, id: editing?.id });
+      let payload: GameInput = { ...form };
+      if (autoUpscale) {
+        const orig = editing;
+        const newCover = payload.image_url && payload.image_url !== orig?.image_url;
+        const newShots = (payload.screenshots ?? []).filter(
+          (s) => !orig?.screenshots?.includes(s),
+        );
+        if (newCover || newShots.length) {
+          setUpscaling(true);
+          toast.info("Auto-upscaling new images to 4K...");
+        }
+        if (newCover && payload.image_url) {
+          try { payload.image_url = await upscaleOne(payload.image_url); }
+          catch (e: any) { toast.error(`Cover upscale: ${e.message}`); }
+        }
+        if (newShots.length) {
+          const updated = [...(payload.screenshots ?? [])];
+          for (let i = 0; i < updated.length; i++) {
+            if (newShots.includes(updated[i])) {
+              try { updated[i] = await upscaleOne(updated[i]); }
+              catch (e: any) { toast.error(`Shot upscale: ${e.message}`); }
+            }
+          }
+          payload.screenshots = updated;
+        }
+        setUpscaling(false);
+      }
+      await upsert.mutateAsync({ ...payload, id: editing?.id });
       toast.success(editing ? "Game updated" : "Game added");
       setOpen(false);
       setEditing(null);
     } catch (err: any) {
+      setUpscaling(false);
       toast.error(err.message);
     }
   };
@@ -127,6 +233,14 @@ const Admin = () => {
             <p className="text-muted-foreground text-sm mt-1">Manage your game catalog</p>
           </div>
           <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={bulkUpscaleAll}
+              disabled={bulkRunning || !games?.length}
+            >
+              {bulkRunning ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+              Upscale all to 4K
+            </Button>
             <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
               <DialogTrigger asChild>
                 <Button className="bg-primary-gradient text-primary-foreground hover:opacity-90">
@@ -141,15 +255,34 @@ const Admin = () => {
                   <div className="grid grid-cols-2 gap-3">
                     <div className="col-span-2"><Label>Title *</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required /></div>
                     <div className="col-span-2"><Label>Description</Label><Textarea rows={3} value={form.description ?? ""} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
-                    <div className="col-span-2"><Label>Image URL (cover)</Label><Input value={form.image_url ?? ""} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://..." /></div>
                     <div className="col-span-2">
-                      <Label>Screenshots (one URL per line)</Label>
+                      <div className="flex items-center justify-between">
+                        <Label>Image URL (cover)</Label>
+                        <Button type="button" size="sm" variant="ghost" disabled={!form.image_url || upscaling} onClick={() => upscaleField("image_url")}>
+                          {upscaling ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Sparkles className="h-3 w-3 mr-1" />}
+                          Upscale to 4K
+                        </Button>
+                      </div>
+                      <Input value={form.image_url ?? ""} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://..." />
+                    </div>
+                    <div className="col-span-2">
+                      <div className="flex items-center justify-between">
+                        <Label>Screenshots (one URL per line)</Label>
+                        <Button type="button" size="sm" variant="ghost" disabled={!form.screenshots?.length || upscaling} onClick={() => upscaleField("screenshots")}>
+                          {upscaling ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Sparkles className="h-3 w-3 mr-1" />}
+                          Upscale all
+                        </Button>
+                      </div>
                       <Textarea
                         rows={3}
                         value={(form.screenshots ?? []).join("\n")}
                         onChange={(e) => setForm({ ...form, screenshots: e.target.value.split("\n").map(s => s.trim()).filter(Boolean) })}
                         placeholder={"https://...\nhttps://..."}
                       />
+                    </div>
+                    <div className="col-span-2 flex items-center gap-2 text-sm bg-surface-2/50 rounded-md p-3">
+                      <Switch checked={autoUpscale} onCheckedChange={setAutoUpscale} />
+                      <span>Auto-upscale new images to 4K when saving</span>
                     </div>
                     <div className="col-span-2">
                       <Label>Trailer URL (YouTube link or .mp4)</Label>
@@ -188,8 +321,8 @@ const Admin = () => {
                     <div className="col-span-2"><Label>Storage</Label><Input value={form.min_storage ?? ""} onChange={(e) => setForm({ ...form, min_storage: e.target.value })} placeholder="50 GB available space" /></div>
                   </div>
                   <DialogFooter>
-                    <Button type="submit" disabled={upsert.isPending} className="bg-primary-gradient text-primary-foreground hover:opacity-90">
-                      {editing ? "Save Changes" : "Add Game"}
+                    <Button type="submit" disabled={upsert.isPending || upscaling} className="bg-primary-gradient text-primary-foreground hover:opacity-90">
+                      {upscaling ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Upscaling...</> : (editing ? "Save Changes" : "Add Game")}
                     </Button>
                   </DialogFooter>
                 </form>
@@ -198,6 +331,22 @@ const Admin = () => {
             <Button variant="outline" onClick={logout}><LogOut className="h-4 w-4 mr-2" /> Logout</Button>
           </div>
         </div>
+
+        {bulkRunning && (
+          <div className="mb-6 rounded-lg border border-primary/40 bg-surface-2 p-4 space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="flex items-center gap-2 font-medium">
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                Upscaling images to 4K
+              </span>
+              <span className="text-muted-foreground">
+                {bulkProgress.done} / {bulkProgress.total}
+              </span>
+            </div>
+            <Progress value={bulkProgress.total ? (bulkProgress.done / bulkProgress.total) * 100 : 0} />
+            <div className="text-xs text-muted-foreground truncate">{bulkProgress.current}</div>
+          </div>
+        )}
 
         <Tabs defaultValue="games" className="w-full">
           <TabsList>
