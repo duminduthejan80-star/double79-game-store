@@ -29,7 +29,6 @@ const Index = () => {
   }, [games, q, filter]);
 
   const featured = useMemo(() => games?.filter((g) => g.featured) ?? [], [games]);
-  const autoplay = useRef(Autoplay({ delay: 5000, stopOnInteraction: false, stopOnMouseEnter: true }));
 
   return (
     <div className="min-h-screen">
@@ -83,21 +82,7 @@ const Index = () => {
         {featured.length > 0 && filter === "all" && !q && (
           <div className="mb-12">
             <h2 className="text-2xl font-bold mb-4">Featured</h2>
-            <Carousel
-              opts={{ align: "start", loop: true }}
-              plugins={[autoplay.current]}
-              className="w-full"
-            >
-              <CarouselContent className="-ml-5">
-                {featured.map((g) => (
-                  <CarouselItem key={g.id} className="pl-5 md:basis-1/2 lg:basis-1/3">
-                    <GameCard game={g} />
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-              <CarouselPrevious className="hidden md:flex -left-4" />
-              <CarouselNext className="hidden md:flex -right-4" />
-            </Carousel>
+            <FeaturedShowcase games={featured} />
           </div>
         )}
 
