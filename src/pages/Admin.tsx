@@ -25,6 +25,8 @@ const empty: GameInput = {
   genre: "", developer: "", publisher: "", release_date: null,
   min_os: "", min_cpu: "", min_ram: "", min_gpu: "", min_storage: "",
   featured: false,
+  screenshots: [],
+  trailer_url: "",
 };
 
 const Admin = () => {
