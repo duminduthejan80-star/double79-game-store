@@ -321,8 +321,8 @@ const Admin = () => {
                     <div className="col-span-2"><Label>Storage</Label><Input value={form.min_storage ?? ""} onChange={(e) => setForm({ ...form, min_storage: e.target.value })} placeholder="50 GB available space" /></div>
                   </div>
                   <DialogFooter>
-                    <Button type="submit" disabled={upsert.isPending} className="bg-primary-gradient text-primary-foreground hover:opacity-90">
-                      {editing ? "Save Changes" : "Add Game"}
+                    <Button type="submit" disabled={upsert.isPending || upscaling} className="bg-primary-gradient text-primary-foreground hover:opacity-90">
+                      {upscaling ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Upscaling...</> : (editing ? "Save Changes" : "Add Game")}
                     </Button>
                   </DialogFooter>
                 </form>
