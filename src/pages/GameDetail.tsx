@@ -1,6 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Download, Wifi, WifiOff, Check, Calendar, User, Building2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
+import MediaGallery from "@/components/MediaGallery";
 import { useGame } from "@/hooks/useGames";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -60,9 +61,12 @@ const GameDetail = () => {
 
         <div className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
-            <div className="aspect-video rounded-lg overflow-hidden bg-surface-2 shadow-elevated">
-              {game.image_url && <img src={game.image_url} alt={game.title} className="w-full h-full object-cover" />}
-            </div>
+            <MediaGallery
+              title={game.title}
+              cover={game.image_url}
+              trailerUrl={game.trailer_url}
+              screenshots={game.screenshots ?? []}
+            />
 
             <div>
               <div className="flex items-center gap-2 mb-2">

@@ -141,7 +141,20 @@ const Admin = () => {
                   <div className="grid grid-cols-2 gap-3">
                     <div className="col-span-2"><Label>Title *</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required /></div>
                     <div className="col-span-2"><Label>Description</Label><Textarea rows={3} value={form.description ?? ""} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
-                    <div className="col-span-2"><Label>Image URL</Label><Input value={form.image_url ?? ""} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://..." /></div>
+                    <div className="col-span-2"><Label>Image URL (cover)</Label><Input value={form.image_url ?? ""} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://..." /></div>
+                    <div className="col-span-2">
+                      <Label>Screenshots (one URL per line)</Label>
+                      <Textarea
+                        rows={3}
+                        value={(form.screenshots ?? []).join("\n")}
+                        onChange={(e) => setForm({ ...form, screenshots: e.target.value.split("\n").map(s => s.trim()).filter(Boolean) })}
+                        placeholder={"https://...\nhttps://..."}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Label>Trailer URL (YouTube link or .mp4)</Label>
+                      <Input value={form.trailer_url ?? ""} onChange={(e) => setForm({ ...form, trailer_url: e.target.value })} placeholder="https://youtube.com/watch?v=... or https://.../video.mp4" />
+                    </div>
                     <div className="col-span-2"><Label>Download URL</Label><Input value={form.download_url ?? ""} onChange={(e) => setForm({ ...form, download_url: e.target.value })} placeholder="https://..." /></div>
 
                     <div><Label>Genre</Label><Input value={form.genre ?? ""} onChange={(e) => setForm({ ...form, genre: e.target.value })} /></div>
