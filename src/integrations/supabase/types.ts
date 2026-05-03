@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      download_events: {
+        Row: {
+          created_at: string
+          game_id: string
+          game_title: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          game_id: string
+          game_title?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          game_id?: string
+          game_title?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       games: {
         Row: {
           created_at: string
@@ -79,6 +103,33 @@ export type Database = {
           publisher?: string | null
           release_date?: string | null
           title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          email: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
           updated_at?: string
         }
         Relationships: []
