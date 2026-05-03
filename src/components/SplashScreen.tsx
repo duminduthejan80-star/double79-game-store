@@ -76,7 +76,7 @@ const SplashScreen = () => {
           0%, 100% { opacity: 0.6; }
           50% { opacity: 1; }
         }
-        .splash-logo { animation: splashLogoIn 1.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both; }
+        .splash-logo { animation: splashLogoIn 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
         .splash-text { animation: splashTextIn 1s ease-out 1.6s both; }
         .splash-pulse { animation: splashPulse 2.4s ease-in-out infinite; }
         .splash-bar { animation: splashTextIn 0.8s ease-out 2.2s both; }
