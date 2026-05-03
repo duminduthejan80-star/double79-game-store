@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Gamepad2 } from "lucide-react";
+import logo from "@/assets/logo.png";
 
 const SplashScreen = () => {
   const [show, setShow] = useState(() => !sessionStorage.getItem("splashShown"));
@@ -32,9 +32,9 @@ const SplashScreen = () => {
       <div className="relative flex flex-col items-center gap-6">
         {/* Logo */}
         <div className="splash-logo relative">
-          <div className="absolute inset-0 rounded-2xl bg-primary-gradient blur-2xl opacity-60 splash-pulse" />
-          <div className="relative flex h-24 w-24 items-center justify-center rounded-2xl bg-primary-gradient shadow-glow">
-            <Gamepad2 className="h-12 w-12 text-primary-foreground" />
+          <div className="absolute inset-0 rounded-full bg-primary/40 blur-3xl splash-pulse" />
+          <div className="relative h-40 w-40 md:h-48 md:w-48 rounded-full overflow-hidden ring-2 ring-primary/60 shadow-glow">
+            <img src={logo} alt="Double79" className="h-full w-full object-cover" />
           </div>
         </div>
 
