@@ -7,9 +7,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useGames, useUpsertGame, useDeleteGame } from "@/hooks/useGames";
-import { Shield, Plus, Pencil, Trash2, LogOut } from "lucide-react";
+import { Shield, Plus, Pencil, Trash2, LogOut, Users, ChevronDown, Download as DownloadIcon, Library as LibraryIcon } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import type { Game, GameInput } from "@/types/game";
 
 const ADMIN_CODE = "7997";
