@@ -43,7 +43,16 @@ const Index = () => {
       <Navbar />
 
       <section className="relative overflow-hidden bg-hero border-b border-border/60">
-        <div className="container mx-auto px-4 py-16 md:py-24">
+        <video
+          src="/hero-bg.mp4"
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover opacity-40 pointer-events-none"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-background via-background/70 to-background/30 pointer-events-none" />
+        <div className="container relative mx-auto px-4 py-16 md:py-24">
           <div className="max-w-3xl">
             <div className="inline-block rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium uppercase tracking-widest text-primary-glow">
               Official Store
