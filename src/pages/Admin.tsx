@@ -332,6 +332,22 @@ const Admin = () => {
           </div>
         </div>
 
+        {bulkRunning && (
+          <div className="mb-6 rounded-lg border border-primary/40 bg-surface-2 p-4 space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="flex items-center gap-2 font-medium">
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                Upscaling images to 4K
+              </span>
+              <span className="text-muted-foreground">
+                {bulkProgress.done} / {bulkProgress.total}
+              </span>
+            </div>
+            <Progress value={bulkProgress.total ? (bulkProgress.done / bulkProgress.total) * 100 : 0} />
+            <div className="text-xs text-muted-foreground truncate">{bulkProgress.current}</div>
+          </div>
+        )}
+
         <Tabs defaultValue="games" className="w-full">
           <TabsList>
             <TabsTrigger value="games">Games</TabsTrigger>
