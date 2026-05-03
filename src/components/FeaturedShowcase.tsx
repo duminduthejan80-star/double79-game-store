@@ -134,7 +134,11 @@ const FeaturedShowcase = ({ games }: { games: Game[] }) => {
                 key={`${activeGame.id}-${slideIdx}`}
                 src={current.url}
                 alt={activeGame.title}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                loading="eager"
+                decoding="async"
+                fetchPriority="high"
+                style={{ imageRendering: "auto" }}
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 [image-rendering:high-quality]"
               />
             )
           ) : (
