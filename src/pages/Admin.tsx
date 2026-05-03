@@ -146,11 +146,39 @@ const Admin = () => {
     e.preventDefault();
     if (!form.title.trim()) return toast.error("Title required");
     try {
-      await upsert.mutateAsync({ ...form, id: editing?.id });
+      let payload: GameInput = { ...form };
+      if (autoUpscale) {
+        const orig = editing;
+        const newCover = payload.image_url && payload.image_url !== orig?.image_url;
+        const newShots = (payload.screenshots ?? []).filter(
+          (s) => !orig?.screenshots?.includes(s),
+        );
+        if (newCover || newShots.length) {
+          setUpscaling(true);
+          toast.info("Auto-upscaling new images to 4K...");
+        }
+        if (newCover && payload.image_url) {
+          try { payload.image_url = await upscaleOne(payload.image_url); }
+          catch (e: any) { toast.error(`Cover upscale: ${e.message}`); }
+        }
+        if (newShots.length) {
+          const updated = [...(payload.screenshots ?? [])];
+          for (let i = 0; i < updated.length; i++) {
+            if (newShots.includes(updated[i])) {
+              try { updated[i] = await upscaleOne(updated[i]); }
+              catch (e: any) { toast.error(`Shot upscale: ${e.message}`); }
+            }
+          }
+          payload.screenshots = updated;
+        }
+        setUpscaling(false);
+      }
+      await upsert.mutateAsync({ ...payload, id: editing?.id });
       toast.success(editing ? "Game updated" : "Game added");
       setOpen(false);
       setEditing(null);
     } catch (err: any) {
+      setUpscaling(false);
       toast.error(err.message);
     }
   };
