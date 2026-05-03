@@ -42,26 +42,17 @@ const Index = () => {
     <div className="min-h-screen">
       <Navbar />
 
-      <section className="relative overflow-hidden bg-hero border-b border-border/60">
-        <video
-          src="/hero-bg.mp4"
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover opacity-40 pointer-events-none"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-background via-background/70 to-background/30 pointer-events-none" />
-        <div className="container relative mx-auto px-4 py-16 md:py-24">
-          <div className="max-w-3xl">
-            <div className="inline-block rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium uppercase tracking-widest text-primary-glow">
-              Official Store
+      <section className="relative overflow-hidden border-b border-border/60 bg-surface-1">
+        <div className="container relative mx-auto px-4 py-12 md:py-16">
+          <div className="max-w-2xl">
+            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+              Double79 Store
             </div>
-            <h1 className="mt-4 text-4xl md:text-6xl font-bold leading-tight">
-              Discover. Download. <span className="bg-primary-gradient bg-clip-text text-transparent">Play.</span>
+            <h1 className="mt-3 text-3xl md:text-5xl font-bold leading-tight text-foreground">
+              Discover. Download. <span className="text-primary">Play.</span>
             </h1>
-            <p className="mt-4 text-lg text-muted-foreground max-w-xl">
-              The official Double79 game library — curated titles, free-to-play hits, and premium experiences.
+            <p className="mt-3 text-base text-muted-foreground max-w-xl">
+              Curated titles, free-to-play hits, and premium experiences — all in one place.
             </p>
           </div>
         </div>
