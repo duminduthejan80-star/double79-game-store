@@ -32,7 +32,7 @@ const buildSlides = (game: Game): Slide[] => {
       list.push({
         kind: "video",
         url: game.trailer_url,
-        embedUrl: `https://www.youtube.com/embed/${yt}?rel=0&autoplay=1&mute=1&controls=0&modestbranding=1`,
+        embedUrl: `https://www.youtube.com/embed/${yt}?rel=0&autoplay=1&mute=1&controls=0&modestbranding=1&vq=hd1080&hd=1`,
         thumb: `https://img.youtube.com/vi/${yt}/maxresdefault.jpg`,
       });
     } else {
