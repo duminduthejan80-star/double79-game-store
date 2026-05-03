@@ -5,18 +5,18 @@
 @layer base {
   :root {
     /* Steam-inspired dark UI */
-    --background: 215 28% 9%;
-    --foreground: 210 20% 92%;
+    --background: 210 32% 8%;
+    --foreground: 210 20% 94%;
 
-    --card: 215 25% 12%;
-    --card-foreground: 210 20% 92%;
+    --card: 210 28% 11%;
+    --card-foreground: 210 20% 94%;
 
-    --popover: 215 28% 11%;
-    --popover-foreground: 210 20% 92%;
+    --popover: 210 30% 10%;
+    --popover-foreground: 210 20% 94%;
 
-    --primary: 204 100% 55%;
-    --primary-foreground: 215 35% 8%;
-    --primary-glow: 199 100% 65%;
+    --primary: 203 89% 53%;
+    --primary-foreground: 210 35% 8%;
+    --primary-glow: 199 95% 64%;
 
     --secondary: 215 22% 18%;
     --secondary-foreground: 210 20% 92%;
