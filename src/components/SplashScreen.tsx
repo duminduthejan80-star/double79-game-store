@@ -7,11 +7,11 @@ const SplashScreen = () => {
 
   useEffect(() => {
     if (!show) return;
-    const t1 = setTimeout(() => setFadeOut(true), 2200);
+    const t1 = setTimeout(() => setFadeOut(true), 4400);
     const t2 = setTimeout(() => {
       setShow(false);
       sessionStorage.setItem("splashShown", "1");
-    }, 2800);
+    }, 5000);
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
@@ -76,12 +76,12 @@ const SplashScreen = () => {
           0%, 100% { opacity: 0.6; }
           50% { opacity: 1; }
         }
-        .splash-logo { animation: splashLogoIn 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
-        .splash-text { animation: splashTextIn 0.8s ease-out 0.4s both; }
-        .splash-pulse { animation: splashPulse 1.8s ease-in-out infinite; }
-        .splash-bar { animation: splashTextIn 0.6s ease-out 0.7s both; }
-        .splash-bar-fill { animation: splashBar 1.2s ease-in-out infinite; }
-        .splash-glow { animation: splashGlow 2s ease-in-out infinite; }
+        .splash-logo { animation: splashLogoIn 1.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both; }
+        .splash-text { animation: splashTextIn 1s ease-out 1.6s both; }
+        .splash-pulse { animation: splashPulse 2.4s ease-in-out infinite; }
+        .splash-bar { animation: splashTextIn 0.8s ease-out 2.2s both; }
+        .splash-bar-fill { animation: splashBar 1.6s ease-in-out infinite; }
+        .splash-glow { animation: splashGlow 2.4s ease-in-out infinite; }
         .bg-gradient-radial { background-image: radial-gradient(circle at center, var(--tw-gradient-stops)); }
       `}</style>
     </div>
