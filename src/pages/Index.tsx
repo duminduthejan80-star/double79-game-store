@@ -43,6 +43,15 @@ const Index = () => {
       <Navbar />
 
       <section className="relative overflow-hidden border-b border-border/60 bg-surface-1">
+        <video
+          src="/hero-bg.mp4"
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover opacity-30 pointer-events-none"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-background/40 pointer-events-none" />
         <div className="container relative mx-auto px-4 py-12 md:py-16">
           <div className="max-w-2xl">
             <div className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
