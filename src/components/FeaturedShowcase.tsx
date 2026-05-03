@@ -22,6 +22,10 @@ type Slide = { kind: "video" | "image"; url: string; embedUrl?: string; thumb?: 
 
 const buildSlides = (game: Game): Slide[] => {
   const list: Slide[] = [];
+  if (game.image_url) list.push({ kind: "image", url: game.image_url });
+  for (const s of game.screenshots ?? []) {
+    if (s) list.push({ kind: "image", url: s });
+  }
   if (game.trailer_url) {
     const yt = youtubeId(game.trailer_url);
     if (yt) {
@@ -34,10 +38,6 @@ const buildSlides = (game: Game): Slide[] => {
     } else {
       list.push({ kind: "video", url: game.trailer_url, thumb: game.image_url || undefined });
     }
-  }
-  if (game.image_url) list.push({ kind: "image", url: game.image_url });
-  for (const s of game.screenshots ?? []) {
-    if (s) list.push({ kind: "image", url: s });
   }
   return list;
 };
