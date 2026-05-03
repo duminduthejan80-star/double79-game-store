@@ -233,6 +233,14 @@ const Admin = () => {
             <p className="text-muted-foreground text-sm mt-1">Manage your game catalog</p>
           </div>
           <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={bulkUpscaleAll}
+              disabled={bulkRunning || !games?.length}
+            >
+              {bulkRunning ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+              Upscale all to 4K
+            </Button>
             <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
               <DialogTrigger asChild>
                 <Button className="bg-primary-gradient text-primary-foreground hover:opacity-90">
