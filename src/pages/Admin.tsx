@@ -41,6 +41,83 @@ const Admin = () => {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Game | null>(null);
   const [form, setForm] = useState<GameInput>(empty);
+  const [autoUpscale, setAutoUpscale] = useState(true);
+  const [upscaling, setUpscaling] = useState(false);
+  const [bulkRunning, setBulkRunning] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState({ done: 0, total: 0, current: "" });
+
+  const upscaleOne = async (url: string): Promise<string> => {
+    const { data, error } = await supabase.functions.invoke("upscale-image", {
+      headers: { "x-admin-code": "7997" },
+      body: { imageUrl: url },
+    });
+    if (error) throw new Error(error.message);
+    if (!data?.url) throw new Error("No URL returned");
+    return data.url as string;
+  };
+
+  const upscaleField = async (field: "image_url" | "screenshots") => {
+    setUpscaling(true);
+    try {
+      if (field === "image_url" && form.image_url) {
+        const url = await upscaleOne(form.image_url);
+        setForm((f) => ({ ...f, image_url: url }));
+        toast.success("Cover upscaled to 4K");
+      } else if (field === "screenshots" && form.screenshots?.length) {
+        const out: string[] = [];
+        for (let i = 0; i < form.screenshots.length; i++) {
+          try { out.push(await upscaleOne(form.screenshots[i])); }
+          catch (e: any) { toast.error(`Screenshot ${i + 1}: ${e.message}`); out.push(form.screenshots[i]); }
+        }
+        setForm((f) => ({ ...f, screenshots: out }));
+        toast.success("Screenshots upscaled");
+      }
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setUpscaling(false);
+    }
+  };
+
+  const bulkUpscaleAll = async () => {
+    if (!games?.length) return;
+    if (!confirm(`Upscale all images for ${games.length} games? This uses AI credits.`)) return;
+    setBulkRunning(true);
+    const tasks: { game: Game; total: number }[] = games.map((g) => ({
+      game: g,
+      total: (g.image_url ? 1 : 0) + (g.screenshots?.length ?? 0),
+    }));
+    const total = tasks.reduce((a, t) => a + t.total, 0);
+    setBulkProgress({ done: 0, total, current: "" });
+    let done = 0;
+
+    for (const { game } of tasks) {
+      const updates: Partial<GameInput> = {};
+      if (game.image_url) {
+        setBulkProgress((p) => ({ ...p, current: `${game.title} (cover)` }));
+        try { updates.image_url = await upscaleOne(game.image_url); }
+        catch (e: any) { toast.error(`${game.title} cover: ${e.message}`); }
+        done++; setBulkProgress((p) => ({ ...p, done }));
+      }
+      const newShots: string[] = [];
+      for (let i = 0; i < (game.screenshots?.length ?? 0); i++) {
+        const s = game.screenshots[i];
+        setBulkProgress((p) => ({ ...p, current: `${game.title} (shot ${i + 1})` }));
+        try { newShots.push(await upscaleOne(s)); }
+        catch (e: any) { toast.error(`${game.title} shot ${i + 1}: ${e.message}`); newShots.push(s); }
+        done++; setBulkProgress((p) => ({ ...p, done }));
+      }
+      if (game.screenshots?.length) updates.screenshots = newShots;
+      if (Object.keys(updates).length) {
+        await supabase.from("games").update(updates).eq("id", game.id);
+      }
+    }
+    setBulkRunning(false);
+    setBulkProgress({ done: 0, total: 0, current: "" });
+    toast.success("Bulk upscale complete");
+    // refresh
+    window.location.reload();
+  };
 
   useEffect(() => {
     if (editing) {
