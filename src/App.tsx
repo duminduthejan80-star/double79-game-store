@@ -12,6 +12,7 @@ import Downloads from "./pages/Downloads.tsx";
 import Login from "./pages/Login.tsx";
 import { DownloadsProvider } from "@/lib/downloads";
 import DownloadWidget from "@/components/DownloadWidget";
+import SplashScreen from "@/components/SplashScreen";
 import { AuthProvider } from "@/lib/auth";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
@@ -20,6 +21,7 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
+      <SplashScreen />
       <Toaster />
       <Sonner />
       <BrowserRouter>
