@@ -78,8 +78,23 @@ const MediaGallery = ({ cover, trailerUrl, screenshots = [], title }: Props) => 
             <video key={current.url} src={current.url} controls className="w-full h-full object-contain bg-black" />
           )
         ) : (
-          <img src={current.url} alt={`${title} screenshot`} className="w-full h-full object-cover" />
+          <>
+            <img
+              src={current.url}
+              alt=""
+              aria-hidden
+              className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-50"
+            />
+            <img
+              src={current.url}
+              alt={`${title} screenshot`}
+              loading="eager"
+              decoding="async"
+              className="relative w-full h-full object-contain"
+            />
+          </>
         )}
+
 
         {items.length > 1 && (
           <>
