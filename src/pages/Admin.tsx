@@ -46,8 +46,12 @@ const Admin = () => {
   const [bulkRunning, setBulkRunning] = useState(false);
   const [bulkProgress, setBulkProgress] = useState({ done: 0, total: 0, current: "" });
 
+  const isAlreadyUpscaled = (url: string) => !!url && url.includes("/storage/v1/object/public/game-media/");
+
   const upscaleOne = async (url: string): Promise<string> => {
+    if (isAlreadyUpscaled(url)) return url;
     const { data, error } = await supabase.functions.invoke("upscale-image", {
+
       headers: { "x-admin-code": "7997" },
       body: { imageUrl: url },
     });
@@ -85,36 +89,54 @@ const Admin = () => {
     setBulkRunning(true);
     const tasks: { game: Game; total: number }[] = games.map((g) => ({
       game: g,
-      total: (g.image_url ? 1 : 0) + (g.screenshots?.length ?? 0),
+      total:
+        (g.image_url && !isAlreadyUpscaled(g.image_url) ? 1 : 0) +
+        (g.screenshots?.filter((s) => !isAlreadyUpscaled(s)).length ?? 0),
     }));
     const total = tasks.reduce((a, t) => a + t.total, 0);
     setBulkProgress({ done: 0, total, current: "" });
     let done = 0;
+    let skipped = 0;
 
     for (const { game } of tasks) {
       const updates: Partial<GameInput> = {};
       if (game.image_url) {
-        setBulkProgress((p) => ({ ...p, current: `${game.title} (cover)` }));
-        try { updates.image_url = await upscaleOne(game.image_url); }
-        catch (e: any) { toast.error(`${game.title} cover: ${e.message}`); }
-        done++; setBulkProgress((p) => ({ ...p, done }));
+        if (isAlreadyUpscaled(game.image_url)) {
+          skipped++;
+        } else {
+          setBulkProgress((p) => ({ ...p, current: `${game.title} (cover)` }));
+          try { updates.image_url = await upscaleOne(game.image_url); }
+          catch (e: any) { toast.error(`${game.title} cover: ${e.message}`); }
+          done++; setBulkProgress((p) => ({ ...p, done }));
+        }
       }
       const newShots: string[] = [];
+      let shotsChanged = false;
       for (let i = 0; i < (game.screenshots?.length ?? 0); i++) {
         const s = game.screenshots[i];
+        if (isAlreadyUpscaled(s)) {
+          newShots.push(s);
+          skipped++;
+          continue;
+        }
         setBulkProgress((p) => ({ ...p, current: `${game.title} (shot ${i + 1})` }));
-        try { newShots.push(await upscaleOne(s)); }
+        try {
+          const up = await upscaleOne(s);
+          newShots.push(up);
+          if (up !== s) shotsChanged = true;
+        }
         catch (e: any) { toast.error(`${game.title} shot ${i + 1}: ${e.message}`); newShots.push(s); }
         done++; setBulkProgress((p) => ({ ...p, done }));
       }
-      if (game.screenshots?.length) updates.screenshots = newShots;
+      if (shotsChanged) updates.screenshots = newShots;
       if (Object.keys(updates).length) {
         await supabase.from("games").update(updates).eq("id", game.id);
       }
     }
     setBulkRunning(false);
     setBulkProgress({ done: 0, total: 0, current: "" });
-    toast.success("Bulk upscale complete");
+    toast.success(`Bulk upscale complete${skipped ? ` (skipped ${skipped} already-4K)` : ""}`);
+
     // refresh
     window.location.reload();
   };
