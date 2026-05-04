@@ -46,8 +46,12 @@ const Admin = () => {
   const [bulkRunning, setBulkRunning] = useState(false);
   const [bulkProgress, setBulkProgress] = useState({ done: 0, total: 0, current: "" });
 
+  const isAlreadyUpscaled = (url: string) => !!url && url.includes("/storage/v1/object/public/game-media/");
+
   const upscaleOne = async (url: string): Promise<string> => {
+    if (isAlreadyUpscaled(url)) return url;
     const { data, error } = await supabase.functions.invoke("upscale-image", {
+
       headers: { "x-admin-code": "7997" },
       body: { imageUrl: url },
     });
