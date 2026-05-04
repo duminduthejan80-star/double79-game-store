@@ -130,17 +130,26 @@ const FeaturedShowcase = ({ games }: { games: Game[] }) => {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <img
-                key={`${activeGame.id}-${slideIdx}`}
-                src={current.url}
-                alt={activeGame.title}
-                loading="eager"
-                decoding="async"
-                fetchPriority="high"
-                style={{ imageRendering: "auto" }}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 [image-rendering:high-quality]"
-              />
+              <>
+                {/* Blurred backdrop fills letterbox space without stretching */}
+                <img
+                  src={current.url}
+                  alt=""
+                  aria-hidden
+                  className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-50"
+                />
+                <img
+                  key={`${activeGame.id}-${slideIdx}`}
+                  src={current.url}
+                  alt={activeGame.title}
+                  loading="eager"
+                  decoding="async"
+                  fetchPriority="high"
+                  className="relative w-full h-full object-contain transition-transform duration-700 group-hover:scale-105"
+                />
+              </>
             )
+
           ) : (
             <div className="w-full h-full flex items-center justify-center text-muted-foreground">
               <Gamepad2 className="h-16 w-16 opacity-30" />
