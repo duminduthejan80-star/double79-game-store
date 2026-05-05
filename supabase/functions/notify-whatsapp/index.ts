@@ -20,7 +20,16 @@ Deno.serve(async (req) => {
     const gameId = game?.id;
     const link = gameId ? `${WEBSITE_URL}/game/${gameId}` : WEBSITE_URL;
 
-    const body = `🚀 New Game Alert on Double79!\nName: ${gameName}\nDownload here: ${link}`;
+    const body =
+`🎮 *New Game Added on Double79!* 🚀
+
+🕹️ *Game Name:*
+${gameName}
+
+✨ Free to download now!
+
+🔗 *Download Link:*
+${link}`;
 
     const res = await fetch("https://gate.whapi.cloud/messages/text", {
       method: "POST",
