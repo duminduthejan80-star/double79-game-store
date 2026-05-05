@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
     const gameId = game?.id;
     const link = gameId ? `${WEBSITE_URL}/game/${gameId}` : WEBSITE_URL;
 
-    const body =
+    const caption =
 `🎮 *New Game Added on Double79!* 🚀
 
 🕹️ *Game Name:*
@@ -31,14 +31,28 @@ ${gameName}
 🔗 *Download Link:*
 ${link}`;
 
-    const res = await fetch("https://gate.whapi.cloud/messages/text", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ to: GROUP_ID, body }),
-    });
+    const imageUrl = game?.image_url;
+    let res: Response;
+
+    if (imageUrl) {
+      res = await fetch("https://gate.whapi.cloud/messages/image", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ to: GROUP_ID, media: imageUrl, caption }),
+      });
+    } else {
+      res = await fetch("https://gate.whapi.cloud/messages/text", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ to: GROUP_ID, body: caption }),
+      });
+    }
 
     const text = await res.text();
     console.log("Whapi response", res.status, text);
