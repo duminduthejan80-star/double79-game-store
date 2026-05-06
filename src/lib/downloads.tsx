@@ -190,22 +190,15 @@ export const DownloadsProvider = ({ children }: { children: ReactNode }) => {
     tryRealDownload(item);
   };
 
-  const stopSim = (id: string) => {
-    const t = simTimers.current.get(id);
-    if (t) { window.clearInterval(t); simTimers.current.delete(id); }
-  };
-
   const cancel = (id: string) => {
     controllers.current.get(id)?.abort();
     controllers.current.delete(id);
-    stopSim(id);
     dispatch({ type: "update", id, patch: { status: "cancelled", speed: 0 } });
   };
 
   const remove = (id: string) => {
     controllers.current.get(id)?.abort();
     controllers.current.delete(id);
-    stopSim(id);
     dispatch({ type: "remove", id });
   };
 
