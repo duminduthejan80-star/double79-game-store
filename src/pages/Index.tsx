@@ -69,7 +69,7 @@ const Index = () => {
           </div>
         )}
 
-        <h2 className="text-2xl font-bold mb-4">All Games</h2>
+        <h2 className="text-2xl font-bold mb-4">{filter === "online" ? "Online Games" : filter === "offline" ? "Offline Games" : "All Games"}</h2>
         <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
