@@ -44,11 +44,9 @@ const Navbar = () => {
             target="_blank"
             rel="noopener noreferrer"
             aria-label="YouTube channel"
-            className="group relative inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#FF0000] to-[#B00000] ring-1 ring-white/10 shadow-[0_0_12px_rgba(255,0,0,0.55)] transition-all duration-300 ease-out hover:scale-110 hover:shadow-[0_0_22px_rgba(255,0,0,0.95)] hover:ring-white/30"
+            className="inline-flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 [filter:drop-shadow(0_0_8px_rgba(255,0,0,0.6))] hover:[filter:drop-shadow(0_0_16px_rgba(255,0,0,0.95))]"
           >
-            <span className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-t from-transparent via-white/5 to-white/20 opacity-70" />
-            <Youtube className="relative h-5 w-5 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]" fill="currentColor" strokeWidth={0} />
-            <span className="pointer-events-none absolute -inset-1 rounded-2xl bg-[#FF0000]/0 blur-md transition-all duration-300 group-hover:bg-[#FF0000]/40" />
+            <img src={youtubeLogo} alt="YouTube" className="h-7 w-auto" />
           </a>
         </div>
 
