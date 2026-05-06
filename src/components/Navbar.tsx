@@ -43,9 +43,9 @@ const Navbar = () => {
             target="_blank"
             rel="noopener noreferrer"
             aria-label="YouTube channel"
-            className="text-[#FF0000] hover:text-[#CC0000] transition-smooth"
+            className="inline-flex items-center justify-center text-[#FF0000] transition-all duration-300 ease-out hover:scale-125 [filter:drop-shadow(0_0_4px_rgba(255,0,0,0.55))] hover:[filter:drop-shadow(0_0_10px_rgba(255,0,0,0.95))]"
           >
-            <Youtube className="h-6 w-6" />
+            <Youtube className="h-6 w-6" fill="currentColor" strokeWidth={1.5} />
           </a>
         </div>
 
