@@ -139,48 +139,19 @@ export const DownloadsProvider = ({ children }: { children: ReactNode }) => {
     } catch (err: any) {
       if (controller.signal.aborted) return;
       // Real fetch failed (most likely CORS). Hand off to the browser's
-      // native downloader AND show a Steam-style simulated progress bar
-      // based on the estimated file size from the database.
-      console.warn("Real progress unavailable, simulating progress:", err);
+      // native downloader and clearly mark the item as external — no fake
+      // progress numbers.
+      console.warn("Real progress unavailable, handing off to browser:", err);
       triggerBrowserDownload(item.url, item.title);
-      startSimulatedProgress(item);
-    } finally {
-      controllers.current.delete(item.id);
-    }
-  };
-
-  // Simulated Steam-style progress when real streaming is blocked (CORS).
-  const simTimers = useRef<Map<string, number>>(new Map());
-  const startSimulatedProgress = (item: DownloadItem) => {
-    const total = item.totalBytes && item.totalBytes > 0 ? item.totalBytes : 1.5 * 1024 * 1024 * 1024; // default 1.5GB
-    // Target average speed between 4–12 MB/s, varied per tick for realism
-    const baseSpeed = (4 + Math.random() * 8) * 1024 * 1024;
-    dispatch({ type: "update", id: item.id, patch: { status: "downloading", totalBytes: total, simulated: true } });
-
-    let received = 0;
-    const tickMs = 500;
-    const id = window.setInterval(() => {
-      // jitter speed ±30%
-      const speed = baseSpeed * (0.7 + Math.random() * 0.6);
-      received = Math.min(total, received + (speed * tickMs) / 1000);
-      const done = received >= total;
       dispatch({
         type: "update",
         id: item.id,
-        patch: {
-          receivedBytes: received,
-          speed: done ? 0 : speed,
-          status: done ? "completed" : "downloading",
-          finishedAt: done ? Date.now() : undefined,
-        },
+        patch: { status: "external", speed: 0, finishedAt: Date.now() },
       });
-      if (done) {
-        window.clearInterval(id);
-        simTimers.current.delete(item.id);
-        toast.success(`${item.title} download finished (browser)`);
-      }
-    }, tickMs);
-    simTimers.current.set(item.id, id);
+      toast.info(`${item.title} is downloading via your browser (progress not available)`);
+    } finally {
+      controllers.current.delete(item.id);
+    }
   };
 
   const startDownload: Ctx["startDownload"] = ({ url, title, gameId, imageUrl, estimatedSizeMB }) => {
