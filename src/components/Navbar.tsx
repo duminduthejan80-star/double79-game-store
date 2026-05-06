@@ -1,5 +1,5 @@
 import { Link, NavLink } from "react-router-dom";
-import { Library, Shield, Store, Download, LogOut, MessageCircle } from "lucide-react";
+import { Library, Shield, Store, Download, LogOut, MessageCircle, Youtube } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/logo.png";
 import { useAuth } from "@/lib/auth";
@@ -28,15 +28,26 @@ const Navbar = () => {
   return (
     <header className="sticky top-0 z-50 border-b border-border/60 bg-surface-1/80 backdrop-blur-xl">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 gap-2">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="h-10 w-10 rounded-full overflow-hidden ring-1 ring-primary/50 shadow-glow">
-            <img src={logo} alt="Double79" className="h-full w-full object-cover" />
-          </div>
-          <div className="leading-tight">
-            <div className="text-sm font-bold tracking-widest text-foreground">DOUBLE79</div>
-            <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Game Store</div>
-          </div>
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link to="/" className="flex items-center gap-2">
+            <div className="h-10 w-10 rounded-full overflow-hidden ring-1 ring-primary/50 shadow-glow">
+              <img src={logo} alt="Double79" className="h-full w-full object-cover" />
+            </div>
+            <div className="leading-tight">
+              <div className="text-sm font-bold tracking-widest text-foreground">DOUBLE79</div>
+              <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Game Store</div>
+            </div>
+          </Link>
+          <a
+            href="https://www.youtube.com/channel/UCeUlnTEhYCeZGm8xL9NMZMQ"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="YouTube channel"
+            className="text-[#FF0000] hover:text-[#CC0000] transition-smooth"
+          >
+            <Youtube className="h-6 w-6" />
+          </a>
+        </div>
 
         <nav className="flex items-center gap-1">
           {links.map(({ to, label, icon: Icon }) => (
