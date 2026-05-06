@@ -45,7 +45,10 @@ const Navbar = () => {
             aria-label="YouTube channel"
             className="inline-flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 [filter:drop-shadow(0_0_8px_rgba(255,0,0,0.6))] hover:[filter:drop-shadow(0_0_16px_rgba(255,0,0,0.95))]"
           >
-            <img src={youtubeLogo} alt="YouTube" className="h-7 w-auto" />
+            <svg viewBox="0 0 28 20" className="h-7 w-auto" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path fill="#FF0000" d="M27.4 3.1a3.5 3.5 0 0 0-2.5-2.5C22.7 0 14 0 14 0S5.3 0 3.1.6A3.5 3.5 0 0 0 .6 3.1C0 5.3 0 10 0 10s0 4.7.6 6.9a3.5 3.5 0 0 0 2.5 2.5C5.3 20 14 20 14 20s8.7 0 10.9-.6a3.5 3.5 0 0 0 2.5-2.5C28 14.7 28 10 28 10s0-4.7-.6-6.9z"/>
+              <path fill="#FFFFFF" d="M11.2 14.3 18.4 10l-7.2-4.3v8.6z"/>
+            </svg>
           </a>
         </div>
 
