@@ -1,5 +1,6 @@
 import { Link, NavLink } from "react-router-dom";
-import { Library, Shield, Store, Download, LogOut, MessageCircle, Youtube } from "lucide-react";
+import { Library, Shield, Store, Download, LogOut, MessageCircle } from "lucide-react";
+import youtubeLogo from "@/assets/youtube-logo.png";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/logo.png";
 import { useAuth } from "@/lib/auth";
