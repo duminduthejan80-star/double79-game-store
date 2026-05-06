@@ -1,5 +1,5 @@
 import { Link, NavLink } from "react-router-dom";
-import { Library, Shield, Store, Download, LogOut } from "lucide-react";
+import { Library, Shield, Store, Download, LogOut, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/logo.png";
 import { useAuth } from "@/lib/auth";
@@ -58,6 +58,16 @@ const Navbar = () => {
             </NavLink>
           ))}
         </nav>
+
+        <a
+          href={`https://wa.me/94704962595?text=${encodeURIComponent("Request Game\n\nGame Name: ")}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold bg-[hsl(142_70%_40%)] text-white hover:bg-[hsl(142_70%_35%)] transition-smooth shadow-glow"
+        >
+          <MessageCircle className="h-4 w-4" />
+          <span className="hidden sm:inline">Request Game</span>
+        </a>
 
         {user && (
           <DropdownMenu>
