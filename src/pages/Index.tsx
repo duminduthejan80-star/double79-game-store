@@ -70,6 +70,25 @@ const Index = () => {
         )}
 
         <h2 className="text-2xl font-bold mb-4">All Games</h2>
+        <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Search games..."
+              className="pl-9 bg-surface-2 border-border"
+            />
+          </div>
+          <Tabs value={filter} onValueChange={setFilter}>
+            <TabsList className="bg-surface-2">
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="online">Online</TabsTrigger>
+              <TabsTrigger value="offline">Offline</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+
         {isLoading ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
             {Array.from({ length: 8 }).map((_, i) => (
