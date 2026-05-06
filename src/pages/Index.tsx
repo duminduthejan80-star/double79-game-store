@@ -34,6 +34,27 @@ const Index = () => {
     <div className="min-h-screen">
       <Navbar />
 
+      <div className="container mx-auto px-4 pt-6">
+        <div className="flex flex-col md:flex-row md:items-center gap-4">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Search games..."
+              className="pl-9 bg-surface-2 border-border"
+            />
+          </div>
+          <Tabs value={filter} onValueChange={setFilter}>
+            <TabsList className="bg-surface-2">
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="online">Online</TabsTrigger>
+              <TabsTrigger value="offline">Offline</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+      </div>
+
       <section className="relative overflow-hidden border-b border-border/60 bg-surface-1">
         <video
           src="/hero-bg.mp4"
@@ -60,24 +81,6 @@ const Index = () => {
       </section>
 
       <section className="container mx-auto px-4 py-10">
-        <div className="flex flex-col md:flex-row md:items-center gap-4 mb-8">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Search games..."
-              className="pl-9 bg-surface-2 border-border"
-            />
-          </div>
-          <Tabs value={filter} onValueChange={setFilter}>
-            <TabsList className="bg-surface-2">
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="online">Online</TabsTrigger>
-              <TabsTrigger value="offline">Offline</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
 
         {featured.length > 0 && filter === "all" && !q && (
           <div className="mb-12">
