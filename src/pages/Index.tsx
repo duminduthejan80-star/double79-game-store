@@ -62,7 +62,7 @@ const Index = () => {
 
       <section className="container mx-auto px-4 py-10">
 
-        {featured.length > 0 && filter === "all" && !q && (
+        {featured.length > 0 && (
           <div className="mb-12">
             <h2 className="text-2xl font-bold mb-4">Featured</h2>
             <FeaturedShowcase games={featured} />
