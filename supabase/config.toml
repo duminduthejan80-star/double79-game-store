@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.notify-whatsapp]
 verify_jwt = false
+
+[functions.resolve-download]
+verify_jwt = false
