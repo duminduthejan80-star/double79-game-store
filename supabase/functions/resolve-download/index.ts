@@ -24,28 +24,40 @@ async function resolveGofile(shareUrl: string): Promise<string | null> {
 
   // 1. Create guest account
   const acctRes = await fetch("https://api.gofile.io/accounts", { method: "POST" });
+  if (!acctRes.ok) throw new Error(`gofile accounts ${acctRes.status}`);
   const acctJson = await acctRes.json();
   const token = acctJson?.data?.token;
   if (!token) throw new Error("gofile: no guest token");
 
-  // 2. Fetch content (wt is a public web-token gofile exposes in their JS bundle)
-  const wt = "4fd6sg89d7s6";
+  // 2. Fetch wt from Gofile's JS bundle (rotates periodically)
+  let wt = "4fd6sg89d7s6";
+  try {
+    const jsRes = await fetch("https://gofile.io/dist/js/global.js");
+    const jsTxt = await jsRes.text();
+    const wtMatch = jsTxt.match(/appdata\.wt\s*=\s*["']([^"']+)["']/);
+    if (wtMatch) wt = wtMatch[1];
+  } catch { /* keep default */ }
+
+  // 3. Fetch content
   const contentRes = await fetch(
     `https://api.gofile.io/contents/${contentId}?wt=${wt}`,
     { headers: { Authorization: `Bearer ${token}` } },
   );
   const contentJson = await contentRes.json();
+  if (contentJson?.status !== "ok") {
+    throw new Error(`gofile status: ${contentJson?.status || "unknown"}`);
+  }
   const children = contentJson?.data?.children;
-  if (!children) throw new Error("gofile: no children in response");
+  if (!children || Object.keys(children).length === 0) {
+    throw new Error("gofile: folder empty or link invalid/expired");
+  }
 
   const first = Object.values(children)[0] as any;
   const link = first?.link;
-  if (!link) throw new Error("gofile: no direct link");
-
-  // The direct link requires the account cookie to actually download. We
-  // return it together with the cookie so the caller can use it.
+  if (!link) throw new Error("gofile: no direct link in child");
   return link;
 }
+
 
 // ---------- Buzzheavier ----------
 // Their share page exposes a /dl/ endpoint that 302-redirects to the temporary
