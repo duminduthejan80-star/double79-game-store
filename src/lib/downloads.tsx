@@ -10,9 +10,9 @@ export interface DownloadItem {
   title: string;
   url: string;
   imageUrl?: string;
-  totalBytes: number; // 0 if unknown
+  totalBytes: number;
   receivedBytes: number;
-  speed: number; // bytes/sec
+  speed: number;
   status: DownloadStatus;
   startedAt: number;
   finishedAt?: number;
@@ -33,9 +33,7 @@ const reducer = (state: State, action: Action): State => {
     case "add":
       return { items: [action.item, ...state.items] };
     case "update":
-      return {
-        items: state.items.map((i) => (i.id === action.id ? { ...i, ...action.patch } : i)),
-      };
+      return { items: state.items.map((i) => (i.id === action.id ? { ...i, ...action.patch } : i)) };
     case "remove":
       return { items: state.items.filter((i) => i.id !== action.id) };
     case "clearCompleted":
@@ -63,82 +61,88 @@ const newId = () => Math.random().toString(36).slice(2, 10);
 
 export const DownloadsProvider = ({ children }: { children: ReactNode }) => {
   const [state, dispatch] = useReducer(reducer, { items: [] });
-  const simTimers = useRef<Map<string, number>>(new Map());
+  const controllers = useRef<Map<string, AbortController>>(new Map());
 
-  const stopSim = (id: string) => {
-    const t = simTimers.current.get(id);
-    if (t) {
-      clearInterval(t);
-      simTimers.current.delete(id);
-    }
-  };
-
-  // Trigger the actual file download via a hidden iframe so the user stays
-  // on the current page. The server responds with Content-Disposition:
-  // attachment, which the browser handles without navigating.
-  const triggerHiddenDownload = (url: string) => {
+  const triggerBrowserDownload = (url: string, title: string) => {
     try {
-      const iframe = document.createElement("iframe");
-      iframe.style.display = "none";
-      iframe.src = url;
-      document.body.appendChild(iframe);
-      // Clean up after a while; download has already started.
-      setTimeout(() => {
-        try { document.body.removeChild(iframe); } catch { /* noop */ }
-      }, 60_000);
-    } catch (e) {
-      console.warn("hidden download failed", e);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = title;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch {
+      window.open(url, "_blank");
     }
   };
 
-  // Steam-style simulated progress (real progress is impossible cross-origin
-  // due to CORS — the browser owns the actual download stream).
-  const startSimulatedProgress = (id: string, totalBytes: number) => {
-    stopSim(id);
-    const total = totalBytes > 0 ? totalBytes : 1.5 * 1024 * 1024 * 1024; // default 1.5 GB
-    let received = 0;
-    const startedAt = performance.now();
-    dispatch({
-      type: "update",
-      id,
-      patch: { totalBytes: total, status: "downloading", simulated: true, speed: 0 },
-    });
+  const tryRealDownload = async (item: DownloadItem) => {
+    const controller = new AbortController();
+    controllers.current.set(item.id, controller);
+    try {
+      const res = await fetch(item.url, { signal: controller.signal });
+      if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
+      const totalBytes = Number(res.headers.get("Content-Length") || 0);
+      dispatch({ type: "update", id: item.id, patch: { totalBytes, status: "downloading" } });
 
-    const timer = window.setInterval(() => {
-      // Realistic curve: faster near start, slower near end.
-      const remaining = total - received;
-      const elapsed = (performance.now() - startedAt) / 1000;
-      // base speed 4–12 MB/s with mild jitter
-      const baseSpeed = (4 + Math.random() * 8) * 1024 * 1024;
-      // ease out as we approach 100%
-      const ease = Math.max(0.15, remaining / total);
-      const speed = baseSpeed * ease;
-      const tickBytes = Math.min(remaining, speed * 0.5); // 500ms tick
-      received += tickBytes;
+      const reader = res.body.getReader();
+      let received = 0;
+      let lastTick = performance.now();
+      let lastReceived = 0;
+      const chunks: BlobPart[] = [];
 
-      if (received >= total - 1024) {
-        received = total;
-        dispatch({
-          type: "update",
-          id,
-          patch: {
-            receivedBytes: received,
-            totalBytes: total,
-            speed: 0,
-            status: "completed",
-            finishedAt: Date.now(),
-          },
-        });
-        stopSim(id);
-        return;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value as BlobPart);
+        received += value.length;
+        const now = performance.now();
+        const dt = (now - lastTick) / 1000;
+        if (dt >= 0.25) {
+          const speed = (received - lastReceived) / dt;
+          lastTick = now;
+          lastReceived = received;
+          dispatch({ type: "update", id: item.id, patch: { receivedBytes: received, speed } });
+        }
       }
 
-      dispatch({ type: "update", id, patch: { receivedBytes: received, speed } });
-      // Quiet: avoid using `elapsed` lint warn
-      void elapsed;
-    }, 500);
+      const blob = new Blob(chunks);
+      const objectUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = objectUrl;
+      a.download = item.title;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
 
-    simTimers.current.set(id, timer);
+      dispatch({
+        type: "update",
+        id: item.id,
+        patch: {
+          receivedBytes: received,
+          totalBytes: totalBytes || received,
+          speed: 0,
+          status: "completed",
+          finishedAt: Date.now(),
+        },
+      });
+      toast.success(`${item.title} download finished`);
+    } catch (err: any) {
+      if (controller.signal.aborted) return;
+      console.warn("Real progress unavailable, handing off to browser:", err);
+      triggerBrowserDownload(item.url, item.title);
+      dispatch({
+        type: "update",
+        id: item.id,
+        patch: { status: "external", speed: 0, finishedAt: Date.now() },
+      });
+      toast.info(`${item.title} is downloading via your browser (progress not available)`);
+    } finally {
+      controllers.current.delete(item.id);
+    }
   };
 
   const startDownload: Ctx["startDownload"] = async ({ url, title, gameId, imageUrl, estimatedSizeMB }) => {
@@ -146,9 +150,8 @@ export const DownloadsProvider = ({ children }: { children: ReactNode }) => {
       toast.error("No download link available");
       return;
     }
-    const id = newId();
     const item: DownloadItem = {
-      id,
+      id: newId(),
       gameId,
       title,
       url,
@@ -156,17 +159,13 @@ export const DownloadsProvider = ({ children }: { children: ReactNode }) => {
       totalBytes: estimatedSizeMB ? estimatedSizeMB * 1024 * 1024 : 0,
       receivedBytes: 0,
       speed: 0,
-      status: "downloading",
+      status: "queued",
       startedAt: Date.now(),
-      simulated: true,
+      simulated: false,
     };
     dispatch({ type: "add", item });
     toast.info(`Starting download: ${title}`);
 
-    // Show the Steam-style progress bar immediately.
-    startSimulatedProgress(id, item.totalBytes);
-
-    // log download event (best-effort)
     if (gameId) {
       supabase.auth.getUser().then(({ data }) => {
         if (data.user) {
@@ -179,9 +178,6 @@ export const DownloadsProvider = ({ children }: { children: ReactNode }) => {
       });
     }
 
-    // Resolve share-page URLs (Gofile / Buzzheavier) into a fresh direct
-    // link in the background, then start the actual file transfer via a
-    // hidden iframe so the user never leaves this page.
     let resolvedUrl = url;
     const needsResolve = /gofile\.io|buzzheavier\.com/i.test(url);
     if (needsResolve) {
@@ -193,21 +189,23 @@ export const DownloadsProvider = ({ children }: { children: ReactNode }) => {
         if (data?.direct) resolvedUrl = data.direct;
       } catch (e) {
         console.warn("resolve-download failed, using original url", e);
-        toast.warning("Couldn't refresh link — trying original");
+        toast.warning("Could not refresh download link, trying original");
       }
     }
 
-    dispatch({ type: "update", id, patch: { url: resolvedUrl } });
-    triggerHiddenDownload(resolvedUrl);
+    dispatch({ type: "update", id: item.id, patch: { url: resolvedUrl } });
+    tryRealDownload({ ...item, url: resolvedUrl });
   };
 
   const cancel = (id: string) => {
-    stopSim(id);
+    controllers.current.get(id)?.abort();
+    controllers.current.delete(id);
     dispatch({ type: "update", id, patch: { status: "cancelled", speed: 0 } });
   };
 
   const remove = (id: string) => {
-    stopSim(id);
+    controllers.current.get(id)?.abort();
+    controllers.current.delete(id);
     dispatch({ type: "remove", id });
   };
 
@@ -215,8 +213,7 @@ export const DownloadsProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     return () => {
-      simTimers.current.forEach((t) => clearInterval(t));
-      simTimers.current.clear();
+      controllers.current.forEach((c) => c.abort());
     };
   }, []);
 
@@ -227,7 +224,6 @@ export const DownloadsProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// Formatting helpers
 export const formatBytes = (bytes: number) => {
   if (!bytes || bytes < 0) return "0 B";
   const units = ["B", "KB", "MB", "GB", "TB"];
