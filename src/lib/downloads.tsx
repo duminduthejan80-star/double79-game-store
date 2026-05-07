@@ -154,7 +154,7 @@ export const DownloadsProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const startDownload: Ctx["startDownload"] = ({ url, title, gameId, imageUrl, estimatedSizeMB }) => {
+  const startDownload: Ctx["startDownload"] = async ({ url, title, gameId, imageUrl, estimatedSizeMB }) => {
     if (!url) {
       toast.error("No download link available");
       return;
@@ -174,6 +174,7 @@ export const DownloadsProvider = ({ children }: { children: ReactNode }) => {
     };
     dispatch({ type: "add", item });
     toast.info(`Starting download: ${title}`);
+
     // log download event (best-effort)
     if (gameId) {
       supabase.auth.getUser().then(({ data }) => {
@@ -186,8 +187,28 @@ export const DownloadsProvider = ({ children }: { children: ReactNode }) => {
         }
       });
     }
-    // try real progress first; fallback handled inside
-    tryRealDownload(item);
+
+    // Re-resolve share-page URLs (Gofile / Buzzheavier) into a fresh direct
+    // link via our edge function. Permanent share URLs stay in the DB; the
+    // expiring direct link is generated on demand.
+    let resolvedUrl = url;
+    const needsResolve = /gofile\.io|buzzheavier\.com/i.test(url);
+    if (needsResolve) {
+      try {
+        const { data, error } = await supabase.functions.invoke("resolve-download", {
+          body: { url },
+        });
+        if (error) throw error;
+        if (data?.direct) resolvedUrl = data.direct;
+      } catch (e) {
+        console.warn("resolve-download failed, using original url", e);
+        toast.warning("Could not refresh download link, trying original");
+      }
+    }
+
+    const resolvedItem = { ...item, url: resolvedUrl };
+    dispatch({ type: "update", id: item.id, patch: { url: resolvedUrl } });
+    tryRealDownload(resolvedItem);
   };
 
   const cancel = (id: string) => {
