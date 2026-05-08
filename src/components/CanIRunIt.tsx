@@ -1,5 +1,16 @@
-import { useState } from "react";
-import { CheckCircle2, XCircle, AlertCircle, Cpu, MemoryStick, Monitor, HardDrive, Settings2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import {
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  Cpu,
+  MemoryStick,
+  Monitor,
+  HardDrive,
+  Settings2,
+  ScanLine,
+  RefreshCw,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +24,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { useHardwareProfile, compareSpecs, HardwareProfile } from "@/lib/hardwareProfile";
+import { detectSpecs, DetectedSpecs } from "@/lib/autoDetectSpecs";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -56,69 +68,31 @@ const ProfileEditor = ({ onSaved }: { onSaved?: () => void }) => {
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="cpu" className="flex items-center gap-2">
-          <Cpu className="h-4 w-4" /> CPU
-        </Label>
-        <Input
-          id="cpu"
-          placeholder="e.g. Intel Core i5-12400F"
-          value={draft.cpu}
-          onChange={(e) => update("cpu", e.target.value)}
-        />
+        <Label htmlFor="cpu" className="flex items-center gap-2"><Cpu className="h-4 w-4" /> CPU</Label>
+        <Input id="cpu" placeholder="e.g. Intel Core i5-12400F" value={draft.cpu} onChange={(e) => update("cpu", e.target.value)} />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="gpu" className="flex items-center gap-2">
-          <Monitor className="h-4 w-4" /> GPU
-        </Label>
-        <Input
-          id="gpu"
-          placeholder="e.g. NVIDIA RTX 3060"
-          value={draft.gpu}
-          onChange={(e) => update("gpu", e.target.value)}
-        />
+        <Label htmlFor="gpu" className="flex items-center gap-2"><Monitor className="h-4 w-4" /> GPU</Label>
+        <Input id="gpu" placeholder="e.g. NVIDIA RTX 3060" value={draft.gpu} onChange={(e) => update("gpu", e.target.value)} />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
-          <Label htmlFor="ram" className="flex items-center gap-2">
-            <MemoryStick className="h-4 w-4" /> RAM (GB)
-          </Label>
-          <Input
-            id="ram"
-            type="number"
-            min={0}
-            placeholder="16"
-            value={draft.ram || ""}
-            onChange={(e) => update("ram", parseFloat(e.target.value) || 0)}
-          />
+          <Label htmlFor="ram" className="flex items-center gap-2"><MemoryStick className="h-4 w-4" /> RAM (GB)</Label>
+          <Input id="ram" type="number" min={0} placeholder="16" value={draft.ram || ""} onChange={(e) => update("ram", parseFloat(e.target.value) || 0)} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="storage" className="flex items-center gap-2">
-            <HardDrive className="h-4 w-4" /> Storage (GB)
-          </Label>
-          <Input
-            id="storage"
-            type="number"
-            min={0}
-            placeholder="500"
-            value={draft.storage || ""}
-            onChange={(e) => update("storage", parseFloat(e.target.value) || 0)}
-          />
+          <Label htmlFor="storage" className="flex items-center gap-2"><HardDrive className="h-4 w-4" /> Storage (GB)</Label>
+          <Input id="storage" type="number" min={0} placeholder="500" value={draft.storage || ""} onChange={(e) => update("storage", parseFloat(e.target.value) || 0)} />
         </div>
       </div>
       <DialogFooter>
-        <Button onClick={save} className="w-full">
-          Save profile
-        </Button>
+        <Button onClick={save} className="w-full">Save profile</Button>
       </DialogFooter>
     </div>
   );
 };
 
-export const HardwareProfileDialog = ({
-  trigger,
-}: {
-  trigger?: React.ReactNode;
-}) => {
+export const HardwareProfileDialog = ({ trigger }: { trigger?: React.ReactNode }) => {
   const [open, setOpen] = useState(false);
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -142,23 +116,100 @@ export const HardwareProfileDialog = ({
   );
 };
 
+const mergeProfile = (manual: HardwareProfile, detected: DetectedSpecs | null): HardwareProfile => {
+  if (!detected) return manual;
+  return {
+    cpu: manual.cpu || (detected.cores ? `${detected.cores}-core CPU` : ""),
+    gpu: manual.gpu || detected.gpu || "",
+    ram: manual.ram || detected.ram || 0,
+    storage: manual.storage || 0,
+  };
+};
+
+type ScanState = "idle" | "scanning" | "done" | "blocked";
+
 const CanIRunIt = ({ game }: Props) => {
   const { profile, hasProfile } = useHardwareProfile();
-  const report = compareSpecs(profile, game);
+  const [scanState, setScanState] = useState<ScanState>("idle");
+  const [detected, setDetected] = useState<DetectedSpecs | null>(null);
+
+  const runScan = () => {
+    setScanState("scanning");
+    setDetected(null);
+    // 1s simulated scan animation for the high-tech feel
+    window.setTimeout(() => {
+      const d = detectSpecs();
+      if (!d) {
+        setScanState("blocked");
+        return;
+      }
+      setDetected(d);
+      setScanState("done");
+    }, 1000);
+  };
+
+  useEffect(() => {
+    runScan();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const hasAnyReq = !!(game.min_cpu || game.min_gpu || game.min_ram || game.min_storage);
   if (!hasAnyReq) return null;
 
-  if (!hasProfile) {
+  // Scanning UI
+  if (scanState === "scanning") {
+    return (
+      <div className="relative overflow-hidden rounded-xl border border-primary/30 bg-primary/5 p-5 backdrop-blur scan-sweep">
+        <div className="flex items-center gap-3">
+          <ScanLine className="h-5 w-5 text-primary scan-blink" />
+          <div>
+            <div className="font-semibold text-sm text-primary">Scanning system hardware…</div>
+            <div className="text-xs text-muted-foreground">Reading GPU, CPU cores and memory</div>
+          </div>
+        </div>
+        <div className="mt-3 grid grid-cols-3 gap-2 text-[11px] text-muted-foreground font-mono">
+          <div className="scan-blink">› GPU.detect()</div>
+          <div className="scan-blink">› CPU.cores()</div>
+          <div className="scan-blink">› MEM.size()</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (scanState === "blocked") {
+    return (
+      <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 flex items-center justify-between gap-4 backdrop-blur">
+        <div className="flex items-start gap-3">
+          <AlertCircle className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+          <div>
+            <div className="font-semibold text-sm text-amber-400">Hardware scan blocked</div>
+            <div className="text-xs text-muted-foreground">
+              Your browser limited the auto-detection. Run it manually or set specs by hand.
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button size="sm" onClick={runScan}>
+            <RefreshCw className="h-4 w-4 mr-1.5" /> Scan now
+          </Button>
+          <HardwareProfileDialog />
+        </div>
+      </div>
+    );
+  }
+
+  const merged = mergeProfile(profile, detected);
+  const hasAnything = hasProfile || !!detected;
+  const report = compareSpecs(merged, game);
+
+  if (!hasAnything) {
     return (
       <div className="rounded-lg border border-border/60 bg-card/40 backdrop-blur p-4 flex items-center justify-between gap-4">
         <div className="flex items-start gap-3">
           <AlertCircle className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
           <div>
             <div className="font-semibold text-sm">Can I run this game?</div>
-            <div className="text-xs text-muted-foreground">
-              Set your PC specs to instantly check compatibility.
-            </div>
+            <div className="text-xs text-muted-foreground">Set your PC specs to check compatibility.</div>
           </div>
         </div>
         <HardwareProfileDialog />
@@ -172,7 +223,7 @@ const CanIRunIt = ({ game }: Props) => {
           ring: "ring-1 ring-emerald-500/40",
           bg: "bg-emerald-500/10",
           icon: <CheckCircle2 className="h-6 w-6 text-emerald-400" />,
-          title: "Your PC meets the requirements for this game!",
+          title: "✅ Your PC specs are sufficient for this game.",
           subtitle: "All systems go. Ready to install.",
           accent: "text-emerald-400",
         }
@@ -181,8 +232,8 @@ const CanIRunIt = ({ game }: Props) => {
           ring: "ring-1 ring-red-500/50",
           bg: "bg-red-500/10",
           icon: <XCircle className="h-6 w-6 text-red-400" />,
-          title: "Warning: Your PC does not meet the minimum requirements.",
-          subtitle: "Performance issues may occur. See breakdown below.",
+          title: "❌ Not recommended. Your PC lacks the minimum requirements.",
+          subtitle: "See breakdown below for the missing component.",
           accent: "text-red-400",
         }
       : {
@@ -190,27 +241,37 @@ const CanIRunIt = ({ game }: Props) => {
           bg: "bg-amber-500/10",
           icon: <AlertCircle className="h-6 w-6 text-amber-400" />,
           title: "Compatibility partially checked.",
-          subtitle: "Some specs are missing from your profile.",
+          subtitle: "Some specs couldn't be auto-detected.",
           accent: "text-amber-400",
         };
 
   return (
-    <div className={cn("rounded-xl p-5 backdrop-blur", tone.bg, tone.ring)}>
+    <div className={cn("rounded-xl p-5 backdrop-blur animate-fade-in", tone.bg, tone.ring)}>
       <div className="flex items-start gap-4">
         <div className="shrink-0">{tone.icon}</div>
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-3">
             <div>
               <div className={cn("font-semibold", tone.accent)}>{tone.title}</div>
-              <div className="text-xs text-muted-foreground mt-0.5">{tone.subtitle}</div>
+              <div className="text-xs text-muted-foreground mt-0.5">
+                {tone.subtitle}
+                {detected && (
+                  <span className="ml-1 opacity-70">· auto-scanned in 1s</span>
+                )}
+              </div>
             </div>
-            <HardwareProfileDialog
-              trigger={
-                <Button variant="ghost" size="sm" className="shrink-0">
-                  <Settings2 className="h-4 w-4 mr-1.5" /> Edit
-                </Button>
-              }
-            />
+            <div className="flex items-center gap-1.5">
+              <Button variant="ghost" size="sm" onClick={runScan} className="shrink-0">
+                <RefreshCw className="h-4 w-4 mr-1.5" /> Re-scan
+              </Button>
+              <HardwareProfileDialog
+                trigger={
+                  <Button variant="ghost" size="sm" className="shrink-0">
+                    <Settings2 className="h-4 w-4 mr-1.5" /> Edit
+                  </Button>
+                }
+              />
+            </div>
           </div>
 
           <div className="mt-4 grid sm:grid-cols-2 gap-2">
