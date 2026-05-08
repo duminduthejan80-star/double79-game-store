@@ -209,8 +209,6 @@ export const compareSpecs = (
       });
     }
   }
-    }
-  }
 
   // CPU
   if (req.min_cpu) {
