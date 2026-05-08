@@ -223,8 +223,8 @@ const CanIRunIt = ({ game }: Props) => {
           ring: "ring-1 ring-emerald-500/40",
           bg: "bg-emerald-500/10",
           icon: <CheckCircle2 className="h-6 w-6 text-emerald-400" />,
-          title: "✅ Your PC specs are sufficient for this game.",
-          subtitle: "All systems go. Ready to install.",
+          title: "✅ Recommended: Your PC meets the requirements!",
+          subtitle: "All components are equal to or better than required. Ready to install.",
           accent: "text-emerald-400",
         }
       : report.overall === "fail"
