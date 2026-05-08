@@ -108,7 +108,7 @@ const GameDetail = () => {
           </div>
 
           <aside className="space-y-4">
-            <div className="rounded-lg border border-border bg-card-gradient p-6 shadow-card sticky top-20">
+            <div className="rounded-lg glass p-6 shadow-glow sticky top-20">
               <div className="text-sm text-muted-foreground mb-1">Price</div>
               <div className="text-3xl font-bold mb-4 text-accent">Free</div>
 
