@@ -232,18 +232,32 @@ export const compareSpecs = (
     }
   }
 
-  // CPU
+  // CPU — try tier hierarchy first; fall back to core count if either side is unrecognized.
   if (req.min_cpu) {
     if (!profile.cpu) {
       items.push({ label: "CPU", required: req.min_cpu, yours: "Not set", status: "unknown" });
     } else {
-      const reqScore = scoreCpu(req.min_cpu);
-      const yourScore = scoreCpu(profile.cpu);
+      const reqTier = cpuTier(req.min_cpu);
+      const yourTier = cpuTier(profile.cpu);
+
+      let status: CheckResult;
+      if (reqTier !== null && yourTier !== null) {
+        // Both identifiable → compare full scores (tier + small generation bonus)
+        status = scoreCpu(profile.cpu) >= scoreCpu(req.min_cpu) ? "pass" : "fail";
+      } else {
+        // Fall back to core count (from string or detected hardwareConcurrency)
+        const reqCores = extractCores(req.min_cpu) ?? 2;
+        const yourCores =
+          extractCores(profile.cpu) ??
+          (typeof navigator !== "undefined" ? navigator.hardwareConcurrency || 0 : 0);
+        status = yourCores && yourCores >= reqCores ? "pass" : "unknown";
+      }
+
       items.push({
         label: "CPU",
         required: req.min_cpu,
         yours: profile.cpu,
-        status: yourScore >= reqScore - 5 ? "pass" : "fail",
+        status,
       });
     }
   }
