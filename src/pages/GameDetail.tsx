@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Download, Wifi, WifiOff, Check, Calendar, User, Building2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
@@ -8,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useLibrary, useAddToLibrary } from "@/hooks/useLibrary";
 import { useDownloads } from "@/lib/downloads";
+import { applyTheme, resetTheme, pickTheme } from "@/lib/gameTheme";
 import { toast } from "sonner";
 
 const Row = ({ label, value }: { label: string; value: string | null }) =>
@@ -25,6 +27,13 @@ const GameDetail = () => {
   const addLib = useAddToLibrary();
   const owned = id ? ownedIds.includes(id) : false;
   const { startDownload } = useDownloads();
+
+  const heroImage = game?.image_url || game?.screenshots?.[0] || null;
+  useEffect(() => {
+    if (!game) return;
+    applyTheme(pickTheme(game.title));
+    return () => resetTheme();
+  }, [game?.id, game?.title]);
 
   if (isLoading) return <div className="min-h-screen"><Navbar /><div className="container mx-auto p-10">Loading...</div></div>;
   if (!game) return <div className="min-h-screen"><Navbar /><div className="container mx-auto p-10">Game not found.</div></div>;
@@ -52,7 +61,14 @@ const GameDetail = () => {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen relative">
+      {heroImage && (
+        <div
+          className="game-hero-bg is-active"
+          style={{ backgroundImage: `url(${heroImage})` }}
+          aria-hidden="true"
+        />
+      )}
       <Navbar />
       <div className="container mx-auto px-4 py-8">
         <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6">
@@ -81,7 +97,7 @@ const GameDetail = () => {
               <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">{game.description}</p>
             </div>
 
-            <div className="rounded-lg border border-border bg-card-gradient p-6">
+            <div className="rounded-lg glass p-6">
               <h2 className="text-lg font-semibold mb-4">System Requirements (Minimum)</h2>
               <Row label="OS" value={game.min_os} />
               <Row label="CPU" value={game.min_cpu} />
@@ -92,7 +108,7 @@ const GameDetail = () => {
           </div>
 
           <aside className="space-y-4">
-            <div className="rounded-lg border border-border bg-card-gradient p-6 shadow-card sticky top-20">
+            <div className="rounded-lg glass p-6 shadow-glow sticky top-20">
               <div className="text-sm text-muted-foreground mb-1">Price</div>
               <div className="text-3xl font-bold mb-4 text-accent">Free</div>
 
