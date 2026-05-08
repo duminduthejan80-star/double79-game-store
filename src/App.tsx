@@ -11,6 +11,7 @@ import GameDetail from "./pages/GameDetail.tsx";
 import Downloads from "./pages/Downloads.tsx";
 import Login from "./pages/Login.tsx";
 import { DownloadsProvider } from "@/lib/downloads";
+import { HardwareProfileProvider } from "@/lib/hardwareProfile";
 import DownloadWidget from "@/components/DownloadWidget";
 import SplashScreen from "@/components/SplashScreen";
 import { AuthProvider } from "@/lib/auth";
@@ -27,6 +28,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <DownloadsProvider>
+            <HardwareProfileProvider>
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
@@ -37,6 +39,7 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
             <DownloadWidget />
+            </HardwareProfileProvider>
           </DownloadsProvider>
         </AuthProvider>
       </BrowserRouter>
