@@ -104,25 +104,47 @@ const formatMB = (mb: number): string => {
   return `${Math.round(mb)} MB`;
 };
 
-// Rough CPU/GPU tier scoring by family/series. Heuristic only.
-const scoreCpu = (s: string): number => {
-  if (!s) return 0;
+// CPU tier hierarchy.
+// Intel: i9 > i7 > i5 > i3 > Pentium > Celeron
+// AMD:   Ryzen 9 > Ryzen 7 > Ryzen 5 > Ryzen 3 > FX > Athlon
+const cpuTier = (s: string): number | null => {
+  if (!s) return null;
   const t = s.toLowerCase();
-  let base = 0;
-  if (/i9|ryzen\s*9/.test(t)) base = 90;
-  else if (/i7|ryzen\s*7/.test(t)) base = 75;
-  else if (/i5|ryzen\s*5/.test(t)) base = 60;
-  else if (/i3|ryzen\s*3/.test(t)) base = 40;
-  else if (/pentium|celeron|athlon/.test(t)) base = 20;
-  else base = 30;
-  // generation bump (e.g. 12700, 5600)
-  const gen = t.match(/(\d{4,5})/);
+  if (/\bi9\b|ryzen\s*9|threadripper/.test(t)) return 90;
+  if (/\bi7\b|ryzen\s*7/.test(t)) return 75;
+  if (/\bi5\b|ryzen\s*5/.test(t)) return 60;
+  if (/\bi3\b|ryzen\s*3/.test(t)) return 45;
+  if (/\bfx[-\s]?\d/.test(t) || /\bfx\b/.test(t)) return 35;
+  if (/pentium/.test(t)) return 25;
+  if (/athlon/.test(t)) return 20;
+  if (/celeron/.test(t)) return 15;
+  return null; // Unknown family — caller should fall back to core count
+};
+
+const scoreCpu = (s: string): number => {
+  const tier = cpuTier(s);
+  if (tier === null) return 0;
+  // small generation bump so newer chips edge out older ones in the same family
+  const gen = s.toLowerCase().match(/[-\s](\d{4,5})/);
+  let bonus = 0;
   if (gen) {
     const n = parseInt(gen[1], 10);
-    if (n >= 10000) base += Math.min(20, Math.floor(n / 1000));
-    else base += Math.min(15, Math.floor(n / 1000));
+    bonus = n >= 10000 ? Math.min(8, Math.floor(n / 2000)) : Math.min(6, Math.floor(n / 1500));
   }
-  return base;
+  return tier + bonus;
+};
+
+// Extract a core count from strings like "8-core CPU", "Quad-core", "2 cores".
+const extractCores = (s: string | null | undefined): number | null => {
+  if (!s) return null;
+  const t = s.toLowerCase();
+  const wordMap: Record<string, number> = { dual: 2, quad: 4, hexa: 6, octa: 8, deca: 10 };
+  for (const [k, v] of Object.entries(wordMap)) {
+    if (t.includes(`${k}-core`) || t.includes(`${k} core`)) return v;
+  }
+  const m = t.match(/(\d+)\s*[-\s]?cores?/);
+  if (m) return parseInt(m[1], 10);
+  return null;
 };
 
 const scoreGpu = (s: string): number => {
@@ -210,18 +232,32 @@ export const compareSpecs = (
     }
   }
 
-  // CPU
+  // CPU — try tier hierarchy first; fall back to core count if either side is unrecognized.
   if (req.min_cpu) {
     if (!profile.cpu) {
       items.push({ label: "CPU", required: req.min_cpu, yours: "Not set", status: "unknown" });
     } else {
-      const reqScore = scoreCpu(req.min_cpu);
-      const yourScore = scoreCpu(profile.cpu);
+      const reqTier = cpuTier(req.min_cpu);
+      const yourTier = cpuTier(profile.cpu);
+
+      let status: CheckResult;
+      if (reqTier !== null && yourTier !== null) {
+        // Both identifiable → compare full scores (tier + small generation bonus)
+        status = scoreCpu(profile.cpu) >= scoreCpu(req.min_cpu) ? "pass" : "fail";
+      } else {
+        // Fall back to core count (from string or detected hardwareConcurrency)
+        const reqCores = extractCores(req.min_cpu) ?? 2;
+        const yourCores =
+          extractCores(profile.cpu) ??
+          (typeof navigator !== "undefined" ? navigator.hardwareConcurrency || 0 : 0);
+        status = yourCores && yourCores >= reqCores ? "pass" : "unknown";
+      }
+
       items.push({
         label: "CPU",
         required: req.min_cpu,
         yours: profile.cpu,
-        status: yourScore >= reqScore - 5 ? "pass" : "fail",
+        status,
       });
     }
   }
@@ -237,7 +273,7 @@ export const compareSpecs = (
         label: "GPU",
         required: req.min_gpu,
         yours: profile.gpu,
-        status: yourScore >= reqScore - 5 ? "pass" : "fail",
+        status: yourScore >= reqScore ? "pass" : "fail",
       });
     }
   }
