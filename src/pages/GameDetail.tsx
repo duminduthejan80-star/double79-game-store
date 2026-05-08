@@ -97,7 +97,7 @@ const GameDetail = () => {
               <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">{game.description}</p>
             </div>
 
-            <div className="rounded-lg border border-border bg-card-gradient p-6">
+            <div className="rounded-lg glass p-6">
               <h2 className="text-lg font-semibold mb-4">System Requirements (Minimum)</h2>
               <Row label="OS" value={game.min_os} />
               <Row label="CPU" value={game.min_cpu} />
