@@ -273,7 +273,7 @@ export const compareSpecs = (
         label: "GPU",
         required: req.min_gpu,
         yours: profile.gpu,
-        status: yourScore >= reqScore - 5 ? "pass" : "fail",
+        status: yourScore >= reqScore ? "pass" : "fail",
       });
     }
   }
