@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Download, Wifi, WifiOff, Check, Calendar, User, Building2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
@@ -9,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useLibrary, useAddToLibrary } from "@/hooks/useLibrary";
 import { useDownloads } from "@/lib/downloads";
-import { applyTheme, resetTheme, pickTheme } from "@/lib/gameTheme";
 import { toast } from "sonner";
 
 const Row = ({ label, value }: { label: string; value: string | null }) =>
