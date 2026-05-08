@@ -80,6 +80,30 @@ const extractFirstNumber = (s: string | null | undefined): number | null => {
   return m ? parseFloat(m[1]) : null;
 };
 
+// Parse a size string like "8 GB", "512MB", "1.5 TB", "256" (assumed GB if bare).
+// Returns megabytes.
+const parseSizeToMB = (s: string | null | undefined, assumedUnit: "GB" | "MB" = "GB"): number | null => {
+  if (!s) return null;
+  const m = s.match(/(\d+(?:\.\d+)?)\s*(tb|gb|mb|kb|b)?/i);
+  if (!m) return null;
+  const value = parseFloat(m[1]);
+  const unit = (m[2] || assumedUnit).toLowerCase();
+  switch (unit) {
+    case "tb": return value * 1024 * 1024;
+    case "gb": return value * 1024;
+    case "mb": return value;
+    case "kb": return value / 1024;
+    case "b":  return value / (1024 * 1024);
+    default:   return value * 1024; // assume GB
+  }
+};
+
+const formatMB = (mb: number): string => {
+  if (mb >= 1024 * 1024) return `${(mb / 1024 / 1024).toFixed(1)} TB`;
+  if (mb >= 1024) return `${(mb / 1024).toFixed(mb % 1024 === 0 ? 0 : 1)} GB`;
+  return `${Math.round(mb)} MB`;
+};
+
 // Rough CPU/GPU tier scoring by family/series. Heuristic only.
 const scoreCpu = (s: string): number => {
   if (!s) return 0;
@@ -147,32 +171,41 @@ export const compareSpecs = (
 ): CompatibilityReport => {
   const items: CheckItem[] = [];
 
-  // RAM
+  // RAM — normalize everything to MB before comparing.
+  // Bare numbers in the requirements string are assumed to be GB (typical for PC specs).
   if (req.min_ram) {
-    const required = extractFirstNumber(req.min_ram) ?? 0;
-    if (!profile.ram) {
-      items.push({ label: "RAM", required: req.min_ram, yours: "Not set", status: "unknown" });
+    const requiredMB = parseSizeToMB(req.min_ram, "GB") ?? 0;
+    const yoursMB = profile.ram ? profile.ram * 1024 : 0; // profile.ram is GB
+    if (!yoursMB) {
+      items.push({ label: "RAM", required: formatMB(requiredMB), yours: "Not set", status: "unknown" });
     } else {
       items.push({
         label: "RAM",
-        required: `${required} GB`,
-        yours: `${profile.ram} GB`,
-        status: profile.ram >= required ? "pass" : "fail",
+        required: formatMB(requiredMB),
+        yours: formatMB(yoursMB),
+        status: yoursMB >= requiredMB ? "pass" : "fail",
       });
     }
   }
 
-  // Storage
+  // Storage — normalize to MB. If the user hasn't set storage, treat as "likely OK"
+  // rather than failing/blocking the overall verdict (browsers can't reliably scan disks).
   if (req.min_storage) {
-    const required = extractFirstNumber(req.min_storage) ?? 0;
-    if (!profile.storage) {
-      items.push({ label: "Storage", required: req.min_storage, yours: "Not set", status: "unknown" });
+    const requiredMB = parseSizeToMB(req.min_storage, "GB") ?? 0;
+    const yoursMB = profile.storage ? profile.storage * 1024 : 0;
+    if (!yoursMB) {
+      items.push({
+        label: "Storage",
+        required: formatMB(requiredMB),
+        yours: "Browser can't scan disk",
+        status: "pass",
+      });
     } else {
       items.push({
         label: "Storage",
-        required: `${required} GB`,
-        yours: `${profile.storage} GB free`,
-        status: profile.storage >= required ? "pass" : "fail",
+        required: formatMB(requiredMB),
+        yours: `${formatMB(yoursMB)} free`,
+        status: yoursMB >= requiredMB ? "pass" : "fail",
       });
     }
   }
