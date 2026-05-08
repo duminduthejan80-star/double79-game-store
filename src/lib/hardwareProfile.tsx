@@ -171,33 +171,44 @@ export const compareSpecs = (
 ): CompatibilityReport => {
   const items: CheckItem[] = [];
 
-  // RAM
+  // RAM — normalize everything to MB before comparing.
+  // Bare numbers in the requirements string are assumed to be GB (typical for PC specs).
   if (req.min_ram) {
-    const required = extractFirstNumber(req.min_ram) ?? 0;
-    if (!profile.ram) {
-      items.push({ label: "RAM", required: req.min_ram, yours: "Not set", status: "unknown" });
+    const requiredMB = parseSizeToMB(req.min_ram, "GB") ?? 0;
+    const yoursMB = profile.ram ? profile.ram * 1024 : 0; // profile.ram is GB
+    if (!yoursMB) {
+      items.push({ label: "RAM", required: formatMB(requiredMB), yours: "Not set", status: "unknown" });
     } else {
       items.push({
         label: "RAM",
-        required: `${required} GB`,
-        yours: `${profile.ram} GB`,
-        status: profile.ram >= required ? "pass" : "fail",
+        required: formatMB(requiredMB),
+        yours: formatMB(yoursMB),
+        status: yoursMB >= requiredMB ? "pass" : "fail",
       });
     }
   }
 
-  // Storage
+  // Storage — normalize to MB. If the user hasn't set storage, treat as "likely OK"
+  // rather than failing/blocking the overall verdict (browsers can't reliably scan disks).
   if (req.min_storage) {
-    const required = extractFirstNumber(req.min_storage) ?? 0;
-    if (!profile.storage) {
-      items.push({ label: "Storage", required: req.min_storage, yours: "Not set", status: "unknown" });
+    const requiredMB = parseSizeToMB(req.min_storage, "GB") ?? 0;
+    const yoursMB = profile.storage ? profile.storage * 1024 : 0;
+    if (!yoursMB) {
+      items.push({
+        label: "Storage",
+        required: formatMB(requiredMB),
+        yours: "Browser can't scan disk",
+        status: "pass",
+      });
     } else {
       items.push({
         label: "Storage",
-        required: `${required} GB`,
-        yours: `${profile.storage} GB free`,
-        status: profile.storage >= required ? "pass" : "fail",
+        required: formatMB(requiredMB),
+        yours: `${formatMB(yoursMB)} free`,
+        status: yoursMB >= requiredMB ? "pass" : "fail",
       });
+    }
+  }
     }
   }
 
