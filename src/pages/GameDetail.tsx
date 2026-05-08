@@ -28,6 +28,13 @@ const GameDetail = () => {
   const owned = id ? ownedIds.includes(id) : false;
   const { startDownload } = useDownloads();
 
+  const heroImage = game?.image_url || game?.screenshots?.[0] || null;
+  useEffect(() => {
+    if (!game) return;
+    applyTheme(pickTheme(game.title));
+    return () => resetTheme();
+  }, [game?.id, game?.title]);
+
   if (isLoading) return <div className="min-h-screen"><Navbar /><div className="container mx-auto p-10">Loading...</div></div>;
   if (!game) return <div className="min-h-screen"><Navbar /><div className="container mx-auto p-10">Game not found.</div></div>;
 
