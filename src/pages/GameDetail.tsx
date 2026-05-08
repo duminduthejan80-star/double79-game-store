@@ -6,6 +6,7 @@ import { useGame } from "@/hooks/useGames";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import CanIRunIt from "@/components/CanIRunIt";
 import { useLibrary, useAddToLibrary } from "@/hooks/useLibrary";
 import { useDownloads } from "@/lib/downloads";
 import { toast } from "sonner";
@@ -89,6 +90,15 @@ const GameDetail = () => {
               <h1 className="text-4xl font-bold mb-3">{game.title}</h1>
               <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">{game.description}</p>
             </div>
+
+            <CanIRunIt
+              game={{
+                min_cpu: game.min_cpu,
+                min_gpu: game.min_gpu,
+                min_ram: game.min_ram,
+                min_storage: game.min_storage,
+              }}
+            />
 
             <div className="rounded-lg glass p-6">
               <h2 className="text-lg font-semibold mb-4">System Requirements (Minimum)</h2>
