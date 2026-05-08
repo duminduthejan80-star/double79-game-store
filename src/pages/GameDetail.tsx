@@ -61,7 +61,14 @@ const GameDetail = () => {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen relative">
+      {heroImage && (
+        <div
+          className="game-hero-bg is-active"
+          style={{ backgroundImage: `url(${heroImage})` }}
+          aria-hidden="true"
+        />
+      )}
       <Navbar />
       <div className="container mx-auto px-4 py-8">
         <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6">
