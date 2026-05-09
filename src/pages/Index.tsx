@@ -88,7 +88,10 @@ const Index = () => {
             />
             <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
               <VoiceSearchButton
-                onResult={(t) => setQ(t)}
+                onResult={(t) => {
+                  setQ(t);
+                  setVoiceQuery(t);
+                }}
                 onSuccess={() => {
                   setFlash(true);
                   setTimeout(() => setFlash(false), 700);
