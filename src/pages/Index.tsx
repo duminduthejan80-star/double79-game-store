@@ -15,6 +15,7 @@ const Index = () => {
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState("all");
   const [flash, setFlash] = useState(false);
+  const [voiceQuery, setVoiceQuery] = useState("");
 
   const filtered = useMemo(() => {
     if (!games) return [];
