@@ -1,15 +1,16 @@
 import { useEffect, useRef, useState } from "react";
-import { Mic, MicOff, Loader2 } from "lucide-react";
+import { Mic, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "@/hooks/use-toast";
 
 interface Props {
   onResult: (text: string) => void;
+  onSuccess?: () => void;
   className?: string;
 }
 
-const VoiceSearchButton = ({ onResult, className }: Props) => {
+const VoiceSearchButton = ({ onResult, onSuccess, className }: Props) => {
   const [listening, setListening] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [supported, setSupported] = useState(true);
@@ -30,10 +31,10 @@ const VoiceSearchButton = ({ onResult, className }: Props) => {
     rec.maxAlternatives = 1;
 
     rec.onresult = (e: any) => {
-      const result = e.results[e.results.length - 1][0];
+      const result = e.results[0][0];
       captureRef.current = {
-        transcript: result.transcript.trim(),
-        confidence: result.confidence ?? 0,
+        transcript: (result.transcript || "").trim(),
+        confidence: typeof result.confidence === "number" ? result.confidence : 1,
       };
     };
 
@@ -41,7 +42,16 @@ const VoiceSearchButton = ({ onResult, className }: Props) => {
       setListening(false);
       setProcessing(false);
       captureRef.current = null;
-      if (e.error !== "no-speech" && e.error !== "aborted") {
+      console.error("[VoiceSearch] error:", e.error);
+      if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+        toast({
+          title: "Microphone blocked",
+          description: "Please allow microphone access in your browser.",
+          variant: "destructive",
+        });
+      } else if (e.error === "no-speech") {
+        toast({ title: "No speech detected", description: "Please try again." });
+      } else if (e.error !== "aborted") {
         toast({ title: "Voice search error", description: e.error, variant: "destructive" });
       }
     };
@@ -51,11 +61,18 @@ const VoiceSearchButton = ({ onResult, className }: Props) => {
       const captured = captureRef.current;
       captureRef.current = null;
 
-      if (captured) {
+      if (captured && captured.transcript) {
         setProcessing(true);
         setTimeout(() => {
-          if (captured.confidence >= 0.8) {
+          // Lenient confidence filter — many browsers report 0 for final results
+          if (captured.confidence === 0 || captured.confidence >= 0.6) {
             onResult(captured.transcript);
+            onSuccess?.();
+          } else {
+            toast({
+              title: "Low confidence",
+              description: `Heard: "${captured.transcript}" — please try again.`,
+            });
           }
           setProcessing(false);
         }, 500);
@@ -68,7 +85,7 @@ const VoiceSearchButton = ({ onResult, className }: Props) => {
     return () => {
       try { rec.abort(); } catch {}
     };
-  }, [onResult]);
+  }, [onResult, onSuccess]);
 
   const toggle = () => {
     if (!recRef.current) return;
@@ -79,23 +96,27 @@ const VoiceSearchButton = ({ onResult, className }: Props) => {
       captureRef.current = null;
     } else {
       try {
+        captureRef.current = null;
         recRef.current.start();
         setListening(true);
-      } catch {}
+      } catch (err) {
+        console.error("[VoiceSearch] start failed:", err);
+      }
     }
   };
 
   if (!supported) return null;
 
   const active = listening || processing;
+  const tooltipLabel = processing ? "Processing..." : listening ? "Listening..." : "Voice search";
 
   return (
-    <Tooltip open={active || undefined}>
+    <Tooltip>
       <TooltipTrigger asChild>
         <button
           type="button"
           onClick={toggle}
-          aria-label={listening ? "Stop listening" : processing ? "Processing voice" : "Voice search"}
+          aria-label={tooltipLabel}
           className={cn(
             "relative flex h-8 w-8 items-center justify-center rounded-md transition-smooth",
             active
@@ -106,8 +127,6 @@ const VoiceSearchButton = ({ onResult, className }: Props) => {
         >
           {processing ? (
             <Loader2 className="h-4 w-4 animate-spin" />
-          ) : listening ? (
-            <Mic className="h-4 w-4" />
           ) : (
             <Mic className="h-4 w-4" />
           )}
