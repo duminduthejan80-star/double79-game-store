@@ -3,6 +3,7 @@ import { Search } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import GameCard from "@/components/GameCard";
 import FeaturedShowcase from "@/components/FeaturedShowcase";
+import VoiceSearchButton from "@/components/VoiceSearchButton";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useGames } from "@/hooks/useGames";
