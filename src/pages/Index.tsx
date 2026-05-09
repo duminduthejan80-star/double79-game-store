@@ -8,11 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useGames } from "@/hooks/useGames";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 const Index = () => {
   const { data: games, isLoading } = useGames();
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState("all");
+  const [flash, setFlash] = useState(false);
 
   const filtered = useMemo(() => {
     if (!games) return [];
@@ -73,15 +75,24 @@ const Index = () => {
         <h2 className="text-2xl font-bold mb-4">{filter === "online" ? "Online Games" : filter === "offline" ? "Offline Games" : "All Games"}</h2>
         <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
             <Input
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search games..."
-              className="pl-9 pr-12 bg-surface-2 border-border"
+              className={cn(
+                "pl-9 pr-12 bg-surface-2 border-border transition-all",
+                flash && "ring-2 ring-green-500 border-green-500"
+              )}
             />
             <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
-              <VoiceSearchButton onResult={(t) => setQ(t)} />
+              <VoiceSearchButton
+                onResult={(t) => setQ(t)}
+                onSuccess={() => {
+                  setFlash(true);
+                  setTimeout(() => setFlash(false), 700);
+                }}
+              />
             </div>
           </div>
           <Tabs value={filter} onValueChange={setFilter}>
