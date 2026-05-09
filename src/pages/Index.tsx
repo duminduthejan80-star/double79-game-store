@@ -15,6 +15,7 @@ const Index = () => {
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState("all");
   const [flash, setFlash] = useState(false);
+  const [voiceQuery, setVoiceQuery] = useState("");
 
   const filtered = useMemo(() => {
     if (!games) return [];
@@ -87,7 +88,10 @@ const Index = () => {
             />
             <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
               <VoiceSearchButton
-                onResult={(t) => setQ(t)}
+                onResult={(t) => {
+                  setQ(t);
+                  setVoiceQuery(t);
+                }}
                 onSuccess={() => {
                   setFlash(true);
                   setTimeout(() => setFlash(false), 700);
@@ -112,7 +116,9 @@ const Index = () => {
           </div>
         ) : filtered.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border p-16 text-center text-muted-foreground">
-            No games found. Add some from the Admin panel.
+            {voiceQuery && q === voiceQuery
+              ? `Could not find a match for "${voiceQuery}"`
+              : "No games found. Add some from the Admin panel."}
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
