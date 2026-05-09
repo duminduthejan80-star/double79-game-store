@@ -3,6 +3,7 @@ import { Search } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import GameCard from "@/components/GameCard";
 import FeaturedShowcase from "@/components/FeaturedShowcase";
+import VoiceSearchButton from "@/components/VoiceSearchButton";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useGames } from "@/hooks/useGames";
@@ -77,8 +78,11 @@ const Index = () => {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search games..."
-              className="pl-9 bg-surface-2 border-border"
+              className="pl-9 pr-12 bg-surface-2 border-border"
             />
+            <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+              <VoiceSearchButton onResult={(t) => setQ(t)} />
+            </div>
           </div>
           <Tabs value={filter} onValueChange={setFilter}>
             <TabsList className="bg-surface-2">
