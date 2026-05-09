@@ -64,16 +64,9 @@ const VoiceSearchButton = ({ onResult, onSuccess, className }: Props) => {
       if (captured && captured.transcript) {
         setProcessing(true);
         setTimeout(() => {
-          // Lenient confidence filter — many browsers report 0 for final results
-          if (captured.confidence === 0 || captured.confidence >= 0.6) {
-            onResult(captured.transcript);
-            onSuccess?.();
-          } else {
-            toast({
-              title: "Low confidence",
-              description: `Heard: "${captured.transcript}" — please try again.`,
-            });
-          }
+          // Always accept whatever the browser captured
+          onResult(captured.transcript);
+          onSuccess?.();
           setProcessing(false);
         }, 500);
       } else {
