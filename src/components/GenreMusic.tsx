@@ -3,33 +3,42 @@ import { Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
-// Royalty-free ambient tracks (Pixabay CDN, direct .mp3)
-const GENRE_TRACKS: Record<string, string> = {
-  horror: "https://cdn.pixabay.com/download/audio/2022/10/25/audio_946203c81e.mp3",
-  action: "https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3",
-  racing: "https://cdn.pixabay.com/download/audio/2022/08/23/audio_d16737dc28.mp3",
-  rpg: "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3",
-  adventure: "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3",
-  shooter: "https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3",
-  fps: "https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3",
-  strategy: "https://cdn.pixabay.com/download/audio/2022/10/18/audio_4d92b67b88.mp3",
-  puzzle: "https://cdn.pixabay.com/download/audio/2022/10/18/audio_4d92b67b88.mp3",
-  sports: "https://cdn.pixabay.com/download/audio/2022/08/23/audio_d16737dc28.mp3",
-  simulation: "https://cdn.pixabay.com/download/audio/2022/10/18/audio_4d92b67b88.mp3",
-  default: "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3",
+// Royalty-free ambient tracks (Pixabay CDN, direct .mp3) — one per category.
+const musicMap: Record<string, string> = {
+  horror: "https://cdn.pixabay.com/download/audio/2022/10/25/audio_946203c81e.mp3",      // dark ambient
+  action: "https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3",      // cinematic
+  racing: "https://cdn.pixabay.com/download/audio/2022/08/23/audio_d16737dc28.mp3",      // upbeat electronic
+  rpg: "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3",         // epic fantasy
+  strategy: "https://cdn.pixabay.com/download/audio/2022/10/18/audio_4d92b67b88.mp3",    // ambient strategy
+  sports: "https://cdn.pixabay.com/download/audio/2022/08/23/audio_d16737dc28.mp3",      // upbeat
+  puzzle: "https://cdn.pixabay.com/download/audio/2022/10/18/audio_4d92b67b88.mp3",      // chill
+  default: "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3",     // general gaming
 };
 
 const TARGET_VOLUME = 0.3;
 const FADE_MS = 1200;
 
-function pickTrack(genre?: string | null): { url: string; label: string } {
-  if (!genre) return { url: GENRE_TRACKS.default, label: "General Gaming" };
+// Pick a category strictly from genre keywords.
+function pickCategory(genre?: string | null): string {
+  if (!genre) return "default";
   const g = genre.toLowerCase();
-  for (const key of Object.keys(GENRE_TRACKS)) {
-    if (key === "default") continue;
-    if (g.includes(key)) return { url: GENRE_TRACKS[key], label: key.charAt(0).toUpperCase() + key.slice(1) };
-  }
-  return { url: GENRE_TRACKS.default, label: "General Gaming" };
+  if (g.includes("horror") || g.includes("survival horror")) return "horror";
+  if (g.includes("action") || g.includes("adventure") || g.includes("shooter") || g.includes("fps")) return "action";
+  if (g.includes("racing") || g.includes("driving")) return "racing";
+  if (g.includes("rpg") || g.includes("role")) return "rpg";
+  if (g.includes("strategy") || g.includes("simulation") || g.includes("sim")) return "strategy";
+  if (g.includes("sport")) return "sports";
+  if (g.includes("puzzle")) return "puzzle";
+  return "default";
+}
+
+function pickTrack(genre?: string | null): { url: string; label: string; category: string } {
+  const category = pickCategory(genre);
+  const url = musicMap[category] ?? musicMap.default;
+  const label = category === "default" ? "General Gaming" : category.charAt(0).toUpperCase() + category.slice(1);
+  console.log("Current Genre:", genre);
+  console.log("Playing Music for:", category);
+  return { url, label, category };
 }
 
 function fade(audio: HTMLAudioElement, to: number, ms: number, onDone?: () => void) {
@@ -93,9 +102,9 @@ const GenreMusic = ({ genre }: { genre?: string | null }) => {
       a.play().then(() => fade(a, target, FADE_MS)).catch(() => {});
     };
     const onErr = () => {
-      if (a.src !== GENRE_TRACKS.default) {
+      if (a.src !== musicMap.default) {
         console.warn(`Failed to load ${label} track, switching to default`);
-        swap(GENRE_TRACKS.default, true);
+        swap(musicMap.default, true);
       }
     };
     a.onerror = onErr;
