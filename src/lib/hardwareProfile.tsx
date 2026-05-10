@@ -285,13 +285,33 @@ export const compareSpecs = (
     if (!profile.gpu) {
       items.push({ label: "GPU", required: req.min_gpu, yours: "Not set", status: "unknown" });
     } else {
+      const cleanedYours = cleanGpuName(profile.gpu);
       const reqScore = scoreGpu(req.min_gpu);
-      const yourScore = scoreGpu(profile.gpu);
+      const yourScore = scoreGpu(cleanedYours);
+      const sameFamily =
+        gpuFamily(cleanedYours) && gpuFamily(cleanedYours) === gpuFamily(req.min_gpu);
+      const canCompareExact = hasGpuModelNumber(cleanedYours) && hasGpuModelNumber(req.min_gpu);
+
+      let status: CheckResult;
+      if (yourScore >= reqScore && canCompareExact) {
+        status = "pass";
+      } else if (!canCompareExact && sameFamily) {
+        // e.g. user has "GTX" something, requirement is "GTX" something — can't be exact, warn yellow.
+        status = "unknown";
+      } else if (yourScore >= reqScore) {
+        status = "pass";
+      } else if (sameFamily) {
+        // Lower in same family — still warn instead of hard fail.
+        status = "unknown";
+      } else {
+        status = "fail";
+      }
+
       items.push({
         label: "GPU",
         required: req.min_gpu,
-        yours: profile.gpu,
-        status: yourScore >= reqScore ? "pass" : "fail",
+        yours: cleanedYours,
+        status,
       });
     }
   }
