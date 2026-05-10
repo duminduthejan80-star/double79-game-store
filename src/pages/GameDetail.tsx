@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import CanIRunIt from "@/components/CanIRunIt";
+import GenreMusic from "@/components/GenreMusic";
 import { useLibrary, useAddToLibrary } from "@/hooks/useLibrary";
 import { useDownloads } from "@/lib/downloads";
 import { toast } from "sonner";
