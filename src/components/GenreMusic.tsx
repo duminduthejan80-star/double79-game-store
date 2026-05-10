@@ -19,16 +19,17 @@ const GENRE_TRACKS: Record<string, string> = {
   default: "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3",
 };
 
-const TARGET_VOLUME = 0.18;
+const TARGET_VOLUME = 0.3;
 const FADE_MS = 1200;
 
-function pickTrack(genre?: string | null): string {
-  if (!genre) return GENRE_TRACKS.default;
+function pickTrack(genre?: string | null): { url: string; label: string } {
+  if (!genre) return { url: GENRE_TRACKS.default, label: "General Gaming" };
   const g = genre.toLowerCase();
   for (const key of Object.keys(GENRE_TRACKS)) {
-    if (g.includes(key)) return GENRE_TRACKS[key];
+    if (key === "default") continue;
+    if (g.includes(key)) return { url: GENRE_TRACKS[key], label: key.charAt(0).toUpperCase() + key.slice(1) };
   }
-  return GENRE_TRACKS.default;
+  return { url: GENRE_TRACKS.default, label: "General Gaming" };
 }
 
 function fade(audio: HTMLAudioElement, to: number, ms: number, onDone?: () => void) {
@@ -47,7 +48,6 @@ const GenreMusic = ({ genre }: { genre?: string | null }) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [muted, setMuted] = useState<boolean>(() => localStorage.getItem("genreMusicMuted") === "1");
   const [ready, setReady] = useState(false);
-  const trackUrl = pickTrack(genre);
 
   // Create audio element once
   useEffect(() => {
@@ -84,18 +84,27 @@ const GenreMusic = ({ genre }: { genre?: string | null }) => {
   useEffect(() => {
     const a = audioRef.current;
     if (!a || !ready) return;
-    const swap = () => {
-      a.src = trackUrl;
+    const { url, label } = pickTrack(genre);
+    const swap = (src: string, isFallback = false) => {
+      a.src = src;
       a.volume = 0;
       const target = muted ? 0 : TARGET_VOLUME;
+      console.log(`Playing ${isFallback ? "General Gaming (fallback)" : label} music`);
       a.play().then(() => fade(a, target, FADE_MS)).catch(() => {});
     };
+    const onErr = () => {
+      if (a.src !== GENRE_TRACKS.default) {
+        console.warn(`Failed to load ${label} track, switching to default`);
+        swap(GENRE_TRACKS.default, true);
+      }
+    };
+    a.onerror = onErr;
     if (a.src && !a.paused) {
-      fade(a, 0, FADE_MS, swap);
+      fade(a, 0, FADE_MS, () => swap(url));
     } else {
-      swap();
+      swap(url);
     }
-  }, [trackUrl, ready]);
+  }, [genre, ready]);
 
   // Respond to mute toggle
   useEffect(() => {
