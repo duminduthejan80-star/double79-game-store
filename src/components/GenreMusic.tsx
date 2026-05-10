@@ -85,18 +85,27 @@ const GenreMusic = ({ genre }: { genre?: string | null }) => {
   useEffect(() => {
     const a = audioRef.current;
     if (!a || !ready) return;
-    const swap = () => {
-      a.src = trackUrl;
+    const { url, label } = pickTrack(genre);
+    const swap = (src: string, isFallback = false) => {
+      a.src = src;
       a.volume = 0;
       const target = muted ? 0 : TARGET_VOLUME;
+      console.log(`Playing ${isFallback ? "General Gaming (fallback)" : label} music`);
       a.play().then(() => fade(a, target, FADE_MS)).catch(() => {});
     };
+    const onErr = () => {
+      if (a.src !== GENRE_TRACKS.default) {
+        console.warn(`Failed to load ${label} track, switching to default`);
+        swap(GENRE_TRACKS.default, true);
+      }
+    };
+    a.onerror = onErr;
     if (a.src && !a.paused) {
-      fade(a, 0, FADE_MS, swap);
+      fade(a, 0, FADE_MS, () => swap(url));
     } else {
-      swap();
+      swap(url);
     }
-  }, [trackUrl, ready]);
+  }, [genre, ready]);
 
   // Respond to mute toggle
   useEffect(() => {
