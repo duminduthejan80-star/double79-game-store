@@ -278,6 +278,7 @@ const CanIRunIt = ({ game }: Props) => {
             {report.items.map((item) => {
               const ok = item.status === "pass";
               const fail = item.status === "fail";
+              const warn = item.status === "unknown";
               return (
                 <div
                   key={item.label}
@@ -285,7 +286,8 @@ const CanIRunIt = ({ game }: Props) => {
                     "flex items-center gap-3 rounded-md border px-3 py-2 text-xs",
                     ok && "border-emerald-500/30 bg-emerald-500/5",
                     fail && "border-red-500/40 bg-red-500/5",
-                    !ok && !fail && "border-border/60 bg-background/30",
+                    warn && "border-amber-500/40 bg-amber-500/5",
+                    !ok && !fail && !warn && "border-border/60 bg-background/30",
                   )}
                 >
                   <div
@@ -293,6 +295,7 @@ const CanIRunIt = ({ game }: Props) => {
                       "flex items-center gap-1.5 font-medium w-16 shrink-0",
                       ok && "text-emerald-400",
                       fail && "text-red-400",
+                      warn && "text-amber-400",
                     )}
                   >
                     {iconFor(item.label)}
@@ -302,12 +305,21 @@ const CanIRunIt = ({ game }: Props) => {
                     <div className="text-muted-foreground truncate">
                       Requires <span className="text-foreground">{item.required}</span>
                     </div>
-                    <div className={cn("truncate", fail ? "text-red-400" : "text-muted-foreground")}>
+                    <div
+                      className={cn(
+                        "truncate",
+                        fail ? "text-red-400" : warn ? "text-amber-400" : "text-muted-foreground",
+                      )}
+                    >
                       You have <span className="text-foreground">{item.yours}</span>
+                      {warn && item.label === "GPU" && (
+                        <span className="ml-1 opacity-80">· maybe compatible</span>
+                      )}
                     </div>
                   </div>
                   {ok && <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />}
                   {fail && <XCircle className="h-4 w-4 text-red-400 shrink-0" />}
+                  {warn && <AlertCircle className="h-4 w-4 text-amber-400 shrink-0" />}
                 </div>
               );
             })}
