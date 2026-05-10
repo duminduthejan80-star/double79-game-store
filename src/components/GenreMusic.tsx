@@ -102,9 +102,9 @@ const GenreMusic = ({ genre }: { genre?: string | null }) => {
       a.play().then(() => fade(a, target, FADE_MS)).catch(() => {});
     };
     const onErr = () => {
-      if (a.src !== GENRE_TRACKS.default) {
+      if (a.src !== musicMap.default) {
         console.warn(`Failed to load ${label} track, switching to default`);
-        swap(GENRE_TRACKS.default, true);
+        swap(musicMap.default, true);
       }
     };
     a.onerror = onErr;
