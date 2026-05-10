@@ -48,7 +48,6 @@ const GenreMusic = ({ genre }: { genre?: string | null }) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [muted, setMuted] = useState<boolean>(() => localStorage.getItem("genreMusicMuted") === "1");
   const [ready, setReady] = useState(false);
-  const trackUrl = pickTrack(genre);
 
   // Create audio element once
   useEffect(() => {
