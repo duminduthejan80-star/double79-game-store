@@ -88,7 +88,10 @@ const GameDetail = () => {
                 </Badge>
                 {game.genre && <Badge variant="outline">{game.genre}</Badge>}
               </div>
-              <h1 className="text-4xl font-bold mb-3">{game.title}</h1>
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <h1 className="text-4xl font-bold">{game.title}</h1>
+                <GenreMusic genre={game.genre} />
+              </div>
               <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">{game.description}</p>
             </div>
 
