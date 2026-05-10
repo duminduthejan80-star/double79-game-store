@@ -19,16 +19,17 @@ const GENRE_TRACKS: Record<string, string> = {
   default: "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3",
 };
 
-const TARGET_VOLUME = 0.18;
+const TARGET_VOLUME = 0.3;
 const FADE_MS = 1200;
 
-function pickTrack(genre?: string | null): string {
-  if (!genre) return GENRE_TRACKS.default;
+function pickTrack(genre?: string | null): { url: string; label: string } {
+  if (!genre) return { url: GENRE_TRACKS.default, label: "General Gaming" };
   const g = genre.toLowerCase();
   for (const key of Object.keys(GENRE_TRACKS)) {
-    if (g.includes(key)) return GENRE_TRACKS[key];
+    if (key === "default") continue;
+    if (g.includes(key)) return { url: GENRE_TRACKS[key], label: key.charAt(0).toUpperCase() + key.slice(1) };
   }
-  return GENRE_TRACKS.default;
+  return { url: GENRE_TRACKS.default, label: "General Gaming" };
 }
 
 function fade(audio: HTMLAudioElement, to: number, ms: number, onDone?: () => void) {
