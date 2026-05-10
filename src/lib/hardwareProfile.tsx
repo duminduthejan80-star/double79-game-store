@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { cleanGpuName } from "@/lib/autoDetectSpecs";
 
 export interface HardwareProfile {
   cpu: string;
