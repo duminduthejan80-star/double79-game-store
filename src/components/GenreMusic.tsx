@@ -72,7 +72,8 @@ const GenreMusic = ({ genre }: { genre?: string | null }) => {
   const [muted, setMuted] = useState<boolean>(() => localStorage.getItem("genreMusicMuted") === "1");
   const [ready, setReady] = useState(false);
 
-  // Create audio element once
+  // Create audio element once. STRICT cleanup on unmount stops "ghost music"
+  // when leaving the Game Details page or closing a modal.
   useEffect(() => {
     const a = new Audio();
     a.loop = true;
@@ -80,7 +81,13 @@ const GenreMusic = ({ genre }: { genre?: string | null }) => {
     a.volume = 0;
     audioRef.current = a;
     return () => {
-      try { fade(a, 0, FADE_MS, () => { a.pause(); a.src = ""; }); } catch {}
+      try {
+        a.pause();
+        a.removeAttribute("src");
+        a.src = "";
+        a.load();
+      } catch {}
+      audioRef.current = null;
     };
   }, []);
 
@@ -103,12 +110,15 @@ const GenreMusic = ({ genre }: { genre?: string | null }) => {
     };
   }, [ready]);
 
-  // Crossfade when track or readiness changes
+  // Crossfade when track or readiness changes. Stops any current playback first
+  // to prevent overlapping/double-loaded instances.
   useEffect(() => {
     const a = audioRef.current;
     if (!a || !ready) return;
     const { url, label } = pickTrack(genre);
     const swap = (src: string, isFallback = false) => {
+      if (!audioRef.current) return;
+      try { a.pause(); } catch {}
       a.src = src;
       a.volume = 0;
       const target = muted ? 0 : TARGET_VOLUME;
