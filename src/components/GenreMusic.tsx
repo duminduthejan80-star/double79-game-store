@@ -3,33 +3,48 @@ import { Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
-// Royalty-free ambient tracks (Pixabay CDN, direct .mp3) — one per category.
+// Royalty-free tracks (Pixabay CDN, direct .mp3) — distinct vibe per category.
 const musicMap: Record<string, string> = {
-  horror: "https://cdn.pixabay.com/download/audio/2022/10/25/audio_946203c81e.mp3",      // dark ambient
-  action: "https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3",      // cinematic
-  racing: "https://cdn.pixabay.com/download/audio/2022/08/23/audio_d16737dc28.mp3",      // upbeat electronic
-  rpg: "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3",         // epic fantasy
-  strategy: "https://cdn.pixabay.com/download/audio/2022/10/18/audio_4d92b67b88.mp3",    // ambient strategy
-  sports: "https://cdn.pixabay.com/download/audio/2022/08/23/audio_d16737dc28.mp3",      // upbeat
-  puzzle: "https://cdn.pixabay.com/download/audio/2022/10/18/audio_4d92b67b88.mp3",      // chill
-  default: "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3",     // general gaming
+  horror:     "https://cdn.pixabay.com/download/audio/2022/10/25/audio_946203c81e.mp3", // dark eerie ambient pad
+  shooter:    "https://cdn.pixabay.com/download/audio/2022/03/10/audio_270f49b83e.mp3", // heavy industrial / electronic
+  fighting:   "https://cdn.pixabay.com/download/audio/2023/06/06/audio_2d68f9a54c.mp3", // hybrid orchestral / trap
+  action:     "https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3", // epic cinematic orchestral
+  racing:     "https://cdn.pixabay.com/download/audio/2022/05/16/audio_1d3c0f6ea1.mp3", // high-tempo synthwave / rock
+  stealth:    "https://cdn.pixabay.com/download/audio/2022/11/22/audio_febc508a42.mp3", // calm but tense atmospheric
+  simulation: "https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0c6ff1bdd.mp3", // relaxing lo-fi / acoustic
+  rpg:        "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3", // epic fantasy
+  strategy:   "https://cdn.pixabay.com/download/audio/2022/10/18/audio_4d92b67b88.mp3", // ambient strategy
+  puzzle:     "https://cdn.pixabay.com/download/audio/2022/10/18/audio_4d92b67b88.mp3", // chill
+  default:    "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3", // general gaming
 };
 
 const TARGET_VOLUME = 0.3;
 const FADE_MS = 1200;
 
-// Pick a category strictly from genre keywords.
+// Priority order: most intense / specific first. Horror always wins over Action, etc.
+const CATEGORY_RULES: { category: string; keywords: string[] }[] = [
+  { category: "horror",     keywords: ["horror", "mystery", "survival horror"] },
+  { category: "fighting",   keywords: ["fighting", "fighter", "brawler", "beat 'em up", "beat em up"] },
+  { category: "shooter",    keywords: ["shooter", "fps", "tps", "battle royale"] },
+  { category: "racing",     keywords: ["racing", "driving", "sport", "sports"] },
+  { category: "stealth",    keywords: ["stealth", "open world", "open-world", "sandbox"] },
+  { category: "rpg",        keywords: ["rpg", "role-playing", "role playing", "role"] },
+  { category: "action",     keywords: ["action", "adventure", "platformer", "hack and slash"] },
+  { category: "simulation", keywords: ["simulation", "sim", "indie", "casual", "life sim"] },
+  { category: "strategy",   keywords: ["strategy", "rts", "turn-based", "tactics"] },
+  { category: "puzzle",     keywords: ["puzzle", "trivia", "word"] },
+];
+
+// Pick a category from genre keywords with a clear priority order.
 function pickCategory(genre?: string | null): string {
   if (!genre) return "default";
   const g = genre.toLowerCase();
-  if (g.includes("horror") || g.includes("survival horror")) return "horror";
-  if (g.includes("action") || g.includes("adventure") || g.includes("shooter") || g.includes("fps")) return "action";
-  if (g.includes("racing") || g.includes("driving")) return "racing";
-  if (g.includes("rpg") || g.includes("role")) return "rpg";
-  if (g.includes("strategy") || g.includes("simulation") || g.includes("sim")) return "strategy";
-  if (g.includes("sport")) return "sports";
-  if (g.includes("puzzle")) return "puzzle";
-  return "default";
+  const tokens = g.split(/[,\/|;&+]+|\s-\s/).map((t) => t.trim()).filter(Boolean);
+  const haystack = tokens.length ? tokens : [g];
+  const match = CATEGORY_RULES.find((rule) =>
+    rule.keywords.some((kw) => haystack.some((t) => t.includes(kw)) || g.includes(kw))
+  );
+  return match?.category ?? "default";
 }
 
 function pickTrack(genre?: string | null): { url: string; label: string; category: string } {
