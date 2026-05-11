@@ -21,30 +21,29 @@ const musicMap: Record<string, string> = {
 const TARGET_VOLUME = 0.3;
 const FADE_MS = 1200;
 
-// Priority order: most intense / specific first. Horror always wins over Action, etc.
+// Priority order: most intense / specific first. Horror always wins over Action.
+// IMPORTANT: avoid loose tokens like "active" matching "action".
 const CATEGORY_RULES: { category: string; keywords: string[] }[] = [
   { category: "horror",     keywords: ["horror", "mystery", "survival horror"] },
+  { category: "racing",     keywords: ["racing", "driving", "sport", "sports"] },
   { category: "fighting",   keywords: ["fighting", "fighter", "brawler", "beat 'em up", "beat em up"] },
   { category: "shooter",    keywords: ["shooter", "fps", "tps", "battle royale"] },
-  { category: "racing",     keywords: ["racing", "driving", "sport", "sports"] },
   { category: "stealth",    keywords: ["stealth", "open world", "open-world", "sandbox"] },
-  { category: "rpg",        keywords: ["rpg", "role-playing", "role playing", "role"] },
+  { category: "rpg",        keywords: ["rpg", "role-playing", "role playing"] },
   { category: "action",     keywords: ["action", "adventure", "platformer", "hack and slash"] },
-  { category: "simulation", keywords: ["simulation", "sim", "indie", "casual", "life sim"] },
+  { category: "simulation", keywords: ["simulation", "life sim", "indie", "casual"] },
   { category: "strategy",   keywords: ["strategy", "rts", "turn-based", "tactics"] },
   { category: "puzzle",     keywords: ["puzzle", "trivia", "word"] },
 ];
 
-// Pick a category from genre keywords with a clear priority order.
+// Strict priority lookup using lowercase .includes() against the full genre string.
 function pickCategory(genre?: string | null): string {
   if (!genre) return "default";
   const g = genre.toLowerCase();
-  const tokens = g.split(/[,\/|;&+]+|\s-\s/).map((t) => t.trim()).filter(Boolean);
-  const haystack = tokens.length ? tokens : [g];
-  const match = CATEGORY_RULES.find((rule) =>
-    rule.keywords.some((kw) => haystack.some((t) => t.includes(kw)) || g.includes(kw))
-  );
-  return match?.category ?? "default";
+  for (const rule of CATEGORY_RULES) {
+    if (rule.keywords.some((kw) => g.includes(kw))) return rule.category;
+  }
+  return "default";
 }
 
 function pickTrack(genre?: string | null): { url: string; label: string; category: string } {
@@ -73,7 +72,8 @@ const GenreMusic = ({ genre }: { genre?: string | null }) => {
   const [muted, setMuted] = useState<boolean>(() => localStorage.getItem("genreMusicMuted") === "1");
   const [ready, setReady] = useState(false);
 
-  // Create audio element once
+  // Create audio element once. STRICT cleanup on unmount stops "ghost music"
+  // when leaving the Game Details page or closing a modal.
   useEffect(() => {
     const a = new Audio();
     a.loop = true;
@@ -81,7 +81,13 @@ const GenreMusic = ({ genre }: { genre?: string | null }) => {
     a.volume = 0;
     audioRef.current = a;
     return () => {
-      try { fade(a, 0, FADE_MS, () => { a.pause(); a.src = ""; }); } catch {}
+      try {
+        a.pause();
+        a.removeAttribute("src");
+        a.src = "";
+        a.load();
+      } catch {}
+      audioRef.current = null;
     };
   }, []);
 
@@ -104,12 +110,15 @@ const GenreMusic = ({ genre }: { genre?: string | null }) => {
     };
   }, [ready]);
 
-  // Crossfade when track or readiness changes
+  // Crossfade when track or readiness changes. Stops any current playback first
+  // to prevent overlapping/double-loaded instances.
   useEffect(() => {
     const a = audioRef.current;
     if (!a || !ready) return;
     const { url, label } = pickTrack(genre);
     const swap = (src: string, isFallback = false) => {
+      if (!audioRef.current) return;
+      try { a.pause(); } catch {}
       a.src = src;
       a.volume = 0;
       const target = muted ? 0 : TARGET_VOLUME;
