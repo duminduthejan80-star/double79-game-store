@@ -5,54 +5,51 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 
 // Royalty-free tracks (Pixabay CDN, direct .mp3) — distinct vibe per category.
 const musicMap: Record<string, string> = {
-  horror:     "https://cdn.pixabay.com/download/audio/2022/10/25/audio_946203c81e.mp3", // dark eerie ambient pad
-  shooter:    "https://cdn.pixabay.com/download/audio/2022/03/10/audio_270f49b83e.mp3", // heavy industrial / electronic
-  fighting:   "https://cdn.pixabay.com/download/audio/2023/06/06/audio_2d68f9a54c.mp3", // hybrid orchestral / trap
-  action:     "https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3", // epic cinematic orchestral
-  racing:     "https://cdn.pixabay.com/download/audio/2022/05/16/audio_1d3c0f6ea1.mp3", // high-tempo synthwave / rock
-  stealth:    "https://cdn.pixabay.com/download/audio/2022/11/22/audio_febc508a42.mp3", // calm but tense atmospheric
-  simulation: "https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0c6ff1bdd.mp3", // relaxing lo-fi / acoustic
-  rpg:        "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3", // epic fantasy
-  strategy:   "https://cdn.pixabay.com/download/audio/2022/10/18/audio_4d92b67b88.mp3", // ambient strategy
-  puzzle:     "https://cdn.pixabay.com/download/audio/2022/10/18/audio_4d92b67b88.mp3", // chill
-  default:    "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3", // general gaming
+  horror:     "https://cdn.pixabay.com/download/audio/2022/10/25/audio_946203c81e.mp3", // scary eerie ambient
+  shooter:    "https://cdn.pixabay.com/download/audio/2022/03/10/audio_270f49b83e.mp3", // intense combat beats
+  racing:     "https://cdn.pixabay.com/download/audio/2022/05/16/audio_1d3c0f6ea1.mp3", // energetic rock / electronic
+  simulation: "https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0c6ff1bdd.mp3", // calm lo-fi
+  survival:   "https://cdn.pixabay.com/download/audio/2022/11/22/audio_febc508a42.mp3", // tense atmospheric loop
+  fighting:   "https://cdn.pixabay.com/download/audio/2023/06/06/audio_2d68f9a54c.mp3",
+  rpg:        "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3",
 };
 
 const TARGET_VOLUME = 0.3;
 const FADE_MS = 1200;
 
-// Priority order: most intense / specific first. Horror always wins over Action.
-// IMPORTANT: avoid loose tokens like "active" matching "action".
+// Keywords that must NEVER trigger music. They are stripped from the genre
+// before category matching.
+const BLOCKED_KEYWORDS = ["active", "adventure"];
+
+// Priority order: most intense / specific first. Horror always wins.
+// NOTE: "action" intentionally maps to shooter (intense combat beats) per spec.
 const CATEGORY_RULES: { category: string; keywords: string[] }[] = [
-  { category: "horror",     keywords: ["horror", "mystery", "survival horror"] },
+  { category: "horror",     keywords: ["horror", "psychological horror", "mystery", "survival horror"] },
+  { category: "shooter",    keywords: ["shooter", "shooting", "fps", "tps", "battle royale", "action"] },
   { category: "racing",     keywords: ["racing", "driving", "sport", "sports"] },
+  { category: "survival",   keywords: ["survival", "open world", "open-world", "sandbox", "stealth"] },
   { category: "fighting",   keywords: ["fighting", "fighter", "brawler", "beat 'em up", "beat em up"] },
-  { category: "shooter",    keywords: ["shooter", "fps", "tps", "battle royale"] },
-  { category: "stealth",    keywords: ["stealth", "open world", "open-world", "sandbox"] },
   { category: "rpg",        keywords: ["rpg", "role-playing", "role playing"] },
-  { category: "action",     keywords: ["action", "adventure", "platformer", "hack and slash"] },
-  { category: "simulation", keywords: ["simulation", "life sim", "indie", "casual"] },
-  { category: "strategy",   keywords: ["strategy", "rts", "turn-based", "tactics"] },
-  { category: "puzzle",     keywords: ["puzzle", "trivia", "word"] },
+  { category: "simulation", keywords: ["simulation", "strategy", "indie", "rts", "turn-based", "tactics", "casual", "puzzle"] },
 ];
 
-// Strict priority lookup using lowercase .includes() against the full genre string.
-function pickCategory(genre?: string | null): string {
-  if (!genre) return "default";
-  const g = genre.toLowerCase();
-  for (const rule of CATEGORY_RULES) {
-    if (rule.keywords.some((kw) => g.includes(kw))) return rule.category;
-  }
-  return "default";
-}
+// Returns category, or null if the genre is empty / only contains blocked keywords.
+function pickCategory(genre?: string | null): string | null {
+  if (!genre) return null;
+  // Split by common separators, lowercase, drop blocked tags entirely.
+  const tags = genre
+    .toLowerCase()
+    .split(/[,/|;]+/)
+    .map((t) => t.trim())
+    .filter(Boolean)
+    .filter((t) => !BLOCKED_KEYWORDS.some((b) => t === b || t.includes(b)));
 
-function pickTrack(genre?: string | null): { url: string; label: string; category: string } {
-  const category = pickCategory(genre);
-  const url = musicMap[category] ?? musicMap.default;
-  const label = category === "default" ? "General Gaming" : category.charAt(0).toUpperCase() + category.slice(1);
-  console.log("Current Genre:", genre);
-  console.log("Playing Music for:", category);
-  return { url, label, category };
+  if (tags.length === 0) return null; // only "Active" / "Adventure" → silent
+  const joined = tags.join(" ");
+  for (const rule of CATEGORY_RULES) {
+    if (rule.keywords.some((kw) => joined.includes(kw))) return rule.category;
+  }
+  return null;
 }
 
 function fade(audio: HTMLAudioElement, to: number, ms: number, onDone?: () => void) {
@@ -72,8 +69,8 @@ const GenreMusic = ({ genre }: { genre?: string | null }) => {
   const [muted, setMuted] = useState<boolean>(() => localStorage.getItem("genreMusicMuted") === "1");
   const [ready, setReady] = useState(false);
 
-  // Create audio element once. STRICT cleanup on unmount stops "ghost music"
-  // when leaving the Game Details page or closing a modal.
+  // STRICT cleanup: destroy the audio element on unmount so leaving the
+  // Game Details page (or clicking Back) immediately kills the audio.
   useEffect(() => {
     const a = new Audio();
     a.loop = true;
@@ -110,28 +107,35 @@ const GenreMusic = ({ genre }: { genre?: string | null }) => {
     };
   }, [ready]);
 
-  // Crossfade when track or readiness changes. Stops any current playback first
-  // to prevent overlapping/double-loaded instances.
+  // Pick + crossfade the right track. If category is null → stay silent.
   useEffect(() => {
     const a = audioRef.current;
     if (!a || !ready) return;
-    const { url, label } = pickTrack(genre);
-    const swap = (src: string, isFallback = false) => {
+    const category = pickCategory(genre);
+    console.log("Current Genre:", genre);
+    console.log("Playing Music for:", category ?? "(silent — blocked or unmapped)");
+
+    if (!category) {
+      // Silence: fade out and clear src so nothing plays.
+      if (!a.paused) {
+        fade(a, 0, FADE_MS, () => {
+          try { a.pause(); a.src = ""; a.load(); } catch {}
+        });
+      }
+      return;
+    }
+
+    const url = musicMap[category];
+    const swap = (src: string) => {
       if (!audioRef.current) return;
       try { a.pause(); } catch {}
       a.src = src;
       a.volume = 0;
       const target = muted ? 0 : TARGET_VOLUME;
-      console.log(`Playing ${isFallback ? "General Gaming (fallback)" : label} music`);
       a.play().then(() => fade(a, target, FADE_MS)).catch(() => {});
     };
-    const onErr = () => {
-      if (a.src !== musicMap.default) {
-        console.warn(`Failed to load ${label} track, switching to default`);
-        swap(musicMap.default, true);
-      }
-    };
-    a.onerror = onErr;
+    a.onerror = () => { /* silent on failure — no fallback per spec */ };
+
     if (a.src && !a.paused) {
       fade(a, 0, FADE_MS, () => swap(url));
     } else {
