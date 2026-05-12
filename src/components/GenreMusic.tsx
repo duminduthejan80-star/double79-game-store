@@ -90,7 +90,6 @@ const GenreMusic = ({ genre }: { genre?: string | null }) => {
     const a = new Audio();
     a.loop = true;
     a.preload = "auto";
-    a.crossOrigin = "anonymous";
     a.volume = 0;
     audioRef.current = a;
     console.log("[GenreMusic] audio element created");
