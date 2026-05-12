@@ -3,17 +3,17 @@ import { Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
-// Direct, CORS-friendly royalty-free MP3s (Pixabay CDN).
+// Reliable royalty-free MP3s (SoundHelix — verified 200 OK, no CORS issues).
 const musicMap: Record<string, string> = {
-  horror:     "https://cdn.pixabay.com/download/audio/2022/10/25/audio_946203c81e.mp3", // eerie dark ambient
-  shooter:    "https://cdn.pixabay.com/download/audio/2022/03/10/audio_270f49b83e.mp3", // heavy industrial
-  racing:     "https://cdn.pixabay.com/download/audio/2022/05/16/audio_1d3c0f6ea1.mp3", // energetic rock / EDM
-  fighting:   "https://cdn.pixabay.com/download/audio/2023/06/19/audio_53fc59d723.mp3", // high-energy hybrid
-  stealth:    "https://cdn.pixabay.com/download/audio/2022/08/04/audio_2dde668ca0.mp3", // low-key tense
-  action:     "https://cdn.pixabay.com/download/audio/2023/03/15/audio_ca6f7a2c01.mp3", // epic cinematic orchestral
-  adventure:  "https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8e9b4b1ef.mp3", // grand atmospheric storytelling
-  simulation: "https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0c6ff1bdd.mp3", // calm thoughtful
-  indie:      "https://cdn.pixabay.com/download/audio/2022/08/02/audio_2dde668ca0.mp3", // relaxing lo-fi / acoustic
+  horror:     "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3",
+  shooter:    "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
+  racing:     "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3",
+  fighting:   "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3",
+  stealth:    "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3",
+  action:     "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+  adventure:  "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3",
+  simulation: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+  indie:      "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3",
 };
 
 const TARGET_VOLUME = 0.4;
@@ -90,7 +90,6 @@ const GenreMusic = ({ genre }: { genre?: string | null }) => {
     const a = new Audio();
     a.loop = true;
     a.preload = "auto";
-    a.crossOrigin = "anonymous";
     a.volume = 0;
     audioRef.current = a;
     console.log("[GenreMusic] audio element created");
