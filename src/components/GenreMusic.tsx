@@ -5,22 +5,34 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 
 // Direct, CORS-friendly royalty-free MP3s (Pixabay CDN).
 const musicMap: Record<string, string> = {
-  horror:     "https://cdn.pixabay.com/download/audio/2022/10/25/audio_946203c81e.mp3", // eerie ambient
-  shooter:    "https://cdn.pixabay.com/download/audio/2022/03/10/audio_270f49b83e.mp3", // fast industrial
-  racing:     "https://cdn.pixabay.com/download/audio/2022/05/16/audio_1d3c0f6ea1.mp3", // high-energy rock
-  simulation: "https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0c6ff1bdd.mp3", // calm lo-fi
+  horror:     "https://cdn.pixabay.com/download/audio/2022/10/25/audio_946203c81e.mp3", // eerie dark ambient
+  shooter:    "https://cdn.pixabay.com/download/audio/2022/03/10/audio_270f49b83e.mp3", // heavy industrial
+  racing:     "https://cdn.pixabay.com/download/audio/2022/05/16/audio_1d3c0f6ea1.mp3", // energetic rock / EDM
+  fighting:   "https://cdn.pixabay.com/download/audio/2023/06/19/audio_53fc59d723.mp3", // high-energy hybrid
+  stealth:    "https://cdn.pixabay.com/download/audio/2022/08/04/audio_2dde668ca0.mp3", // low-key tense
+  action:     "https://cdn.pixabay.com/download/audio/2023/03/15/audio_ca6f7a2c01.mp3", // epic cinematic orchestral
+  adventure:  "https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8e9b4b1ef.mp3", // grand atmospheric storytelling
+  simulation: "https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0c6ff1bdd.mp3", // calm thoughtful
+  indie:      "https://cdn.pixabay.com/download/audio/2022/08/02/audio_2dde668ca0.mp3", // relaxing lo-fi / acoustic
 };
 
-const TARGET_VOLUME = 0.5;
-const FADE_MS = 800;
+const TARGET_VOLUME = 0.4;
+const FADE_MS = 1000;
 
-const BLOCKED = ["active", "adventure"];
+// General/non-specific tags we should never use to decide music.
+const BLOCKED = ["active", "live"];
 
+// Priority order matters: more specific / intense genres come first.
 const CATEGORY_RULES: { category: keyof typeof musicMap; keywords: string[] }[] = [
-  { category: "horror",     keywords: ["horror", "mystery", "psychological", "survival horror"] },
-  { category: "shooter",    keywords: ["shooting", "shooter", "fps", "tps", "action", "battle royale", "fighting", "fighter"] },
-  { category: "racing",     keywords: ["racing", "race", "driving", "cars", "car", "sport", "sports"] },
-  { category: "simulation", keywords: ["simulation", "sim", "indie", "casual", "strategy", "rpg", "puzzle", "open world", "sandbox", "stealth", "survival"] },
+  { category: "horror",     keywords: ["horror", "mystery", "thriller", "psychological", "survival horror"] },
+  { category: "stealth",    keywords: ["stealth", "survival"] },
+  { category: "racing",     keywords: ["racing", "race", "driving", "cars", "car", "sport", "sports", "high-speed"] },
+  { category: "fighting",   keywords: ["fighting", "fighter", "beat 'em up", "arcade", "brawler"] },
+  { category: "shooter",    keywords: ["shooting", "shooter", "fps", "tps", "war", "battle royale"] },
+  { category: "action",     keywords: ["action", "combat", "hack and slash"] },
+  { category: "adventure",  keywords: ["adventure", "rpg", "role-playing", "role playing", "mmorpg", "jrpg", "story"] },
+  { category: "simulation", keywords: ["simulation", "sim", "strategy", "tycoon", "rts", "tactics", "management", "puzzle"] },
+  { category: "indie",      keywords: ["indie", "casual", "sandbox", "open world", "lo-fi", "lofi", "acoustic"] },
 ];
 
 function pickCategory(genre?: string | null): keyof typeof musicMap | null {
@@ -36,7 +48,7 @@ function pickCategory(genre?: string | null): keyof typeof musicMap | null {
   for (const rule of CATEGORY_RULES) {
     if (rule.keywords.some((kw) => joined.includes(kw))) return rule.category;
   }
-  return "simulation"; // default to calm lo-fi for unmapped non-blocked genres
+  return "simulation";
 }
 
 function fade(audio: HTMLAudioElement, to: number, ms: number, onDone?: () => void) {
@@ -56,13 +68,10 @@ const GenreMusic = ({ genre }: { genre?: string | null }) => {
   const [muted, setMuted] = useState<boolean>(() => localStorage.getItem("genreMusicMuted") === "1");
   const [ready, setReady] = useState(false);
 
-  // Listen for the first user interaction so play() is allowed by the browser.
+  // Browser autoplay bypass: first user interaction unlocks audio.
   useEffect(() => {
     if (ready) return;
-    const trigger = () => {
-      console.log("[GenreMusic] user interaction detected → enabling audio");
-      setReady(true);
-    };
+    const trigger = () => setReady(true);
     const opts = { once: true, capture: true } as AddEventListenerOptions;
     window.addEventListener("pointerdown", trigger, opts);
     window.addEventListener("keydown", trigger, opts);
@@ -97,10 +106,10 @@ const GenreMusic = ({ genre }: { genre?: string | null }) => {
     };
   }, []);
 
-  // Play / swap track when genre or readiness changes.
+  // Try instant play on mount; if blocked, retry once interaction is detected.
   useEffect(() => {
     const a = audioRef.current;
-    if (!a || !ready) return;
+    if (!a) return;
 
     const category = pickCategory(genre);
     console.log("[GenreMusic] Current Genre:", genre, "→ category:", category);
@@ -122,7 +131,7 @@ const GenreMusic = ({ genre }: { genre?: string | null }) => {
       const p = a.play();
       if (p && typeof p.then === "function") {
         p.then(() => fade(a, target, FADE_MS))
-         .catch((err) => console.warn("[GenreMusic] play() blocked:", err));
+         .catch((err) => console.warn("[GenreMusic] play() blocked, awaiting interaction:", err?.message || err));
       }
     };
 
