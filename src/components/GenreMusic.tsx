@@ -12,7 +12,7 @@ const musicMap: Record<string, string> = {
   stealth:    "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3",
   action:     "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
   adventure:  "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3",
-  simulation: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+  simulation: "https://incompetech.com/music/royalty-free/mp3-royaltyfree/Healing.mp3",
   indie:      "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3",
 };
 
