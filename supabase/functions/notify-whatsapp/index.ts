@@ -35,12 +35,18 @@ ${link}`;
     let res: Response;
 
     if (imageUrl) {
-    res = await fetch("https://hook.us2.make.com/c3wqlnfnayc2e8yvqoypa405nw25fvxz", {
+    // 🚀 කෙළින්ම Green-API එකට ෆොටෝ එකයි මැසේජ් එකයි යවනවා
+    res = await fetch("https://api.greenapi.com/waInstance7103980145/sendFileByUrl/56eccbf54d2e46e5a400f91884ea2ebf25091fa16db3405cba", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ game, imageUrl, caption }),
+      body: JSON.stringify({
+        chatId: "120363385732296489@g.us", // ඔයාගේ WhatsApp Group ID එක
+        urlFile: imageUrl,
+        fileName: `${game?.name || 'game'}.jpg`,
+        caption: caption
+      }),
     });
   } else {
       res = await fetch("https://gate.whapi.cloud/messages/text", {
