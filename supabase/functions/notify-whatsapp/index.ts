@@ -35,15 +35,14 @@ ${link}`;
     let res: Response;
 
     if (imageUrl) {
-      res = await fetch("https://gate.whapi.cloud/messages/image", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ to: GROUP_ID, media: imageUrl, caption }),
-      });
-    } else {
+    res = await fetch("https://hook.us2.make.com/c3wqlnfnayc2e8yvqoypa405nw25fvxz", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ game, imageUrl, caption }),
+    });
+  } else {
       res = await fetch("https://gate.whapi.cloud/messages/text", {
         method: "POST",
         headers: {
