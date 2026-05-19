@@ -20,6 +20,10 @@ import type { Game, GameInput } from "@/types/game";
 const ADMIN_CODE = "7997";
 const SESSION_KEY = "d79_admin_ok";
 
+const GREEN_API_URL =
+  "https://api.greenapi.com/waInstance7103980145/sendFileByUrl/56eccbf54d2e46e5a400f91884ea2ebf25091fa16db3405cba";
+const GREEN_API_CHAT_ID = "120363385732296489@g.us";
+
 const empty: GameInput = {
   title: "", description: "", image_url: "", download_url: "",
   price: 0, is_free: true, mode: "offline",
@@ -51,7 +55,6 @@ const Admin = () => {
   const upscaleOne = async (url: string): Promise<string> => {
     if (isAlreadyUpscaled(url)) return url;
     const { data, error } = await supabase.functions.invoke("upscale-image", {
-
       headers: { "x-admin-code": "7997" },
       body: { imageUrl: url },
     });
@@ -136,8 +139,6 @@ const Admin = () => {
     setBulkRunning(false);
     setBulkProgress({ done: 0, total: 0, current: "" });
     toast.success(`Bulk upscale complete${skipped ? ` (skipped ${skipped} already-4K)` : ""}`);
-
-    // refresh
     window.location.reload();
   };
 
@@ -169,6 +170,7 @@ const Admin = () => {
     if (!form.title.trim()) return toast.error("Title required");
     try {
       let payload: GameInput = { ...form };
+
       if (autoUpscale) {
         const orig = editing;
         const newCover = payload.image_url && payload.image_url !== orig?.image_url;
@@ -195,8 +197,34 @@ const Admin = () => {
         }
         setUpscaling(false);
       }
+
       await upsert.mutateAsync({ ...payload, id: editing?.id });
       toast.success(editing ? "Game updated" : "Game added");
+
+      // ── Green-API WhatsApp notification (new games only) ──────────────
+      if (!editing && payload.title) {
+        try {
+          await fetch(GREEN_API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              chatId: GREEN_API_CHAT_ID,
+              urlFile: payload.image_url ?? "",
+              fileName: payload.title + ".jpg",
+              caption:
+                "🎮 *New Game Added!* 🎮\n\n📌 *Title:* " +
+                payload.title +
+                "\n🔗 *Link:* " +
+                (payload.download_url ?? ""),
+            }),
+          });
+          toast.success("WhatsApp group notified ✅");
+        } catch (waErr: any) {
+          toast.warning("Game saved, but WhatsApp notify failed: " + waErr.message);
+        }
+      }
+      // ──────────────────────────────────────────────────────────────────
+
       setOpen(false);
       setEditing(null);
     } catch (err: any) {
