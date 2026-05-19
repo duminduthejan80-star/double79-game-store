@@ -1,82 +1,65 @@
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+Deno.serve(async (req: Request) => {
+  if (req.method !== "POST") {
+    return new Response("Method Not Allowed", { status: 405 });
+  }
 
-const WEBSITE_URL = "https://double79-game-store.lovable.app";
-const GROUP_ID = "120363405710260136@g.us";
-
-Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  let reqBody: { gameName: string; imageUrl: string; link: string };
 
   try {
-    const token = Deno.env.get("WHAPI_TOKEN");
-    if (!token) throw new Error("WHAPI_TOKEN not set");
+    reqBody = await req.json();
+  } catch {
+    return new Response("Invalid JSON body", { status: 400 });
+  }
 
-    const payload = await req.json();
-    // Support both pg_net trigger payload { record: {...} } and direct calls
-    const game = payload.record ?? payload.game ?? payload;
-    const gameName = game?.title ?? "New Game";
-    const gameId = game?.id;
-    const link = gameId ? `${WEBSITE_URL}/game/${gameId}` : WEBSITE_URL;
+  if (!reqBody.gameName || !reqBody.imageUrl || !reqBody.link) {
+    return new Response("Missing required fields: gameName, imageUrl, link", {
+      status: 400,
+    });
+  }
 
-    const caption =
-`🎮 *New Game Added on Double79!* 🚀
+  const GREEN_API_URL =
+    "https://api.greenapi.com/waInstance7103980145/sendFileByUrl/56eccbf54d2e46e5a400f91884ea2ebf25091fa16db3405cba";
 
-🕹️ *Game Name:*
-${gameName}
+  const payload = {
+    chatId: "120363385732296489@g.us",
+    urlFile: reqBody.imageUrl,
+    fileName: reqBody.gameName + ".jpg",
+    caption:
+      "🎮 *New Game Added!* 🎮\n\n📌 *Title:* " +
+      reqBody.gameName +
+      "\n🔗 *Link:* " +
+      reqBody.link,
+  };
 
-✨ Free to download now!
-
-🔗 *Download Link:*
-${link}`;
-
-    const imageUrl = game?.image_url;
-    let res: Response;
-
-    if (imageUrl) {
-    // 🚀 කෙළින්ම Green-API එකට ෆොටෝ එකයි මැසේජ් එකයි යවනවා
-    res = await fetch("https://api.greenapi.com/waInstance7103980145/sendFileByUrl/56eccbf54d2e46e5a400f91884ea2ebf25091fa16db3405cba", {
+  try {
+    const greenApiResponse = await fetch(GREEN_API_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        chatId: "120363385732296489@g.us", // ඔයාගේ WhatsApp Group ID එක
-        urlFile: imageUrl,
-        fileName: `${game?.name || 'game'}.jpg`,
-        caption: caption
-      }),
+      body: JSON.stringify(payload),
     });
-  } else {
-      res = await fetch("https://gate.whapi.cloud/messages/text", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ to: GROUP_ID, body: caption }),
-      });
+
+    const responseData = await greenApiResponse.json();
+
+    if (!greenApiResponse.ok) {
+      console.error("Green-API error:", responseData);
+      return new Response(
+        JSON.stringify({ error: "Green-API request failed", details: responseData }),
+        { status: 502, headers: { "Content-Type": "application/json" } }
+      );
     }
 
-    const text = await res.text();
-    console.log("Whapi response", res.status, text);
-
-    if (!res.ok) {
-      return new Response(JSON.stringify({ error: "Whapi failed", status: res.status, detail: text }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    return new Response(JSON.stringify({ success: true }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  } catch (e) {
-    console.error("notify-whatsapp error", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    console.log("WhatsApp notification sent successfully:", responseData);
+    return new Response(
+      JSON.stringify({ success: true, data: responseData }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
+  } catch (err) {
+    console.error("Fetch to Green-API failed:", err);
+    return new Response(
+      JSON.stringify({ error: "Internal server error", details: String(err) }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
   }
 });
