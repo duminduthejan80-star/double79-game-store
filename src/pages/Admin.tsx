@@ -19,10 +19,7 @@ import type { Game, GameInput } from "@/types/game";
 
 const ADMIN_CODE = "7997";
 const SESSION_KEY = "d79_admin_ok";
-
-const GREEN_API_URL =
-  "https://api.greenapi.com/waInstance7103980145/sendFileByUrl/56eccbf54d2e46e5a400f91884ea2ebf25091fa16db3405cba";
-const GREEN_API_CHAT_ID = "120363385732296489@g.us";
+const STORE_BASE_URL = "https://double79-game-store.lovable.app/games/";
 
 const empty: GameInput = {
   title: "", description: "", image_url: "", download_url: "",
@@ -50,7 +47,8 @@ const Admin = () => {
   const [bulkRunning, setBulkRunning] = useState(false);
   const [bulkProgress, setBulkProgress] = useState({ done: 0, total: 0, current: "" });
 
-  const isAlreadyUpscaled = (url: string) => !!url && url.includes("/storage/v1/object/public/game-media/");
+  const isAlreadyUpscaled = (url: string) =>
+    !!url && url.includes("/storage/v1/object/public/game-media/");
 
   const upscaleOne = async (url: string): Promise<string> => {
     if (isAlreadyUpscaled(url)) return url;
@@ -198,32 +196,29 @@ const Admin = () => {
         setUpscaling(false);
       }
 
-      await upsert.mutateAsync({ ...payload, id: editing?.id });
+      // Upsert the game and capture the returned row so we have the real ID
+      const savedGame = await upsert.mutateAsync({ ...payload, id: editing?.id });
       toast.success(editing ? "Game updated" : "Game added");
 
-      // ── Green-API WhatsApp notification (new games only) ──────────────
-      if (!editing && payload.title) {
+      // ── Notify WhatsApp via Edge Function (new games only) ─────────────
+      if (!editing) {
         try {
-          await fetch(GREEN_API_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              chatId: GREEN_API_CHAT_ID,
-              urlFile: payload.image_url ?? "",
-              fileName: payload.title + ".jpg",
-              caption:
-                "🎮 *New Game Added!* 🎮\n\n📌 *Title:* " +
-                payload.title +
-                "\n🔗 *Link:* " +
-                (payload.download_url ?? ""),
-            }),
+          const gameId = (savedGame as any)?.id ?? (savedGame as any)?.[0]?.id;
+          const { error: waError } = await supabase.functions.invoke("notify-whatsapp", {
+            body: {
+              gameName: payload.title,
+              imageUrl: payload.image_url ?? "",
+              link: STORE_BASE_URL + (gameId ?? ""),
+            },
           });
+          if (waError) throw new Error(waError.message);
           toast.success("WhatsApp group notified ✅");
         } catch (waErr: any) {
+          // Non-blocking — game is already saved, just warn
           toast.warning("Game saved, but WhatsApp notify failed: " + waErr.message);
         }
       }
-      // ──────────────────────────────────────────────────────────────────
+      // ───────────────────────────────────────────────────────────────────
 
       setOpen(false);
       setEditing(null);
@@ -279,7 +274,9 @@ const Admin = () => {
       <div className="container mx-auto px-4 py-10">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold flex items-center gap-3"><Shield className="h-7 w-7 text-primary" /> Admin Panel</h1>
+            <h1 className="text-3xl font-bold flex items-center gap-3">
+              <Shield className="h-7 w-7 text-primary" /> Admin Panel
+            </h1>
             <p className="text-muted-foreground text-sm mt-1">Manage your game catalog</p>
           </div>
           <div className="flex gap-2">
@@ -358,7 +355,9 @@ const Admin = () => {
                     <div><Label>Release Date</Label><Input type="date" value={form.release_date ?? ""} onChange={(e) => setForm({ ...form, release_date: e.target.value || null })} /></div>
 
                     <div className="col-span-2 flex gap-6 pt-2">
-                      <label className="flex items-center gap-2 text-sm"><Switch checked={form.featured} onCheckedChange={(v) => setForm({ ...form, featured: v })} /> Featured</label>
+                      <label className="flex items-center gap-2 text-sm">
+                        <Switch checked={form.featured} onCheckedChange={(v) => setForm({ ...form, featured: v })} /> Featured
+                      </label>
                     </div>
 
                     <div className="col-span-2 pt-2 border-t border-border">
