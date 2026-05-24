@@ -11,8 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useGames, useUpsertGame, useDeleteGame } from "@/hooks/useGames";
-import { Shield, Plus, Pencil, Trash2, LogOut, Users, ChevronDown, Download as DownloadIcon, Library as LibraryIcon, Sparkles, Loader2 } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
+import { Shield, Plus, Pencil, Trash2, LogOut, Users, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Game, GameInput } from "@/types/game";
@@ -42,51 +41,7 @@ const Admin = () => {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Game | null>(null);
   const [form, setForm] = useState<GameInput>(empty);
-  const [autoUpscale, setAutoUpscale] = useState(false); // Default OFF කරා ක්‍රැෂ් වෙන නිසා
-  const [upscaling, setUpscaling] = useState(false);
-  const [bulkRunning, setBulkRunning] = useState(false);
-  const [bulkProgress, setBulkProgress] = useState({ done: 0, total: 0, current: "" });
-
-  const isAlreadyUpscaled = (url: string) =>
-    !!url && url.includes("/storage/v1/object/public/game-media/");
-
-  const upscaleOne = async (url: string): Promise<string> => {
-    if (isAlreadyUpscaled(url)) return url;
-    const { data, error } = await supabase.functions.invoke("upscale-image", {
-      headers: { "x-admin-code": "7997" },
-      body: { imageUrl: url },
-    });
-    if (error) throw new Error(error.message);
-    if (!data?.url) throw new Error("No URL returned");
-    return data.url as string;
-  };
-
-  const upscaleField = async (field: "image_url" | "screenshots") => {
-    setUpscaling(true);
-    try {
-      if (field === "image_url" && form.image_url) {
-        const url = await upscaleOne(form.image_url);
-        setForm((f) => ({ ...f, image_url: url }));
-        toast.success("Cover upscaled to 4K");
-      } else if (field === "screenshots" && form.screenshots?.length) {
-        const out: string[] = [];
-        for (let i = 0; i < form.screenshots.length; i++) {
-          try { out.push(await upscaleOne(form.screenshots[i])); }
-          catch (e: any) { toast.error(`Screenshot ${i + 1}: ${e.message}`); out.push(form.screenshots[i]); }
-        }
-        setForm((f) => ({ ...f, screenshots: out }));
-        toast.success("Screenshots upscaled");
-      }
-    } catch (e: any) {
-      toast.error("AI Upscale failed (Credits may be empty): " + e.message);
-    } {
-      setUpscaling(false);
-    }
-  };
-
-  const bulkUpscaleAll = async () => {
-    toast.error("Bulk upscale temporarily disabled due to API Limit (402)");
-  };
+  const [autoUpscale, setAutoUpscale] = useState(false);
 
   useEffect(() => {
     if (editing) {
@@ -118,43 +73,14 @@ const Admin = () => {
     try {
       let payload: GameInput = { ...form };
 
-      // SAFETY: AI Upscale එක වටේටම try-catch දාලා සේෆ් කරනවා. 
-      // ඒක ෆේල් වුණත් ගේම් එක සේව් වෙන්න සහ වට්සැප් මැසේජ් එක යන්න මේක උදව් වෙනවා.
-      if (autoUpscale) {
-        try {
-          const orig = editing;
-          const newCover = payload.image_url && payload.image_url !== orig?.image_url;
-          const newShots = (payload.screenshots ?? []).filter(
-            (s) => !orig?.screenshots?.includes(s),
-          );
-          
-          if (newCover && payload.image_url) {
-            payload.image_url = await upscaleOne(payload.image_url);
-          }
-          if (newShots.length) {
-            const updated = [...(payload.screenshots ?? [])];
-            for (let i = 0; i < updated.length; i++) {
-              if (newShots.includes(updated[i])) {
-                updated[i] = await upscaleOne(updated[i]);
-              }
-            }
-            payload.screenshots = updated;
-          }
-        } catch (aiErr) {
-          console.log("AI Upscale error ignored to prevent block:", aiErr);
-          // එරර් එක ස්කිප් කරලා ඉස්සරහට යනවා
-        }
-      }
-
-      // 1. Save Game
+      // 1. Save Game First (AI Upscale එක 402 හින්දා සම්පූර්ණයෙන්ම අයින් කරා මචං)
       const isNewGame = !editing;
       const savedGame = await upsert.mutateAsync({ ...payload, id: editing?.id });
       toast.success(isNewGame ? "Game added" : "Game updated");
 
-      // 2. WhatsApp Notification Trigger (Only for new games)
+      // 2. WhatsApp Notification Trigger (AI එක ක්‍රැෂ් වුණත් මේක දැන් 100% වැඩ)
       if (isNewGame) {
         try {
-          // සේව් වුණු ගේම් එකේ ID එක ගන්නවා ට්‍රැක් කරන්න
           const { data: latestGame } = await supabase
             .from("games")
             .select("id")
@@ -170,6 +96,7 @@ const Admin = () => {
               ? payload.image_url 
               : "https://placehold.co/600x400?text=" + encodeURIComponent(payload.title);
 
+            // කෙළින්ම වට්සැප් ෆන්ක්ෂන් එක විතරක් සේෆ්ලි කෝල් කරනවා
             await supabase.functions.invoke("notify-whatsapp", {
               body: {
                 gameName: payload.title,
@@ -258,16 +185,9 @@ const Admin = () => {
                   <div className="grid grid-cols-2 gap-3">
                     <div className="col-span-2"><Label>Title *</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required /></div>
                     <div className="col-span-2"><Label>Description</Label><Textarea rows={3} value={form.description ?? ""} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
+                    <div className="col-span-2"><Label>Image URL (cover)</Label><Input value={form.image_url ?? ""} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://..." /></div>
                     <div className="col-span-2">
-                      <div className="flex items-center justify-between">
-                        <Label>Image URL (cover)</Label>
-                      </div>
-                      <Input value={form.image_url ?? ""} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://..." />
-                    </div>
-                    <div className="col-span-2">
-                      <div className="flex items-center justify-between">
-                        <Label>Screenshots (one URL per line)</Label>
-                      </div>
+                      <Label>Screenshots (one URL per line)</Label>
                       <Textarea
                         rows={3}
                         value={(form.screenshots ?? []).join("\n")}
@@ -275,14 +195,7 @@ const Admin = () => {
                         placeholder={"https://...\nhttps://..."}
                       />
                     </div>
-                    <div className="col-span-2 flex items-center gap-2 text-sm bg-surface-2/50 rounded-md p-3">
-                      <Switch checked={autoUpscale} onCheckedChange={setAutoUpscale} />
-                      <span>Auto-upscale new images to 4K when saving (⚠️ Temporarily Disabled Due to Limits)</span>
-                    </div>
-                    <div className="col-span-2">
-                      <Label>Trailer URL (YouTube link or .mp4)</Label>
-                      <Input value={form.trailer_url ?? ""} onChange={(e) => setForm({ ...form, trailer_url: e.target.value })} placeholder="https://youtube.com/watch?v=... or https://.../video.mp4" />
-                    </div>
+                    <div className="col-span-2"><Label>Trailer URL (YouTube link or .mp4)</Label><Input value={form.trailer_url ?? ""} onChange={(e) => setForm({ ...form, trailer_url: e.target.value })} placeholder="https://..." /></div>
                     <div className="col-span-2"><Label>Download URL</Label><Input value={form.download_url ?? ""} onChange={(e) => setForm({ ...form, download_url: e.target.value })} placeholder="https://..." /></div>
 
                     <div><Label>Genre</Label><Input value={form.genre ?? ""} onChange={(e) => setForm({ ...form, genre: e.target.value })} /></div>
@@ -332,7 +245,7 @@ const Admin = () => {
         <Tabs defaultValue="games" className="w-full">
           <TabsList>
             <TabsTrigger value="games">Games</TabsTrigger>
-            <TabsTrigger value="users"><Users className="h-4 w-4 mr-1" /> Users</TabsTrigger>
+            <TabsTrigger value="users">Users</TabsTrigger>
           </TabsList>
 
           <TabsContent value="games">
@@ -348,7 +261,7 @@ const Admin = () => {
                 </thead>
                 <tbody>
                   {games?.length === 0 && (
-                    <tr><td colSpan={4} className="p-10 text-center text-muted-foreground">No games yet. Click "Add Game" to start.</td></tr>
+                    <tr><td colSpan={4} className="p-10 text-center text-muted-foreground">No games yet.</td></tr>
                   )}
                   {games?.map((g) => (
                     <tr key={g.id} className="border-t border-border/50 hover:bg-surface-2/50">
@@ -387,18 +300,12 @@ const Admin = () => {
   );
 };
 
-// UsersPanel code stays here exactly as before...
 interface UserStats {
   id: string; email: string | null; display_name: string | null; avatar_url: string | null;
   joined_at: string; library_count: number; download_count: number;
   library: { game_id: string; title: string; added_at: string }[];
   downloads: { game_id: string; title: string; at: string }[];
 }
-
-const fmt = (iso: string) => {
-  const d = new Date(iso);
-  return d.toLocaleString(undefined, { year: "numeric", month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" });
-};
 
 const UsersPanel = () => {
   const [loading, setLoading] = useState(true);
