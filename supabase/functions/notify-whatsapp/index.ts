@@ -7,7 +7,6 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // බ්‍රවුසර් එකෙන් මුලින්ම එවන OPTIONS (Preflight) රික්වෙස්ට් එක හැන්ඩ්ල් කරනවා
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -21,8 +20,9 @@ serve(async (req) => {
     }
 
     const body = await req.json();
+    console.log("Received body in Edge Function:", body);
     
-    // Green-API එකට ඩේටා යවනවා
+    // Green-API එකට රික්වෙස්ට් එක දානවා
     const res = await fetch(
       "https://api.greenapi.com/waInstance7103980145/sendFileByUrl/56eccbf54d2e46e5a400f91884ea2ebf25091fa16db3405cba",
       {
@@ -30,14 +30,15 @@ serve(async (req) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           chatId: "120363385732296489@g.us",
-          urlFile: body.imageUrl,
-          fileName: body.gameName + ".jpg",
-          caption: `🎮 *New Game Added!* 🎮\n\n📌 *Title:* ${body.gameName}\n🔗 *Link:* ${body.link}`
+          urlFile: body.imageUrl || "https://placehold.co/600x400?text=Game",
+          fileName: (body.gameName || "Game") + ".jpg",
+          caption: `🎮 *New Game Added!* 🎮\n\n📌 *Title:* ${body.gameName || "Unknown"}\n🔗 *Link:* ${body.link || "#"}`
         })
       }
     );
 
     const data = await res.json();
+    console.log("Green API Response:", data);
 
     return new Response(JSON.stringify({ success: true, greenApiResponse: data }), {
       status: 200,
@@ -45,6 +46,7 @@ serve(async (req) => {
     });
 
   } catch (error) {
+    console.error("Edge Function Error:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" }
