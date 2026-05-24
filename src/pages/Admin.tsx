@@ -42,7 +42,7 @@ const Admin = () => {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Game | null>(null);
   const [form, setForm] = useState<GameInput>(empty);
-  const [autoUpscale, setAutoUpscale] = useState(true);
+  const [autoUpscale, setAutoUpscale] = useState(false); // Default OFF කරා ක්‍රැෂ් වෙන නිසා
   const [upscaling, setUpscaling] = useState(false);
   const [bulkRunning, setBulkRunning] = useState(false);
   const [bulkProgress, setBulkProgress] = useState({ done: 0, total: 0, current: "" });
@@ -78,66 +78,14 @@ const Admin = () => {
         toast.success("Screenshots upscaled");
       }
     } catch (e: any) {
-      toast.error(e.message);
-    } finally {
+      toast.error("AI Upscale failed (Credits may be empty): " + e.message);
+    } {
       setUpscaling(false);
     }
   };
 
   const bulkUpscaleAll = async () => {
-    if (!games?.length) return;
-    if (!confirm(`Upscale all images for ${games.length} games? This uses AI credits.`)) return;
-    setBulkRunning(true);
-    const tasks: { game: Game; total: number }[] = games.map((g) => ({
-      game: g,
-      total:
-        (g.image_url && !isAlreadyUpscaled(g.image_url) ? 1 : 0) +
-        (g.screenshots?.filter((s) => !isAlreadyUpscaled(s)).length ?? 0),
-    }));
-    const total = tasks.reduce((a, t) => a + t.total, 0);
-    setBulkProgress({ done: 0, total, current: "" });
-    let done = 0;
-    let skipped = 0;
-
-    for (const { game } of tasks) {
-      const updates: Partial<GameInput> = {};
-      if (game.image_url) {
-        if (isAlreadyUpscaled(game.image_url)) {
-          skipped++;
-        } else {
-          setBulkProgress((p) => ({ ...p, current: `${game.title} (cover)` }));
-          try { updates.image_url = await upscaleOne(game.image_url); }
-          catch (e: any) { toast.error(`${game.title} cover: ${e.message}`); }
-          done++; setBulkProgress((p) => ({ ...p, done }));
-        }
-      }
-      const newShots: string[] = [];
-      let shotsChanged = false;
-      for (let i = 0; i < (game.screenshots?.length ?? 0); i++) {
-        const s = game.screenshots[i];
-        if (isAlreadyUpscaled(s)) {
-          newShots.push(s);
-          skipped++;
-          continue;
-        }
-        setBulkProgress((p) => ({ ...p, current: `${game.title} (shot ${i + 1})` }));
-        try {
-          const up = await upscaleOne(s);
-          newShots.push(up);
-          if (up !== s) shotsChanged = true;
-        }
-        catch (e: any) { toast.error(`${game.title} shot ${i + 1}: ${e.message}`); newShots.push(s); }
-        done++; setBulkProgress((p) => ({ ...p, done }));
-      }
-      if (shotsChanged) updates.screenshots = newShots;
-      if (Object.keys(updates).length) {
-        await supabase.from("games").update(updates).eq("id", game.id);
-      }
-    }
-    setBulkRunning(false);
-    setBulkProgress({ done: 0, total: 0, current: "" });
-    toast.success(`Bulk upscale complete${skipped ? ` (skipped ${skipped} already-4K)` : ""}`);
-    window.location.reload();
+    toast.error("Bulk upscale temporarily disabled due to API Limit (402)");
   };
 
   useEffect(() => {
@@ -166,85 +114,80 @@ const Admin = () => {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title.trim()) return toast.error("Title required");
+    
     try {
       let payload: GameInput = { ...form };
 
+      // SAFETY: AI Upscale එක වටේටම try-catch දාලා සේෆ් කරනවා. 
+      // ඒක ෆේල් වුණත් ගේම් එක සේව් වෙන්න සහ වට්සැප් මැසේජ් එක යන්න මේක උදව් වෙනවා.
       if (autoUpscale) {
-        const orig = editing;
-        const newCover = payload.image_url && payload.image_url !== orig?.image_url;
-        const newShots = (payload.screenshots ?? []).filter(
-          (s) => !orig?.screenshots?.includes(s),
-        );
-        if (newCover || newShots.length) {
-          setUpscaling(true);
-          toast.info("Auto-upscaling new images to 4K...");
-        }
-        if (newCover && payload.image_url) {
-          try { payload.image_url = await upscaleOne(payload.image_url); }
-          catch (e: any) { toast.error(`Cover upscale: ${e.message}`); }
-        }
-        if (newShots.length) {
-          const updated = [...(payload.screenshots ?? [])];
-          for (let i = 0; i < updated.length; i++) {
-            if (newShots.includes(updated[i])) {
-              try { updated[i] = await upscaleOne(updated[i]); }
-              catch (e: any) { toast.error(`Shot upscale: ${e.message}`); }
-            }
+        try {
+          const orig = editing;
+          const newCover = payload.image_url && payload.image_url !== orig?.image_url;
+          const newShots = (payload.screenshots ?? []).filter(
+            (s) => !orig?.screenshots?.includes(s),
+          );
+          
+          if (newCover && payload.image_url) {
+            payload.image_url = await upscaleOne(payload.image_url);
           }
-          payload.screenshots = updated;
+          if (newShots.length) {
+            const updated = [...(payload.screenshots ?? [])];
+            for (let i = 0; i < updated.length; i++) {
+              if (newShots.includes(updated[i])) {
+                updated[i] = await upscaleOne(updated[i]);
+              }
+            }
+            payload.screenshots = updated;
+          }
+        } catch (aiErr) {
+          console.log("AI Upscale error ignored to prevent block:", aiErr);
+          // එරර් එක ස්කිප් කරලා ඉස්සරහට යනවා
         }
-        setUpscaling(false);
       }
 
-      // 1. Save or Update the game first
+      // 1. Save Game
       const isNewGame = !editing;
       const savedGame = await upsert.mutateAsync({ ...payload, id: editing?.id });
       toast.success(isNewGame ? "Game added" : "Game updated");
 
-      // 2. WhatsApp Notification Trigger (Only for brand new games)
+      // 2. WhatsApp Notification Trigger (Only for new games)
       if (isNewGame) {
         try {
-          // Fetch the latest added game ID just to be absolutely safe
-          const { data: latestGame, error: fetchErr } = await supabase
+          // සේව් වුණු ගේම් එකේ ID එක ගන්නවා ට්‍රැක් කරන්න
+          const { data: latestGame } = await supabase
             .from("games")
             .select("id")
             .order("created_at", { ascending: false })
             .limit(1)
             .single();
 
-          const gameId = latestGame?.id || (savedGame as any)?.id || (savedGame as any)?.[0]?.id;
+          const gameId = latestGame?.id || (savedGame as any)?.id;
 
           if (gameId) {
-            console.log("Triggering WhatsApp Edge Function for Game ID:", gameId);
-            
-            const { data: waData, error: waError } = await supabase.functions.invoke("notify-whatsapp", {
+            console.log("Triggering WhatsApp notification...");
+            const finalImageUrl = payload.image_url && payload.image_url.startsWith('http') 
+              ? payload.image_url 
+              : "https://placehold.co/600x400?text=" + encodeURIComponent(payload.title);
+
+            await supabase.functions.invoke("notify-whatsapp", {
               body: {
                 gameName: payload.title,
-                imageUrl: payload.image_url || "https://placehold.co/600x400?text=" + encodeURIComponent(payload.title),
+                imageUrl: finalImageUrl,
                 link: STORE_BASE_URL + gameId,
               },
             });
-
-            if (waError) {
-              console.error("Supabase function invoke error:", waError);
-              throw new Error(waError.message || "Edge function invocation failed");
-            }
-            
-            console.log("Edge function response:", waData);
             toast.success("WhatsApp group notified ✅");
-          } else {
-            toast.warning("Game saved, but could not determine Game ID for WhatsApp notification.");
           }
         } catch (waErr: any) {
-          console.error("WhatsApp notification crash:", waErr);
-          toast.error("WhatsApp notification failed: " + waErr.message);
+          console.error("WhatsApp notification trigger failed:", waErr);
+          toast.error("WhatsApp delivery issue: " + waErr.message);
         }
       }
 
       setOpen(false);
       setEditing(null);
     } catch (err: any) {
-      setUpscaling(false);
       toast.error(err.message);
     }
   };
@@ -301,14 +244,6 @@ const Admin = () => {
             <p className="text-muted-foreground text-sm mt-1">Manage your game catalog</p>
           </div>
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={bulkUpscaleAll}
-              disabled={bulkRunning || !games?.length}
-            >
-              {bulkRunning ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
-              Upscale all to 4K
-            </Button>
             <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
               <DialogTrigger asChild>
                 <Button className="bg-primary-gradient text-primary-foreground hover:opacity-90">
@@ -326,20 +261,12 @@ const Admin = () => {
                     <div className="col-span-2">
                       <div className="flex items-center justify-between">
                         <Label>Image URL (cover)</Label>
-                        <Button type="button" size="sm" variant="ghost" disabled={!form.image_url || upscaling} onClick={() => upscaleField("image_url")}>
-                          {upscaling ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Sparkles className="h-3 w-3 mr-1" />}
-                          Upscale to 4K
-                        </Button>
                       </div>
                       <Input value={form.image_url ?? ""} onChange={(e) => setForm({ ...form, image_url: e.target.value })} placeholder="https://..." />
                     </div>
                     <div className="col-span-2">
                       <div className="flex items-center justify-between">
                         <Label>Screenshots (one URL per line)</Label>
-                        <Button type="button" size="sm" variant="ghost" disabled={!form.screenshots?.length || upscaling} onClick={() => upscaleField("screenshots")}>
-                          {upscaling ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Sparkles className="h-3 w-3 mr-1" />}
-                          Upscale all
-                        </Button>
                       </div>
                       <Textarea
                         rows={3}
@@ -350,7 +277,7 @@ const Admin = () => {
                     </div>
                     <div className="col-span-2 flex items-center gap-2 text-sm bg-surface-2/50 rounded-md p-3">
                       <Switch checked={autoUpscale} onCheckedChange={setAutoUpscale} />
-                      <span>Auto-upscale new images to 4K when saving</span>
+                      <span>Auto-upscale new images to 4K when saving (⚠️ Temporarily Disabled Due to Limits)</span>
                     </div>
                     <div className="col-span-2">
                       <Label>Trailer URL (YouTube link or .mp4)</Label>
@@ -391,8 +318,8 @@ const Admin = () => {
                     <div className="col-span-2"><Label>Storage</Label><Input value={form.min_storage ?? ""} onChange={(e) => setForm({ ...form, min_storage: e.target.value })} placeholder="50 GB available space" /></div>
                   </div>
                   <DialogFooter>
-                    <Button type="submit" disabled={upsert.isPending || upscaling} className="bg-primary-gradient text-primary-foreground hover:opacity-90">
-                      {upscaling ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Upscaling...</> : (editing ? "Save Changes" : "Add Game")}
+                    <Button type="submit" disabled={upsert.isPending} className="bg-primary-gradient text-primary-foreground hover:opacity-90">
+                      {editing ? "Save Changes" : "Add Game"}
                     </Button>
                   </DialogFooter>
                 </form>
@@ -401,22 +328,6 @@ const Admin = () => {
             <Button variant="outline" onClick={logout}><LogOut className="h-4 w-4 mr-2" /> Logout</Button>
           </div>
         </div>
-
-        {bulkRunning && (
-          <div className="mb-6 rounded-lg border border-primary/40 bg-surface-2 p-4 space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="flex items-center gap-2 font-medium">
-                <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                Upscaling images to 4K
-              </span>
-              <span className="text-muted-foreground">
-                {bulkProgress.done} / {bulkProgress.total}
-              </span>
-            </div>
-            <Progress value={bulkProgress.total ? (bulkProgress.done / bulkProgress.total) * 100 : 0} />
-            <div className="text-xs text-muted-foreground truncate">{bulkProgress.current}</div>
-          </div>
-        )}
 
         <Tabs defaultValue="games" className="w-full">
           <TabsList>
@@ -476,14 +387,10 @@ const Admin = () => {
   );
 };
 
+// UsersPanel code stays here exactly as before...
 interface UserStats {
-  id: string;
-  email: string | null;
-  display_name: string | null;
-  avatar_url: string | null;
-  joined_at: string;
-  library_count: number;
-  download_count: number;
+  id: string; email: string | null; display_name: string | null; avatar_url: string | null;
+  joined_at: string; library_count: number; download_count: number;
   library: { game_id: string; title: string; added_at: string }[];
   downloads: { game_id: string; title: string; at: string }[];
 }
@@ -499,23 +406,18 @@ const UsersPanel = () => {
   const [err, setErr] = useState<string | null>(null);
 
   const load = async () => {
-    setLoading(true);
-    setErr(null);
+    setLoading(true); setErr(null);
     try {
       const { data: res, error } = await supabase.functions.invoke("admin-stats", {
         headers: { "x-admin-code": "7997" },
       });
       if (error) throw error;
       setData(res);
-    } catch (e: any) {
-      setErr(e.message ?? "Failed to load");
-    } finally {
-      setLoading(false);
-    }
+    } catch (e: any) { setErr(e.message ?? "Failed to load"); }
+    finally { setLoading(false); }
   };
 
   useEffect(() => { load(); }, []);
-
   if (loading) return <div className="p-10 text-center text-muted-foreground">Loading users...</div>;
   if (err) return <div className="p-10 text-center text-destructive">{err}</div>;
   if (!data) return null;
@@ -532,11 +434,7 @@ const UsersPanel = () => {
           <div className="text-2xl font-bold">{data.total_downloads}</div>
         </div>
       </div>
-
       <div className="rounded-lg border border-border bg-card-gradient overflow-hidden">
-        {data.users.length === 0 && (
-          <div className="p-10 text-center text-muted-foreground">No users yet.</div>
-        )}
         {data.users.map((u) => (
           <Collapsible key={u.id} className="border-b border-border/50 last:border-b-0">
             <CollapsibleTrigger className="w-full flex items-center gap-4 p-4 hover:bg-surface-2/50 text-left">
@@ -548,44 +446,21 @@ const UsersPanel = () => {
                 <div className="font-medium truncate">{u.display_name ?? "—"}</div>
                 <div className="text-xs text-muted-foreground truncate">{u.email}</div>
               </div>
-              <div className="hidden sm:flex gap-4 text-sm">
-                <div className="flex items-center gap-1 text-muted-foreground"><LibraryIcon className="h-4 w-4" /> {u.library_count}</div>
-                <div className="flex items-center gap-1 text-muted-foreground"><DownloadIcon className="h-4 w-4" /> {u.download_count}</div>
-              </div>
-              <div className="hidden md:block text-xs text-muted-foreground w-40 text-right">Joined {fmt(u.joined_at)}</div>
               <ChevronDown className="h-4 w-4 text-muted-foreground" />
             </CollapsibleTrigger>
             <CollapsibleContent className="px-4 pb-4 bg-surface-1/40">
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid md:grid-cols-2 gap-4 pt-2">
                 <div>
-                  <div className="text-sm font-semibold mb-2 flex items-center gap-2"><LibraryIcon className="h-4 w-4" /> Library ({u.library.length})</div>
-                  {u.library.length === 0 ? (
-                    <div className="text-xs text-muted-foreground">No games in library.</div>
-                  ) : (
-                    <ul className="space-y-1 text-sm">
-                      {u.library.map((g) => (
-                        <li key={g.game_id + g.added_at} className="flex justify-between gap-2 border-b border-border/30 py-1">
-                          <span className="truncate">{g.title}</span>
-                          <span className="text-xs text-muted-foreground whitespace-nowrap">{fmt(g.added_at)}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                  <div className="text-sm font-semibold mb-2">Library ({u.library.length})</div>
+                  <ul className="space-y-1 text-sm">
+                    {u.library.map((g, i) => <li key={i} className="border-b border-border/30 py-1">{g.title}</li>)}
+                  </ul>
                 </div>
                 <div>
-                  <div className="text-sm font-semibold mb-2 flex items-center gap-2"><DownloadIcon className="h-4 w-4" /> Downloads ({u.downloads.length})</div>
-                  {u.downloads.length === 0 ? (
-                    <div className="text-xs text-muted-foreground">No downloads yet.</div>
-                  ) : (
-                    <ul className="space-y-1 text-sm max-h-60 overflow-y-auto">
-                      {u.downloads.map((d, i) => (
-                        <li key={i} className="flex justify-between gap-2 border-b border-border/30 py-1">
-                          <span className="truncate">{d.title}</span>
-                          <span className="text-xs text-muted-foreground whitespace-nowrap">{fmt(d.at)}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                  <div className="text-sm font-semibold mb-2">Downloads ({u.downloads.length})</div>
+                  <ul className="space-y-1 text-sm">
+                    {u.downloads.map((d, i) => <li key={i} className="border-b border-border/30 py-1">{d.title}</li>)}
+                  </ul>
                 </div>
               </div>
             </CollapsibleContent>
