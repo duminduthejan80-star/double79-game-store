@@ -196,29 +196,50 @@ const Admin = () => {
         setUpscaling(false);
       }
 
-      // Upsert the game and capture the returned row so we have the real ID
+      // 1. Save or Update the game first
+      const isNewGame = !editing;
       const savedGame = await upsert.mutateAsync({ ...payload, id: editing?.id });
-      toast.success(editing ? "Game updated" : "Game added");
+      toast.success(isNewGame ? "Game added" : "Game updated");
 
-      // ── Notify WhatsApp via Edge Function (new games only) ─────────────
-      if (!editing) {
+      // 2. WhatsApp Notification Trigger (Only for brand new games)
+      if (isNewGame) {
         try {
-          const gameId = (savedGame as any)?.id ?? (savedGame as any)?.[0]?.id;
-          const { error: waError } = await supabase.functions.invoke("notify-whatsapp", {
-            body: {
-              gameName: payload.title,
-              imageUrl: payload.image_url ?? "",
-              link: STORE_BASE_URL + (gameId ?? ""),
-            },
-          });
-          if (waError) throw new Error(waError.message);
-          toast.success("WhatsApp group notified ✅");
+          // Fetch the latest added game ID just to be absolutely safe
+          const { data: latestGame, error: fetchErr } = await supabase
+            .from("games")
+            .select("id")
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .single();
+
+          const gameId = latestGame?.id || (savedGame as any)?.id || (savedGame as any)?.[0]?.id;
+
+          if (gameId) {
+            console.log("Triggering WhatsApp Edge Function for Game ID:", gameId);
+            
+            const { data: waData, error: waError } = await supabase.functions.invoke("notify-whatsapp", {
+              body: {
+                gameName: payload.title,
+                imageUrl: payload.image_url || "https://placehold.co/600x400?text=" + encodeURIComponent(payload.title),
+                link: STORE_BASE_URL + gameId,
+              },
+            });
+
+            if (waError) {
+              console.error("Supabase function invoke error:", waError);
+              throw new Error(waError.message || "Edge function invocation failed");
+            }
+            
+            console.log("Edge function response:", waData);
+            toast.success("WhatsApp group notified ✅");
+          } else {
+            toast.warning("Game saved, but could not determine Game ID for WhatsApp notification.");
+          }
         } catch (waErr: any) {
-          // Non-blocking — game is already saved, just warn
-          toast.warning("Game saved, but WhatsApp notify failed: " + waErr.message);
+          console.error("WhatsApp notification crash:", waErr);
+          toast.error("WhatsApp notification failed: " + waErr.message);
         }
       }
-      // ───────────────────────────────────────────────────────────────────
 
       setOpen(false);
       setEditing(null);
