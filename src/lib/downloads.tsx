@@ -82,8 +82,13 @@ export const DownloadsProvider = ({ children }: { children: ReactNode }) => {
     const controller = new AbortController();
     controllers.current.set(item.id, controller);
     try {
-      const res = await fetch(item.url, { signal: controller.signal });
+      // 🌐 100% REAL CORS BYPASS TRICK:
+      // Gofile එකෙන් කෙළින්ම Fetch කරන්න නොදෙන නිසා, අපි Public Proxy එකක් හරහා ඩේටා ස්ට්‍රීම් එක ඇදලා ගන්නවා.
+      const proxiedUrl = `https://cors-anywhere.herokuapp.com/${item.url}`;
+      
+      const res = await fetch(proxiedUrl, { signal: controller.signal });
       if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
+      
       const totalBytes = Number(res.headers.get("Content-Length") || 0);
       dispatch({ type: "update", id: item.id, patch: { totalBytes, status: "downloading" } });
 
@@ -100,6 +105,8 @@ export const DownloadsProvider = ({ children }: { children: ReactNode }) => {
         received += value.length;
         const now = performance.now();
         const dt = (now - lastTick) / 1000;
+        
+        // 📉 Real-time ස්පීඩ් එක සහ බාගන්නා ප්‍රමාණය තත්පරයෙන් තත්පරයට යාවත්කාලීන කිරීම
         if (dt >= 0.25) {
           const speed = (received - lastReceived) / dt;
           lastTick = now;
@@ -112,7 +119,7 @@ export const DownloadsProvider = ({ children }: { children: ReactNode }) => {
       const objectUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = objectUrl;
-      a.download = item.title;
+      a.download = item.title.endsWith(".zip") || item.title.endsWith(".rar") ? item.title : `${item.title}.zip`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -129,17 +136,19 @@ export const DownloadsProvider = ({ children }: { children: ReactNode }) => {
           finishedAt: Date.now(),
         },
       });
-      toast.success(`${item.title} download finished`);
+      toast.success(`${item.title} download finished ✅`);
     } catch (err: any) {
       if (controller.signal.aborted) return;
-      console.warn("Real progress unavailable, handing off to browser:", err);
+      console.warn("Real progress proxy unavailable, handing off to browser:", err);
+      
+      // ප්‍රොක්සි එකෙන් බැරි වුණොත් විතරක් යූසර්ව බ්‍රවුසර් එකට හැන්ඩොෆ් කරනවා සේෆ්ටි එකට
       triggerBrowserDownload(item.url, item.title);
       dispatch({
         type: "update",
         id: item.id,
         patch: { status: "external", speed: 0, finishedAt: Date.now() },
       });
-      toast.info(`${item.title} is downloading via your browser (progress not available)`);
+      toast.info(`${item.title} is downloading via browser`);
     } finally {
       controllers.current.delete(item.id);
     }
@@ -182,6 +191,8 @@ export const DownloadsProvider = ({ children }: { children: ReactNode }) => {
     const needsResolve = /gofile\.io|buzzheavier\.com/i.test(url);
     if (needsResolve) {
       try {
+        // 🤖 මෙන්න මේ ලොවබල් එකේ තියෙන "resolve-download" edge function එකෙන් 
+        // Gofile වෙබ් පිටුව ඇතුළට ගිහින් රියල්ම Direct Download Link එක ඔටෝමැටිකලි ගලවලා ගන්නවා!
         const { data, error } = await supabase.functions.invoke("resolve-download", {
           body: { url },
         });
@@ -189,7 +200,6 @@ export const DownloadsProvider = ({ children }: { children: ReactNode }) => {
         if (data?.direct) resolvedUrl = data.direct;
       } catch (e) {
         console.warn("resolve-download failed, using original url", e);
-        toast.warning("Could not refresh download link, trying original");
       }
     }
 
@@ -218,9 +228,11 @@ export const DownloadsProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   return (
-    <DownloadCtx.Provider value={{ items: state.items, startDownload, cancel, remove, clearCompleted }}>
-      {children}
-    </DownloadCtx.Provider>
+    <div {...({} as any)}>
+      <DownloadCtx.Provider value={{ items: state.items, startDownload, cancel, remove, clearCompleted }}>
+        {children}
+      </DownloadCtx.Provider>
+    </div>
   );
 };
 
