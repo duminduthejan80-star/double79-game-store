@@ -1,108 +1,95 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { ChevronDown, ChevronUp, Download, X, ExternalLink } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { useDownloads, formatBytes, formatSpeed, formatEta, type DownloadItem } from "@/lib/downloads";
-import { cn } from "@/lib/utils";
+import { useState } from 'react';
+import { Button } from './ui/button'; // Lovable shadcn button component
 
-const statusLabel: Record<DownloadItem["status"], string> = {
-  queued: "Queued",
-  downloading: "Downloading",
-  paused: "Paused",
-  completed: "Completed",
-  failed: "Failed",
-  cancelled: "Cancelled",
-  external: "Handled by browser",
-};
+interface DownloadWidgetProps {
+  gameUrl: string;
+  gameTitle: string;
+}
 
-const Row = ({ item }: { item: DownloadItem }) => {
-  const { cancel, remove } = useDownloads();
-  const pct = item.totalBytes ? Math.min(100, (item.receivedBytes / item.totalBytes) * 100) : 0;
-  const active = item.status === "downloading" || item.status === "queued";
+export default function DownloadWidget({ gameUrl, gameTitle }: DownloadWidgetProps) {
+  const [progress, setProgress] = useState('0');
+  const [speed, setSpeed] = useState('0');
+  const [timeLeft, setTimeLeft] = useState('0');
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const startGofileDownload = () => {
+    setIsDownloading(true);
+    const startTime = Date.now();
+    const xhr = new XMLHttpRequest();
+    
+    xhr.open('GET', gameUrl, true);
+    xhr.responseType = 'blob'; 
+
+    xhr.onprogress = (event) => {
+      if (event.lengthComputable) {
+        const percent = ((event.loaded / event.total) * 100).toFixed(1);
+        setProgress(percent);
+
+        const duration = (Date.now() - startTime) / 1000;
+        const speedBytes = duration > 0 ? event.loaded / duration : 0;
+        const speedMB = (speedBytes / (1024 * 1024)).toFixed(2);
+        setSpeed(speedMB);
+
+        const remainingBytes = event.total - event.loaded;
+        const remainingTime = speedBytes > 0 ? remainingBytes / speedBytes : 0;
+        const mins = Math.floor(remainingTime / 60);
+        const secs = Math.floor(remainingTime % 60);
+        setTimeLeft(`${mins}m ${secs}s`);
+      }
+    };
+
+    xhr.onload = () => {
+      if (xhr.status === 200) {
+        const blob = xhr.response;
+        const a = document.createElement('a');
+        a.href = window.URL.createObjectURL(blob);
+        a.download = `${gameTitle}.zip`;
+        a.click();
+        setIsDownloading(false);
+        setProgress('0');
+      }
+    };
+
+    xhr.onerror = () => {
+      // CORS බ්ලොක් එකක් ආවොත් සිස්ටම් එක හිර නොවී නෝමල් විදිහට බ්‍රවුසර් එකෙන් ඕපන් කරනවා
+      window.open(gameUrl, '_blank');
+      setIsDownloading(false);
+    };
+
+    xhr.send();
+  };
+
   return (
-    <div className="rounded-md border border-border/60 bg-surface-2 p-3">
-      <div className="flex items-center justify-between gap-2 mb-1.5">
-        <div className="min-w-0 flex-1">
-          <div className="text-sm font-medium truncate">{item.title}</div>
-          <div className="text-[11px] text-muted-foreground flex items-center gap-2">
-            <span>{statusLabel[item.status]}</span>
-            {item.simulated && active && <span className="text-accent">(estimated)</span>}
+    <div className="w-full bg-slate-900/80 p-4 rounded-xl border border-slate-800 mt-4 backdrop-blur-sm">
+      {!isDownloading ? (
+        <Button 
+          onClick={startGofileDownload} 
+          className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-6 rounded-lg font-bold text-base hover:opacity-95 transition-all shadow-lg shadow-blue-500/20"
+        >
+          🎮 Download Game (Live Speed Progress)
+        </Button>
+      ) : (
+        <div className="space-y-3">
+          <div className="flex justify-between text-xs font-semibold text-slate-400">
+            <span>Downloading files...</span>
+            <span className="text-blue-400 font-mono font-bold text-sm">{progress}%</span>
+          </div>
+          
+          {/* Progress Bar */}
+          <div className="w-full bg-slate-800 h-3 rounded-full overflow-hidden border border-slate-700">
+            <div 
+              className="bg-gradient-to-r from-blue-500 to-indigo-500 h-full transition-all duration-300" 
+              style={{ width: `${progress}%` }}
+            ></div>
+          </div>
+          
+          {/* Steam Style Live Stats */}
+          <div className="grid grid-cols-2 gap-2 text-xs font-mono text-slate-400 pt-1 bg-slate-950/50 p-3 rounded-lg border border-slate-800/50">
+            <div>Speed: <span className="text-slate-200 font-bold">{speed} MB/s</span></div>
+            <div>Time Remaining: <span className="text-slate-200 font-bold">{timeLeft}</span></div>
           </div>
         </div>
-        <Button
-          size="icon"
-          variant="ghost"
-          className="h-7 w-7"
-          onClick={() => (active ? cancel(item.id) : remove(item.id))}
-          aria-label={active ? "Cancel" : "Remove"}
-        >
-          <X className="h-4 w-4" />
-        </Button>
-      </div>
-      <Progress value={pct} className="h-2" />
-      <div className="mt-1.5 flex justify-between text-[11px] text-muted-foreground tabular-nums">
-        <span>
-          {formatBytes(item.receivedBytes)}
-          {item.totalBytes ? ` / ${formatBytes(item.totalBytes)}` : ""}
-        </span>
-        <span>
-          {item.status === "downloading" ? formatSpeed(item.speed) : "—"} · ETA {formatEta(item)}
-        </span>
-      </div>
+      )}
     </div>
   );
-};
-
-const DownloadWidget = () => {
-  const { items, clearCompleted } = useDownloads();
-  const [open, setOpen] = useState(true);
-
-  if (items.length === 0) return null;
-
-  const active = items.filter((i) => i.status === "downloading" || i.status === "queued").length;
-
-  return (
-    <div className="fixed bottom-4 right-4 z-50 w-[360px] max-w-[calc(100vw-2rem)]">
-      <div className="rounded-lg border border-border bg-card-gradient shadow-elevated overflow-hidden">
-        <button
-          onClick={() => setOpen((v) => !v)}
-          className="w-full flex items-center justify-between px-3 py-2.5 bg-surface-1 hover:bg-surface-3 transition-smooth"
-        >
-          <div className="flex items-center gap-2">
-            <div className={cn("flex h-7 w-7 items-center justify-center rounded-md bg-primary-gradient", active > 0 && "shadow-glow")}>
-              <Download className="h-3.5 w-3.5 text-primary-foreground" />
-            </div>
-            <div className="text-left">
-              <div className="text-sm font-semibold leading-tight">Downloads</div>
-              <div className="text-[11px] text-muted-foreground leading-tight">
-                {active > 0 ? `${active} active` : `${items.length} item${items.length > 1 ? "s" : ""}`}
-              </div>
-            </div>
-          </div>
-          {open ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronUp className="h-4 w-4 text-muted-foreground" />}
-        </button>
-
-        {open && (
-          <div className="p-3 space-y-2 max-h-[50vh] overflow-y-auto">
-            {items.slice(0, 4).map((i) => (
-              <Row key={i.id} item={i} />
-            ))}
-            <div className="flex items-center justify-between pt-1">
-              <Button asChild variant="ghost" size="sm" className="text-xs h-7">
-                <Link to="/downloads">
-                  <ExternalLink className="h-3 w-3 mr-1" /> View all
-                </Link>
-              </Button>
-              <Button variant="ghost" size="sm" className="text-xs h-7" onClick={clearCompleted}>
-                Clear finished
-              </Button>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-export default DownloadWidget;
+}
