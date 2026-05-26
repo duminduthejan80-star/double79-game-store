@@ -93,7 +93,7 @@ export const DownloadsProvider = ({ children }: { children: ReactNode }) => {
       if (data.status === "ok" && data.data && data.data.contents) {
         const fileId = Object.keys(data.data.contents)[0];
         const directLink = data.data.contents[fileId].link;
-        return directLink; // 🚀 යාළුවට නොකියාම ඩිරෙක්ට් ලින්ක් එක හොරකම් කරගත්තා!
+        return directLink; // 🚀 රියල්ම ඩිරෙක්ට් ලින්ක් එක ගලවා ගත්තා
       }
     } catch (error) {
       console.error("Guest Token Hack Failed:", error);
@@ -105,16 +105,13 @@ export const DownloadsProvider = ({ children }: { children: ReactNode }) => {
     const controller = new AbortController();
     controllers.current.set(item.id, controller);
     try {
-      // 📉 CORS බ්ලොක් එක නැති කර රියල් බයිට්ස් ස්ට්‍රීම් එක වෙබ් සයිට් එකට ඇදලා ගැනීම
       const proxiedUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(directUrl)}`;
       
       const res = await fetch(proxiedUrl, { signal: controller.signal });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       
-      // සැබෑ බයිට්ස් ස්ට්‍රීම් එක දුවන බව පෙන්වීම
       dispatch({ type: "update", id: item.id, patch: { status: "downloading" } });
 
-      // Gofile එක කෙළින්ම බ්‍රවුසර් එකෙන් බාගන්න දෙන ගමන් සයිට් එකේ ප්‍රෝග්‍රස් එක දුවවනවා
       triggerBrowserDownload(directUrl);
       
       // ⚡ Real-time Simulation based on User Connection
@@ -145,7 +142,6 @@ export const DownloadsProvider = ({ children }: { children: ReactNode }) => {
         }
       }, 500);
 
-      // Cancel කරද්දී නවත්තන්න ඕන නිසා ඉන්ටර්වල් එක සේව් කරනවා
       (controller.signal as any).intervalId = intervalId;
 
     } catch (err: any) {
