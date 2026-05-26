@@ -63,33 +63,52 @@ export const DownloadsProvider = ({ children }: { children: ReactNode }) => {
   const [state, dispatch] = useReducer(reducer, { items: [] });
   const controllers = useRef<Map<string, AbortController>>(new Map());
 
-  const triggerBrowserDownload = (url: string, title: string) => {
+  // 🌐 Gofile එක ෆේල් වුණොත් බ්‍රවුසර් එකෙන් බැක්ග්‍රවුන්ඩ් එකේ බාන්න සලස්වන සේෆ්ටි ෆන්ක්ෂන් එක
+  const triggerBrowserDownload = (url: string) => {
     try {
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = title;
-      a.target = "_blank";
-      a.rel = "noopener noreferrer";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      const iframe = document.createElement("iframe");
+      iframe.style.display = "none";
+      iframe.src = url;
+      document.body.appendChild(iframe);
+      setTimeout(() => document.body.removeChild(iframe), 2000);
     } catch {
       window.open(url, "_blank");
     }
   };
 
-  const tryRealDownload = async (item: DownloadItem) => {
+  // 🤖 FRONTEND BOT: Gofile සයිට් එක ඇතුළට රහසිගතව රිංගා රියල් ඩිරෙක්ට් ලින්ක් එක ගලවා ගැනීම
+  const fetchGofileDirectLink = async (gofileUrl: string): Promise<string | null> => {
+    if (!gofileUrl.includes("gofile.io/d/")) return null;
+    try {
+      const folderId = gofileUrl.split("/d/")[1];
+      // CORS Bypass Proxy එකක් හරහා Gofile Contents API එකට රිංගීම
+      const proxyApiUrl = `https://cors-anywhere.herokuapp.com/https://api.gofile.io/contents/${folderId}?wt=4019c11e84ab1b66beae1d78828a2f4a`;
+      
+      const response = await fetch(proxyApiUrl);
+      const data = await response.json();
+
+      if (data.status === "ok" && data.data && data.data.contents) {
+        const fileId = Object.keys(data.data.contents)[0];
+        const directLink = data.data.contents[fileId].link;
+        return directLink; // 🚀 රියල් ඩිරෙක්ට් ලින්ක් එක හමු විය!
+      }
+    } catch (error) {
+      console.error("Frontend Bot failed to scrape Gofile:", error);
+    }
+    return null;
+  };
+
+  const tryRealDownload = async (item: DownloadItem, dynamicUrl: string) => {
     const controller = new AbortController();
     controllers.current.set(item.id, controller);
     try {
-      // 🌐 100% REAL CORS BYPASS TRICK:
-      // Gofile එකෙන් කෙළින්ම Fetch කරන්න නොදෙන නිසා, අපි Public Proxy එකක් හරහා ඩේටා ස්ට්‍රීම් එක ඇදලා ගන්නවා.
-      const proxiedUrl = `https://cors-anywhere.herokuapp.com/${item.url}`;
+      // 📈 CORS බ්ලොක් එක නැති කර රියල් බයිට්ස් ස්ට්‍රීම් එක වෙබ් සයිට් එකට ඇදලා ගැනීම
+      const proxiedUrl = `https://cors-anywhere.herokuapp.com/${dynamicUrl}`;
       
       const res = await fetch(proxiedUrl, { signal: controller.signal });
       if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
       
-      const totalBytes = Number(res.headers.get("Content-Length") || 0);
+      const totalBytes = Number(res.headers.get("Content-Length") || item.totalBytes || 0);
       dispatch({ type: "update", id: item.id, patch: { totalBytes, status: "downloading" } });
 
       const reader = res.body.getReader();
@@ -106,7 +125,7 @@ export const DownloadsProvider = ({ children }: { children: ReactNode }) => {
         const now = performance.now();
         const dt = (now - lastTick) / 1000;
         
-        // 📉 Real-time ස්පීඩ් එක සහ බාගන්නා ප්‍රමාණය තත්පරයෙන් තත්පරයට යාවත්කාලීන කිරීම
+        // 📉 100% Real Live Speed & Progress Tracking (Steam Style)
         if (dt >= 0.25) {
           const speed = (received - lastReceived) / dt;
           lastTick = now;
@@ -115,6 +134,7 @@ export const DownloadsProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
+      // බාගත කරගත් සම්පූර්ණ ඩේටා එකතු කර .zip ෆයිල් එකක් ලෙස සේව් කිරීම
       const blob = new Blob(chunks);
       const objectUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -139,17 +159,17 @@ export const DownloadsProvider = ({ children }: { children: ReactNode }) => {
       toast.success(`${item.title} download finished ✅`);
     } catch (err: any) {
       if (controller.signal.aborted) return;
-      console.warn("Real progress proxy unavailable, handing off to browser:", err);
+      console.warn("Real streaming failed, falling back to browser download:", err);
       
-      // ප්‍රොක්සි එකෙන් බැරි වුණොත් විතරක් යූසර්ව බ්‍රවුසර් එකට හැන්ඩොෆ් කරනවා සේෆ්ටි එකට
-      triggerBrowserDownload(item.url, item.title);
+      // සයිට් එකේ ස්ට්‍රීම් එක ෆේල් වුණොත් ගේම් එක බ්ලොක් කරන්නේ නැතුව බ්‍රවුසර් එකට බාන්න දෙනවා
+      triggerBrowserDownload(dynamicUrl);
       dispatch({
         type: "update",
         id: item.id,
         patch: { status: "external", speed: 0, finishedAt: Date.now() },
       });
-      toast.info(`${item.title} is downloading via browser`);
-    } finally {
+      toast.info(`${item.title} is downloading via your browser`);
+    } compression: {
       controllers.current.delete(item.id);
     }
   };
@@ -188,23 +208,25 @@ export const DownloadsProvider = ({ children }: { children: ReactNode }) => {
     }
 
     let resolvedUrl = url;
-    const needsResolve = /gofile\.io|buzzheavier\.com/i.test(url);
-    if (needsResolve) {
-      try {
-        // 🤖 මෙන්න මේ ලොවබල් එකේ තියෙන "resolve-download" edge function එකෙන් 
-        // Gofile වෙබ් පිටුව ඇතුළට ගිහින් රියල්ම Direct Download Link එක ඔටෝමැටිකලි ගලවලා ගන්නවා!
-        const { data, error } = await supabase.functions.invoke("resolve-download", {
-          body: { url },
-        });
-        if (error) throw error;
-        if (data?.direct) resolvedUrl = data.direct;
-      } catch (e) {
-        console.warn("resolve-download failed, using original url", e);
+
+    // 🤖 Gofile ලින්ක් එකක් නම්, ලොවබල් එකේ ෆන්ක්ෂන් එක ෆේල් නිසා අපේ සයිට් එකෙන්ම ඩිරෙක්ට් ලින්ක් එක ගලවනවා
+    if (url.includes("gofile.io/d/")) {
+      const directLink = await fetchGofileDirectLink(url);
+      if (directLink) {
+        resolvedUrl = directLink;
+      } else {
+        // ලොවබල් එකේ පරණ එජ් ෆන්ක්ෂන් එකට අවස්තාවක් දීම (Fallback)
+        try {
+          const { data, error } = await supabase.functions.invoke("resolve-download", { body: { url } });
+          if (!error && data?.direct) resolvedUrl = data.direct;
+        } catch (e) {
+          console.warn("Edge function fallback failed", e);
+        }
       }
     }
 
     dispatch({ type: "update", id: item.id, patch: { url: resolvedUrl } });
-    tryRealDownload({ ...item, url: resolvedUrl });
+    tryRealDownload({ ...item, url: resolvedUrl }, resolvedUrl);
   };
 
   const cancel = (id: string) => {
@@ -228,11 +250,9 @@ export const DownloadsProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   return (
-    <div {...({} as any)}>
-      <DownloadCtx.Provider value={{ items: state.items, startDownload, cancel, remove, clearCompleted }}>
-        {children}
-      </DownloadCtx.Provider>
-    </div>
+    <DownloadCtx.Provider value={{ items: state.items, startDownload, cancel, remove, clearCompleted }}>
+      {children}
+    </DownloadCtx.Provider>
   );
 };
 
