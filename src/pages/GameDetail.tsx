@@ -8,9 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import CanIRunIt from "@/components/CanIRunIt";
 import GenreMusic from "@/components/GenreMusic";
+import GameReviews from "@/components/GameReviews";
 import { useLibrary, useAddToLibrary } from "@/hooks/useLibrary";
 import { useDownloads } from "@/lib/downloads";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const Row = ({ label, value }: { label: string; value: string | null }) =>
   value ? (
@@ -52,6 +54,14 @@ const GameDetail = () => {
       title: game.title,
       gameId: game.id,
       imageUrl: game.image_url || undefined,
+    });
+    // Schedule a 24h WhatsApp follow-up asking for a rating
+    supabase.functions.invoke("schedule-followup", {
+      body: { game_id: game.id, game_title: game.title },
+    }).then(({ error, data }) => {
+      if (error || (data as any)?.error) {
+        console.warn("schedule-followup failed", error || (data as any)?.error);
+      }
     });
   };
 
@@ -143,6 +153,8 @@ const GameDetail = () => {
             </div>
           </aside>
         </div>
+
+        <GameReviews gameId={game.id} />
       </div>
     </div>
   );
