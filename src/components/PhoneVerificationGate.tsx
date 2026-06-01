@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { initializeApp, getApps } from "firebase/app";
 import {
   getAuth,
@@ -14,7 +14,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { toast } from "sonner";
 import { ShieldCheck, Phone, LogOut } from "lucide-react";
 
-// ─── Firebase setup ────────────────────────────────────────────────────────────
+// ─── Firebase setup (module-level singleton, survives hot-reloads) ────────────
 const firebaseConfig = {
   apiKey: "AIzaSyDCbccJpsw_lOnlLaEkgEtBzLKkWdwn77M",
   authDomain: "double79-game-store.firebaseapp.com",
@@ -24,10 +24,48 @@ const firebaseConfig = {
   appId: "1:112135204551:web:be40cdb19fe25503f3d8e2",
 };
 
-// Avoid re-initialising Firebase on hot-reloads
 const firebaseApp =
   getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 const firebaseAuth = getAuth(firebaseApp);
+
+// ─── Module-level reCAPTCHA instance ─────────────────────────────────────────
+// Kept outside React state/refs so it survives StrictMode double-invocations
+// and Vite HMR re-renders without leaking a second instance into the same DOM node.
+let globalRecaptchaVerifier: RecaptchaVerifier | null = null;
+
+function destroyRecaptcha() {
+  try {
+    globalRecaptchaVerifier?.clear();
+  } catch {
+    // ignore errors during cleanup — the widget may already be gone
+  }
+  globalRecaptchaVerifier = null;
+
+  // Also wipe the DOM node so Firebase doesn't see a "used" element next time
+  const el = document.getElementById("recaptcha-container");
+  if (el) el.innerHTML = "";
+}
+
+function getOrCreateRecaptcha(): RecaptchaVerifier {
+  if (!globalRecaptchaVerifier) {
+    globalRecaptchaVerifier = new RecaptchaVerifier(
+      firebaseAuth,
+      "recaptcha-container",
+      {
+        size: "invisible",
+        callback: () => {
+          // reCAPTCHA solved — signInWithPhoneNumber continues automatically
+        },
+        "expired-callback": () => {
+          // Token expired; destroy so it's freshly created on the next attempt
+          destroyRecaptcha();
+          toast.error("reCAPTCHA expired. Please try again.");
+        },
+      }
+    );
+  }
+  return globalRecaptchaVerifier;
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Status = "loading" | "verified" | "needs_phone" | "needs_otp";
@@ -46,7 +84,14 @@ export const PhoneVerificationGate = ({
   const [verifying, setVerifying] = useState(false);
   const [resendIn, setResendIn] = useState(0);
   const confirmationRef = useRef<ConfirmationResult | null>(null);
-  const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null);
+
+  // ── Destroy reCAPTCHA on unmount ─────────────────────────────────────────
+  // Handles both StrictMode teardown and normal unmounts.
+  useEffect(() => {
+    return () => {
+      destroyRecaptcha();
+    };
+  }, []);
 
   // ── Check Supabase for existing phone_verified flag ──────────────────────
   useEffect(() => {
@@ -73,55 +118,40 @@ export const PhoneVerificationGate = ({
     return () => clearTimeout(t);
   }, [resendIn]);
 
-  // ── Initialise (or re-use) invisible reCAPTCHA ───────────────────────────
-  const ensureRecaptcha = () => {
-    if (!recaptchaVerifierRef.current) {
-      recaptchaVerifierRef.current = new RecaptchaVerifier(
-        firebaseAuth,
-        "recaptcha-container",
-        { size: "invisible" }
-      );
-    }
-    return recaptchaVerifierRef.current;
-  };
-
-  // ── Clear reCAPTCHA (needed before a resend) ─────────────────────────────
-  const resetRecaptcha = () => {
-    recaptchaVerifierRef.current?.clear();
-    recaptchaVerifierRef.current = null;
-  };
-
   // ── Send OTP ─────────────────────────────────────────────────────────────
-  const sendOtp = async () => {
+  const sendOtp = useCallback(async () => {
     const cleaned = phone.replace(/\s/g, "");
     if (!/^\+\d{8,15}$/.test(cleaned)) {
       toast.error("Enter phone in E.164 format, e.g. +94771234567");
       return;
     }
+
     setSending(true);
     try {
-      const verifier = ensureRecaptcha();
+      // Always get-or-create; never blindly create a second instance.
+      const verifier = getOrCreateRecaptcha();
       const result = await signInWithPhoneNumber(firebaseAuth, cleaned, verifier);
       confirmationRef.current = result;
       toast.success("OTP sent via SMS");
       setStatus("needs_otp");
       setResendIn(60);
     } catch (e: any) {
-      resetRecaptcha(); // must reset on failure so reCAPTCHA can be retried
+      // On any failure, nuke the instance so the next attempt starts clean.
+      destroyRecaptcha();
       toast.error(e.message || "Failed to send OTP");
     } finally {
       setSending(false);
     }
-  };
+  }, [phone]);
 
   // ── Verify OTP ───────────────────────────────────────────────────────────
-  const verify = async () => {
+  const verify = useCallback(async () => {
     if (code.length !== 6 || !confirmationRef.current) return;
     setVerifying(true);
     try {
       await confirmationRef.current.confirm(code);
 
-      // Mark phone as verified in Supabase profiles table
+      // Mark phone as verified in Supabase
       if (user) {
         await supabase
           .from("profiles")
@@ -129,6 +159,8 @@ export const PhoneVerificationGate = ({
           .eq("id", user.id);
       }
 
+      // Clean up reCAPTCHA — no longer needed after a successful verify
+      destroyRecaptcha();
       toast.success("Phone verified!");
       setStatus("verified");
     } catch (e: any) {
@@ -137,13 +169,22 @@ export const PhoneVerificationGate = ({
     } finally {
       setVerifying(false);
     }
-  };
+  }, [code, phone, user]);
 
-  // ── Resend helper ────────────────────────────────────────────────────────
-  const handleResend = async () => {
-    resetRecaptcha();
+  // ── Resend: destroy existing instance first, then re-send ────────────────
+  const handleResend = useCallback(async () => {
+    destroyRecaptcha();
+    confirmationRef.current = null;
     await sendOtp();
-  };
+  }, [sendOtp]);
+
+  // ── Change number: go back to step 1 and clean up ────────────────────────
+  const handleChangeNumber = useCallback(() => {
+    destroyRecaptcha();
+    confirmationRef.current = null;
+    setCode("");
+    setStatus("needs_phone");
+  }, []);
 
   // ── Render guards ────────────────────────────────────────────────────────
   if (!user) return <>{children}</>;
@@ -160,10 +201,12 @@ export const PhoneVerificationGate = ({
   return (
     <div className="min-h-screen flex items-center justify-center px-4 bg-hero">
       {/*
-        Invisible reCAPTCHA anchor — must exist in the DOM before sendOtp is
-        called. It stays hidden; Firebase manages it entirely.
+        Invisible reCAPTCHA anchor.
+        - Must exist in the DOM before sendOtp is called.
+        - Kept outside the card so the hidden iframe never shifts layout.
+        - innerHTML is wiped by destroyRecaptcha() before each fresh init.
       */}
-      <div id="recaptcha-container" />
+      <div id="recaptcha-container" aria-hidden="true" />
 
       <div className="w-full max-w-md rounded-xl border border-border bg-card-gradient p-8 shadow-elevated">
         {/* Icon */}
@@ -232,11 +275,7 @@ export const PhoneVerificationGate = ({
             </Button>
             <div className="flex items-center justify-between text-xs">
               <button
-                onClick={() => {
-                  setStatus("needs_phone");
-                  setCode("");
-                  resetRecaptcha();
-                }}
+                onClick={handleChangeNumber}
                 className="text-muted-foreground hover:text-foreground"
               >
                 Change number
