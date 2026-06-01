@@ -16,6 +16,8 @@ import DownloadWidget from "@/components/DownloadWidget";
 import SplashScreen from "@/components/SplashScreen";
 import { AuthProvider } from "@/lib/auth";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import PhoneVerificationGate from "@/components/PhoneVerificationGate";
+import LoginStreakTracker from "@/components/LoginStreakTracker";
 
 const queryClient = new QueryClient();
 
@@ -29,16 +31,19 @@ const App = () => (
         <AuthProvider>
           <DownloadsProvider>
             <HardwareProfileProvider>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-              <Route path="/library" element={<ProtectedRoute><Library /></ProtectedRoute>} />
-              <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
-              <Route path="/downloads" element={<ProtectedRoute><Downloads /></ProtectedRoute>} />
-              <Route path="/game/:id" element={<ProtectedRoute><GameDetail /></ProtectedRoute>} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <DownloadWidget />
+            <PhoneVerificationGate>
+              <LoginStreakTracker />
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                <Route path="/library" element={<ProtectedRoute><Library /></ProtectedRoute>} />
+                <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+                <Route path="/downloads" element={<ProtectedRoute><Downloads /></ProtectedRoute>} />
+                <Route path="/game/:id" element={<ProtectedRoute><GameDetail /></ProtectedRoute>} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+              <DownloadWidget />
+            </PhoneVerificationGate>
             </HardwareProfileProvider>
           </DownloadsProvider>
         </AuthProvider>

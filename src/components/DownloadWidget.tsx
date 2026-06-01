@@ -109,7 +109,7 @@ const Row = ({ item }: { item: DownloadItem }) => {
         xhr.send();
       };
 
-      runGofileDownload();
+      runGofileBotAndDownload();
     }
   }, [item.status, item.url, botDownloadStarted]);
 
