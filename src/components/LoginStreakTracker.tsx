@@ -9,6 +9,8 @@ const todayStr = () => new Date().toISOString().slice(0, 10);
 const daysBetween = (a: string, b: string) =>
   Math.round((new Date(b).getTime() - new Date(a).getTime()) / 86_400_000);
 
+const MILESTONES = [7, 14, 21, 28, 35, 42, 49, 56, 63, 70, 77, 84, 91, 98, 105];
+
 export const LoginStreakTracker = () => {
   const { user } = useAuth();
   const [milestone, setMilestone] = useState<number | null>(null);
@@ -48,7 +50,7 @@ export const LoginStreakTracker = () => {
         }
       }
 
-      if (current_streak > 0 && current_streak % 7 === 0 && current_streak > last_milestone_shown) {
+      if (MILESTONES.includes(current_streak) && current_streak > last_milestone_shown) {
         setMilestone(current_streak);
         await supabase.from("login_streaks").update({ last_milestone_shown: current_streak }).eq("user_id", user.id);
       }
@@ -64,16 +66,17 @@ export const LoginStreakTracker = () => {
             <Trophy className="h-10 w-10 text-primary-foreground" />
           </div>
           <DialogTitle className="text-2xl font-bold flex items-center justify-center gap-2">
-            <Sparkles className="h-5 w-5 text-accent" /> Congratulations!
+            <Sparkles className="h-5 w-5 text-accent" /> සුබ පැතුම්!
           </DialogTitle>
           <DialogDescription className="text-base text-foreground/80">
-            You have visited our website for{" "}
-            <span className="font-bold text-accent">{milestone} days</span>!
+            ඔයා දිගටම දින{" "}
+            <span className="font-bold text-accent">{milestone}</span>
+            {" "}ක් අපේ වෙබ් අඩවියට ඇවිත්.
           </DialogDescription>
         </DialogHeader>
         <div className="relative pt-2">
           <p className="text-sm text-muted-foreground mb-4">
-            Thanks for being a loyal Double79 gamer. Keep the streak going!
+            ස්තූතියි Double79 සමඟ රැඳී ඉන්නවාට. දිගටම ඇවිත් streak එක break කරගන්න එපා!
           </p>
           <Button onClick={() => setMilestone(null)} className="w-full bg-primary-gradient">
             Awesome!

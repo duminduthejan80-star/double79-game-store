@@ -12,8 +12,5 @@ verify_jwt = false
 [functions.resolve-download]
 verify_jwt = false
 
-[functions.run-followups]
-verify_jwt = false
-
-[functions.whatsapp-webhook]
+[functions.send-feedback-email]
 verify_jwt = false

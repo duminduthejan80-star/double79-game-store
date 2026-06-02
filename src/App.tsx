@@ -16,7 +16,6 @@ import DownloadWidget from "@/components/DownloadWidget";
 import SplashScreen from "@/components/SplashScreen";
 import { AuthProvider } from "@/lib/auth";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import PhoneVerificationGate from "@/components/PhoneVerificationGate";
 import LoginStreakTracker from "@/components/LoginStreakTracker";
 
 const queryClient = new QueryClient();
@@ -31,7 +30,6 @@ const App = () => (
         <AuthProvider>
           <DownloadsProvider>
             <HardwareProfileProvider>
-            <PhoneVerificationGate>
               <LoginStreakTracker />
               <Routes>
                 <Route path="/login" element={<Login />} />
@@ -43,7 +41,6 @@ const App = () => (
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <DownloadWidget />
-            </PhoneVerificationGate>
             </HardwareProfileProvider>
           </DownloadsProvider>
         </AuthProvider>

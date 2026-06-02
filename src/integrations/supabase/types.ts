@@ -38,30 +38,72 @@ export type Database = {
         }
         Relationships: []
       }
-      game_reviews: {
+      game_downloads: {
         Row: {
+          downloaded_at: string
+          email_sent_at: string | null
+          email_status: string
+          game_id: string
+          game_title: string
+          id: string
+          user_email: string
+          user_id: string
+          user_name: string | null
+        }
+        Insert: {
+          downloaded_at?: string
+          email_sent_at?: string | null
+          email_status?: string
+          game_id: string
+          game_title: string
+          id?: string
+          user_email: string
+          user_id: string
+          user_name?: string | null
+        }
+        Update: {
+          downloaded_at?: string
+          email_sent_at?: string | null
+          email_status?: string
+          game_id?: string
+          game_title?: string
+          id?: string
+          user_email?: string
+          user_id?: string
+          user_name?: string | null
+        }
+        Relationships: []
+      }
+      game_feedback: {
+        Row: {
+          comment: string | null
           created_at: string
           game_id: string
           id: string
           rating: number
+          user_email: string
           user_id: string
-          username: string
+          user_name: string
         }
         Insert: {
+          comment?: string | null
           created_at?: string
           game_id: string
           id?: string
           rating: number
+          user_email: string
           user_id: string
-          username: string
+          user_name: string
         }
         Update: {
+          comment?: string | null
           created_at?: string
           game_id?: string
           id?: string
           rating?: number
+          user_email?: string
           user_id?: string
-          username?: string
+          user_name?: string
         }
         Relationships: []
       }
@@ -167,39 +209,6 @@ export type Database = {
         }
         Relationships: []
       }
-      phone_otps: {
-        Row: {
-          attempts: number
-          code_hash: string
-          consumed_at: string | null
-          created_at: string
-          expires_at: string
-          id: string
-          phone_e164: string
-          user_id: string
-        }
-        Insert: {
-          attempts?: number
-          code_hash: string
-          consumed_at?: string | null
-          created_at?: string
-          expires_at: string
-          id?: string
-          phone_e164: string
-          user_id: string
-        }
-        Update: {
-          attempts?: number
-          code_hash?: string
-          consumed_at?: string | null
-          created_at?: string
-          expires_at?: string
-          id?: string
-          phone_e164?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -207,10 +216,7 @@ export type Database = {
           display_name: string | null
           email: string | null
           id: string
-          phone_e164: string | null
-          phone_verified: boolean
           updated_at: string
-          verified_at: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -218,10 +224,7 @@ export type Database = {
           display_name?: string | null
           email?: string | null
           id: string
-          phone_e164?: string | null
-          phone_verified?: boolean
           updated_at?: string
-          verified_at?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -229,49 +232,7 @@ export type Database = {
           display_name?: string | null
           email?: string | null
           id?: string
-          phone_e164?: string | null
-          phone_verified?: boolean
           updated_at?: string
-          verified_at?: string | null
-        }
-        Relationships: []
-      }
-      scheduled_messages: {
-        Row: {
-          created_at: string
-          error: string | null
-          game_id: string | null
-          game_title: string
-          id: string
-          phone_e164: string
-          send_at: string
-          sent_at: string | null
-          status: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          error?: string | null
-          game_id?: string | null
-          game_title: string
-          id?: string
-          phone_e164: string
-          send_at: string
-          sent_at?: string | null
-          status?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          error?: string | null
-          game_id?: string | null
-          game_title?: string
-          id?: string
-          phone_e164?: string
-          send_at?: string
-          sent_at?: string | null
-          status?: string
-          user_id?: string
         }
         Relationships: []
       }
