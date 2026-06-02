@@ -44,7 +44,7 @@ const GameDetail = () => {
     }
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!game.download_url) {
       toast.error("No download link available");
       return;
@@ -55,14 +55,25 @@ const GameDetail = () => {
       gameId: game.id,
       imageUrl: game.image_url || undefined,
     });
-    // Schedule a 24h WhatsApp follow-up asking for a rating
-    supabase.functions.invoke("schedule-followup", {
-      body: { game_id: game.id, game_title: game.title },
-    }).then(({ error, data }) => {
-      if (error || (data as any)?.error) {
-        console.warn("schedule-followup failed", error || (data as any)?.error);
+    // Record download → 24h follow-up email will be triggered by cron
+    try {
+      const { data: auth } = await supabase.auth.getUser();
+      const u = auth?.user;
+      if (u) {
+        const userName = (u.user_metadata?.full_name as string) ||
+                         (u.user_metadata?.name as string) ||
+                         u.email?.split("@")[0] || "Player";
+        await supabase.from("game_downloads").insert({
+          user_id: u.id,
+          user_email: u.email!,
+          user_name: userName,
+          game_id: game.id,
+          game_title: game.title,
+        });
       }
-    });
+    } catch (e) {
+      console.warn("Failed to record download", e);
+    }
   };
 
   return (
