@@ -296,7 +296,12 @@ const Admin = () => {
           <TabsContent value="users">
             <UsersPanel />
           </TabsContent>
+
+          <TabsContent value="email">
+            <EmailTestPanel />
+          </TabsContent>
         </Tabs>
+
       </div>
     </div>
   );
