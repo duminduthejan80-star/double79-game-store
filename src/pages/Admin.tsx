@@ -307,6 +307,111 @@ const Admin = () => {
   );
 };
 
+const EmailTestPanel = () => {
+  const [to, setTo] = useState("");
+  const [sending, setSending] = useState(false);
+  const [result, setResult] = useState<
+    | { ok: true; to: string; at: string }
+    | { ok: false; to: string; error: string; at: string }
+    | null
+  >(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user?.email) setTo(data.user.email);
+    });
+  }, []);
+
+  const sendTest = async () => {
+    if (!to.trim()) {
+      toast.error("Enter a recipient email");
+      return;
+    }
+    setSending(true);
+    setResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-feedback-email", {
+        body: {
+          test: true,
+          to: to.trim(),
+          name: "Admin Test",
+          gameTitle: "Sample Game",
+          gameId: "00000000-0000-0000-0000-000000000000",
+        },
+      });
+      if (error) throw error;
+      if (data?.ok && data?.delivered) {
+        setResult({ ok: true, to: data.to ?? to.trim(), at: new Date().toLocaleString() });
+        toast.success("Test email delivered ✅");
+      } else {
+        const msg = data?.error ?? "Delivery failed";
+        setResult({ ok: false, to: data?.to ?? to.trim(), error: msg, at: new Date().toLocaleString() });
+        toast.error("Delivery failed: " + msg);
+      }
+    } catch (e: any) {
+      setResult({ ok: false, to: to.trim(), error: e?.message ?? "Unknown error", at: new Date().toLocaleString() });
+      toast.error(e?.message ?? "Failed to send");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="max-w-xl rounded-lg border border-border bg-card-gradient p-6 space-y-4">
+      <div>
+        <h2 className="text-lg font-semibold">Feedback Email Test</h2>
+        <p className="text-sm text-muted-foreground mt-1">
+          Sends a sample feedback email via Gmail SMTP to verify delivery.
+        </p>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="test-email">Recipient email</Label>
+        <Input
+          id="test-email"
+          type="email"
+          value={to}
+          onChange={(e) => setTo(e.target.value)}
+          placeholder="you@example.com"
+        />
+      </div>
+      <Button
+        onClick={sendTest}
+        disabled={sending}
+        className="bg-primary-gradient text-primary-foreground hover:opacity-90"
+      >
+        {sending ? "Sending..." : "Send test email"}
+      </Button>
+
+      {result && (
+        <div
+          className={
+            "rounded-md border p-3 text-sm " +
+            (result.ok
+              ? "border-accent/40 bg-accent/10 text-accent-foreground"
+              : "border-destructive/40 bg-destructive/10 text-destructive")
+          }
+        >
+          {result.ok ? (
+            <div>
+              <div className="font-medium">✅ Delivered</div>
+              <div className="text-xs opacity-80 mt-1">
+                To: {result.to} · {result.at}
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div className="font-medium">❌ Failed</div>
+              <div className="text-xs opacity-80 mt-1">To: {result.to} · {result.at}</div>
+              <div className="text-xs mt-2 break-words">{result.error}</div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+
 interface UserStats {
   id: string; email: string | null; display_name: string | null; avatar_url: string | null;
   joined_at: string; library_count: number; download_count: number;
