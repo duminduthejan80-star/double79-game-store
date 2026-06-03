@@ -246,7 +246,9 @@ const Admin = () => {
           <TabsList>
             <TabsTrigger value="games">Games</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
+            <TabsTrigger value="email">Email Test</TabsTrigger>
           </TabsList>
+
 
           <TabsContent value="games">
             <div className="rounded-lg border border-border bg-card-gradient overflow-hidden">
