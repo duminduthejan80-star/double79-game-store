@@ -39,12 +39,13 @@ function makeSmtpClient() {
   return new SMTPClient({
     connection: {
       hostname: "smtp.gmail.com",
-      port: 465,
-      tls: true,
+      port: 587,
+      tls: false, // STARTTLS upgrade on 587
       auth: { username: SMTP_USER, password: SMTP_PASSWORD },
     },
   });
 }
+
 
 async function sendOne(client: SMTPClient, to: string, name: string, gameTitle: string, gameId: string) {
   await client.send({
