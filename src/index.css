@@ -1,152 +1,26 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Double79 | Official Game Store</title>
+    <meta name="description" content="Double79 Official Game Store — discover, download and play premium and free games.">
+    <meta name="author" content="Double79" />
 
-@layer base {
-  :root {
-    /* Steam-inspired dark UI (Oyage original colors) */
-    --background: 210 32% 8%;
-    --foreground: 210 20% 94%;
-    --card: 210 28% 11%;
-    --card-foreground: 210 20% 94%;
-    --popover: 210 30% 10%;
-    --popover-foreground: 210 20% 94%;
-    --primary: 203 89% 53%;
-    --primary-foreground: 210 35% 8%;
-    --primary-glow: 199 95% 64%;
-    --secondary: 215 22% 18%;
-    --secondary-foreground: 210 20% 92%;
-    --muted: 215 20% 16%;
-    --muted-foreground: 215 12% 60%;
-    --accent: 145 70% 45%;
-    --accent-foreground: 215 35% 8%;
-    --destructive: 0 75% 55%;
-    --destructive-foreground: 210 20% 98%;
-    --border: 215 20% 20%;
-    --input: 215 20% 18%;
-    --ring: 204 100% 55%;
-    --radius: 0.375rem;
+    
+    
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Double79 | Official Game Store">
+  <meta name="twitter:title" content="Double79 | Official Game Store">
+  <meta property="og:description" content="Double79 Official Game Store — discover, download and play premium and free games.">
+  <meta name="twitter:description" content="Double79 Official Game Store — discover, download and play premium and free games.">
+  <meta property="og:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/bb2e422f-29c1-4c35-a478-d75bbc4dabac">
+  <meta name="twitter:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/bb2e422f-29c1-4c35-a478-d75bbc4dabac">
+  <meta name="twitter:card" content="summary_large_image">
+</head>
 
-    /* Gradients & Shadows */
-    --gradient-hero: linear-gradient(135deg, hsl(215 35% 8%) 0%, hsl(215 30% 14%) 50%, hsl(204 60% 18%) 100%);
-    --shadow-glow: 0 0 30px hsl(204 100% 55% / 0.35);
-  }
-}
-
-@layer base {
-  * { @apply border-border; }
-  
-  body {
-    @apply bg-background text-foreground;
-    font-family: 'Orbitron', sans-serif; /* Changed to Gaming Font */
-    background-image: radial-gradient(ellipse at top, hsl(204 60% 14% / 0.6), transparent 60%);
-    background-attachment: fixed;
-    /* 🔴 Custom Gaming Cursor */
-    cursor: crosshair; 
-    overflow-x: hidden;
-  }
-  h1, h2, h3, h4 { @apply font-semibold tracking-tight; }
-  
-  /* Buttons and Links also use custom cursor */
-  a, button, [role="button"] { cursor: pointer; }
-}
-
-@layer utilities {
-  .text-glow { text-shadow: 0 0 24px hsl(var(--primary) / 0.6); }
-  .glass {
-    background: hsl(var(--card) / 0.45);
-    backdrop-filter: blur(18px) saturate(160%);
-    -webkit-backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid hsl(var(--foreground) / 0.08);
-    box-shadow: 0 8px 32px hsl(0 0% 0% / 0.4);
-  }
-}
-
-/* ========================================================
-   🔥 SUPER HIGH NEXT-LEVEL CINEMATIC ANIMATIONS 🔥
-   ======================================================== */
-
-/* 1. Cinematic Background & Particles */
-.cinematic-bg-layer {
-  position: fixed;
-  inset: 0;
-  z-index: -2;
-  background: radial-gradient(circle at 50% 50%, rgba(10, 20, 30, 0.8), #05080f);
-  animation: pulse-bg 10s infinite alternate;
-}
-
-@keyframes pulse-bg {
-  0% { transform: scale(1); filter: brightness(1); }
-  100% { transform: scale(1.05); filter: brightness(1.2); }
-}
-
-/* 2. Floating Effect (Use this class on Cards or Character Images: <div class="floating">) */
-.floating {
-  animation: float-anim 4s ease-in-out infinite;
-}
-
-@keyframes float-anim {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-15px); }
-  100% { transform: translateY(0px); }
-}
-
-/* 3. Next-Level Glitch Text Effect (Use this on Headings: <h1 class="glitch-text" data-text="STORE">STORE</h1>) */
-.glitch-text {
-  position: relative;
-  display: inline-block;
-  color: white;
-  text-transform: uppercase;
-  font-weight: 900;
-  z-index: 1;
-}
-
-.glitch-text::before, .glitch-text::after {
-  content: attr(data-text);
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0.8;
-}
-
-.glitch-text::before {
-  color: #0ff;
-  z-index: -1;
-  animation: glitch-anim-1 2s infinite linear alternate-reverse;
-}
-
-.glitch-text::after {
-  color: #f0f;
-  z-index: -2;
-  animation: glitch-anim-2 3s infinite linear alternate-reverse;
-}
-
-@keyframes glitch-anim-1 {
-  0% { clip-path: inset(20% 0 80% 0); transform: translate(-2px, 1px); }
-  20% { clip-path: inset(60% 0 10% 0); transform: translate(2px, -1px); }
-  40% { clip-path: inset(40% 0 50% 0); transform: translate(-2px, 2px); }
-  60% { clip-path: inset(80% 0 5% 0); transform: translate(2px, -2px); }
-  80% { clip-path: inset(10% 0 70% 0); transform: translate(-1px, 1px); }
-  100% { clip-path: inset(30% 0 40% 0); transform: translate(1px, -1px); }
-}
-
-@keyframes glitch-anim-2 {
-  0% { clip-path: inset(10% 0 60% 0); transform: translate(2px, -1px); }
-  20% { clip-path: inset(30% 0 20% 0); transform: translate(-2px, 1px); }
-  40% { clip-path: inset(70% 0 10% 0); transform: translate(2px, 2px); }
-  60% { clip-path: inset(20% 0 50% 0); transform: translate(-2px, -2px); }
-  80% { clip-path: inset(50% 0 30% 0); transform: translate(1px, 1px); }
-  100% { clip-path: inset(5% 0 80% 0); transform: translate(-1px, -1px); }
-}
-
-/* 4. Cinematic Card Hover (3D Tilt effect alternative) */
-.cinematic-card {
-  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease;
-}
-.cinematic-card:hover {
-  transform: translateY(-10px) scale(1.02);
-  box-shadow: var(--shadow-glow);
-  border-color: hsl(var(--primary));
-}
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
