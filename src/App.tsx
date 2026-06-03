@@ -17,12 +17,14 @@ import SplashScreen from "@/components/SplashScreen";
 import { AuthProvider } from "@/lib/auth";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import LoginStreakTracker from "@/components/LoginStreakTracker";
+import ParticleField from "@/components/ParticleField";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
+      <ParticleField />
       <SplashScreen />
       <Toaster />
       <Sonner />
