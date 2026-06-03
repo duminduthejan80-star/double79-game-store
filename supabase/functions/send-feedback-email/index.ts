@@ -63,6 +63,34 @@ Deno.serve(async (req) => {
       throw new Error("SMTP_USER / SMTP_PASSWORD not configured");
     }
 
+    // Test mode: send a sample feedback email to a single address and return status
+    let body: any = null;
+    if (req.method === "POST") {
+      try { body = await req.json(); } catch (_) { body = null; }
+    }
+    if (body?.test === true) {
+      const to = String(body.to || SMTP_USER);
+      const name = String(body.name || "Tester");
+      const gameTitle = String(body.gameTitle || "Sample Game");
+      const gameId = String(body.gameId || "00000000-0000-0000-0000-000000000000");
+      const client = makeSmtpClient();
+      try {
+        await sendOne(client, to, name, gameTitle, gameId);
+        try { await client.close(); } catch (_) { /* noop */ }
+        return new Response(
+          JSON.stringify({ ok: true, mode: "test", to, delivered: true }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      } catch (e: any) {
+        try { await client.close(); } catch (_) { /* noop */ }
+        return new Response(
+          JSON.stringify({ ok: false, mode: "test", to, delivered: false, error: e?.message ?? String(e) }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+    }
+
+
     const admin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
