@@ -391,7 +391,7 @@ const EmailTestPanel = () => {
               : "border-destructive/40 bg-destructive/10 text-destructive")
           }
         >
-          {result.ok ? (
+          {result.ok === true ? (
             <div>
               <div className="font-medium">✅ Delivered</div>
               <div className="text-xs opacity-80 mt-1">
@@ -402,9 +402,10 @@ const EmailTestPanel = () => {
             <div>
               <div className="font-medium">❌ Failed</div>
               <div className="text-xs opacity-80 mt-1">To: {result.to} · {result.at}</div>
-              <div className="text-xs mt-2 break-words">{result.error}</div>
+              <div className="text-xs mt-2 break-words">{(result as { error: string }).error}</div>
             </div>
           )}
+
         </div>
       )}
     </div>
