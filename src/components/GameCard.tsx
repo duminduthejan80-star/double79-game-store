@@ -1,14 +1,55 @@
+import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Wifi, WifiOff, Gamepad2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { Game } from "@/types/game";
 
 const GameCard = ({ game }: { game: Game }) => {
+  const ref = useRef<HTMLAnchorElement>(null);
+  const [t, setT] = useState({ rx: 0, ry: 0, gx: 50, gy: 50, active: false });
+
+  const handleMove = (e: React.MouseEvent) => {
+    const el = ref.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width;
+    const py = (e.clientY - r.top) / r.height;
+    setT({
+      rx: (py - 0.5) * -10,
+      ry: (px - 0.5) * 12,
+      gx: px * 100,
+      gy: py * 100,
+      active: true,
+    });
+  };
+  const handleLeave = () => setT({ rx: 0, ry: 0, gx: 50, gy: 50, active: false });
+
   return (
     <Link
+      ref={ref}
       to={`/game/${game.id}`}
-      className="group relative flex flex-col overflow-hidden rounded-lg bg-card-gradient border border-border/60 shadow-card transition-smooth hover:border-primary/50 hover:shadow-glow hover:-translate-y-1"
+      onMouseMove={handleMove}
+      onMouseLeave={handleLeave}
+      className="group relative flex flex-col overflow-hidden rounded-lg bg-card-gradient border border-border/60 shadow-card will-change-transform"
+      style={{
+        transformStyle: "preserve-3d",
+        transform: `perspective(900px) rotateX(${t.rx}deg) rotateY(${t.ry}deg) translateZ(0) ${t.active ? "scale(1.03)" : ""}`,
+        transition: "transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s ease, border-color 0.3s ease",
+        boxShadow: t.active
+          ? "0 20px 50px -15px hsl(280 90% 55% / 0.55), 0 0 30px hsl(var(--primary) / 0.4)"
+          : undefined,
+        borderColor: t.active ? "hsl(280 90% 60% / 0.6)" : undefined,
+      }}
     >
+      {/* Neon glare overlay */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+        style={{
+          background: `radial-gradient(420px circle at ${t.gx}% ${t.gy}%, hsl(280 95% 70% / 0.18), transparent 45%)`,
+          mixBlendMode: "screen",
+        }}
+      />
       <div className="relative aspect-[16/9] overflow-hidden bg-surface-2">
         {game.image_url ? (
           <img
