@@ -154,6 +154,22 @@ html { scroll-behavior: smooth; }
 /* Global smooth transitions for interactive elements */
 a, button { transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.3s ease, transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1); }
 
+/* Page route fade-in */
+main, section { animation: pageFade 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@keyframes pageFade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Reveal-on-scroll friendly */
+.reveal { animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Button hover lift */
+button:not(:disabled):hover, a:hover { transform: translateY(-1px); }
+
+/* Image hover zoom helper */
+.img-zoom { overflow: hidden; }
+.img-zoom img { transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.img-zoom:hover img { transform: scale(1.06); }
+
 /* System scan animation */
 @keyframes scan-sweep {
   0% { transform: translateX(-100%); }
