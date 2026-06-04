@@ -14,22 +14,31 @@ import { DownloadsProvider } from "@/lib/downloads";
 import { HardwareProfileProvider } from "@/lib/hardwareProfile";
 import DownloadWidget from "@/components/DownloadWidget";
 import SplashScreen from "@/components/SplashScreen";
+import CinematicBackground from "@/components/CinematicBackground";
 import { AuthProvider } from "@/lib/auth";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import LoginStreakTracker from "@/components/LoginStreakTracker";
+import { useScrollReveal } from "@/hooks/useScrollReveal";
 
 const queryClient = new QueryClient();
+
+const AppShell = ({ children }: { children: React.ReactNode }) => {
+  useScrollReveal();
+  return <>{children}</>;
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <SplashScreen />
+      <CinematicBackground />
       <Toaster />
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
           <DownloadsProvider>
             <HardwareProfileProvider>
+              <AppShell>
               <LoginStreakTracker />
               <Routes>
                 <Route path="/login" element={<Login />} />
@@ -41,6 +50,7 @@ const App = () => (
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <DownloadWidget />
+              </AppShell>
             </HardwareProfileProvider>
           </DownloadsProvider>
         </AuthProvider>

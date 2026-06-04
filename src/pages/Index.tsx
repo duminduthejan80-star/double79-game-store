@@ -45,13 +45,13 @@ const Index = () => {
       <section className="container mx-auto px-4 py-10">
 
         {featured.length > 0 && (
-          <div className="mb-12">
+          <div className="mb-12 reveal-on-scroll">
             <h2 className="text-2xl font-bold mb-4">Featured</h2>
             <FeaturedShowcase games={featured} />
           </div>
         )}
 
-        <h2 className="text-2xl font-bold mb-4">{filter === "online" ? "Online Games" : filter === "offline" ? "Offline Games" : "All Games"}</h2>
+        <h2 className="text-2xl font-bold mb-4 reveal-on-scroll">{filter === "online" ? "Online Games" : filter === "offline" ? "Offline Games" : "All Games"}</h2>
         <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
@@ -100,7 +100,7 @@ const Index = () => {
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-            {filtered.map((g) => <GameCard key={g.id} game={g} />)}
+            {filtered.map((g) => <div key={g.id} className="reveal-on-scroll"><GameCard game={g} /></div>)}
           </div>
         )}
       </section>
