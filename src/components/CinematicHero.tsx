@@ -101,7 +101,7 @@ const CinematicHero = () => {
             }`}
             style={{ transform: `translateZ(80px)`, textShadow: "0 0 40px hsl(var(--primary) / 0.4)" }}
           >
-            Discover. Download.{" "}
+            All in{" "}
             <span
               className="bg-clip-text text-transparent"
               style={{
@@ -109,7 +109,7 @@ const CinematicHero = () => {
                   "linear-gradient(135deg, hsl(var(--primary)), hsl(210 95% 65%), hsl(var(--primary-glow)))",
               }}
             >
-              Play.
+              Game One
             </span>
           </h1>
           <p
@@ -118,7 +118,7 @@ const CinematicHero = () => {
             }`}
             style={{ transform: `translateZ(50px)` }}
           >
-            Curated titles, free-to-play hits, and premium experiences — all in one cinematic launcher.
+            Preinstall Game
           </p>
         </div>
       </div>
