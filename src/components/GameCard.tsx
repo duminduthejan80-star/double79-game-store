@@ -30,15 +30,15 @@ const GameCard = ({ game }: { game: Game }) => {
       to={`/game/${game.id}`}
       onMouseMove={handleMove}
       onMouseLeave={handleLeave}
-      className="group relative flex flex-col overflow-hidden rounded-lg bg-card-gradient border border-border/60 shadow-card will-change-transform"
+      className="group relative flex flex-col overflow-hidden rounded-lg bg-card-gradient border border-border/60 shadow-card will-change-transform animate-fade-in-up"
       style={{
         transformStyle: "preserve-3d",
         transform: `perspective(900px) rotateX(${t.rx}deg) rotateY(${t.ry}deg) translateZ(0) ${t.active ? "scale(1.03)" : ""}`,
         transition: "transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s ease, border-color 0.3s ease",
         boxShadow: t.active
-          ? "0 20px 50px -15px hsl(280 90% 55% / 0.55), 0 0 30px hsl(var(--primary) / 0.4)"
+          ? "0 20px 50px -15px hsl(210 95% 55% / 0.55), 0 0 30px hsl(var(--primary) / 0.4)"
           : undefined,
-        borderColor: t.active ? "hsl(280 90% 60% / 0.6)" : undefined,
+        borderColor: t.active ? "hsl(210 95% 60% / 0.6)" : undefined,
       }}
     >
       {/* Neon glare overlay */}
@@ -46,7 +46,7 @@ const GameCard = ({ game }: { game: Game }) => {
         aria-hidden
         className="pointer-events-none absolute inset-0 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
         style={{
-          background: `radial-gradient(420px circle at ${t.gx}% ${t.gy}%, hsl(280 95% 70% / 0.18), transparent 45%)`,
+          background: `radial-gradient(420px circle at ${t.gx}% ${t.gy}%, hsl(210 95% 70% / 0.18), transparent 45%)`,
           mixBlendMode: "screen",
         }}
       />

@@ -141,18 +141,34 @@ html { scroll-behavior: smooth; }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: hsl(var(--background)); }
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, hsl(var(--primary) / 0.7), hsl(280 90% 55% / 0.7));
+  background: linear-gradient(180deg, hsl(var(--primary) / 0.7), hsl(210 95% 55% / 0.7));
   border-radius: 999px;
   border: 2px solid hsl(var(--background));
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, hsl(var(--primary)), hsl(280 95% 65%));
+  background: linear-gradient(180deg, hsl(var(--primary)), hsl(210 95% 65%));
   box-shadow: 0 0 10px hsl(var(--primary) / 0.6);
 }
 ::-webkit-scrollbar-corner { background: transparent; }
 
 /* Global smooth transitions for interactive elements */
 a, button { transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.3s ease, transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1); }
+
+/* Page route fade-in */
+main, section { animation: pageFade 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@keyframes pageFade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Reveal-on-scroll friendly */
+.reveal { animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Button hover lift */
+button:not(:disabled):hover, a:hover { transform: translateY(-1px); }
+
+/* Image hover zoom helper */
+.img-zoom { overflow: hidden; }
+.img-zoom img { transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.img-zoom:hover img { transform: scale(1.06); }
 
 /* System scan animation */
 @keyframes scan-sweep {

@@ -64,7 +64,7 @@ const CinematicHero = () => {
       <div
         className="absolute -bottom-32 right-0 w-[520px] h-[520px] rounded-full pointer-events-none blur-3xl opacity-30"
         style={{
-          background: "radial-gradient(circle, hsl(280 90% 60% / 0.55), transparent 65%)",
+          background: "radial-gradient(circle, hsl(210 95% 60% / 0.55), transparent 65%)",
           transform: `translate3d(${tilt.x * -50}px, ${tilt.y * -30}px, 0)`,
           transition: "transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1)",
         }}
@@ -106,7 +106,7 @@ const CinematicHero = () => {
               className="bg-clip-text text-transparent"
               style={{
                 backgroundImage:
-                  "linear-gradient(135deg, hsl(var(--primary)), hsl(280 95% 65%), hsl(var(--primary-glow)))",
+                  "linear-gradient(135deg, hsl(var(--primary)), hsl(210 95% 65%), hsl(var(--primary-glow)))",
               }}
             >
               Play.
