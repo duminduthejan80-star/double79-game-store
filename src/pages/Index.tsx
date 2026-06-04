@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import Navbar from "@/components/Navbar";
+import CinematicHero from "@/components/CinematicHero";
 import GameCard from "@/components/GameCard";
 import FeaturedShowcase from "@/components/FeaturedShowcase";
 import VoiceSearchButton from "@/components/VoiceSearchButton";
@@ -39,30 +40,7 @@ const Index = () => {
       <Navbar />
 
 
-      <section className="relative overflow-hidden border-b border-border/60 bg-surface-1">
-        <video
-          src="/hero-bg.mp4"
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover opacity-30 pointer-events-none"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-background/40 pointer-events-none" />
-        <div className="container relative mx-auto px-4 py-12 md:py-16">
-          <div className="max-w-2xl">
-            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
-              Double79 Store
-            </div>
-            <h1 className="mt-3 text-3xl md:text-5xl font-bold leading-tight text-foreground">
-              Discover. Download. <span className="text-primary">Play.</span>
-            </h1>
-            <p className="mt-3 text-base text-muted-foreground max-w-xl">
-              Curated titles, free-to-play hits, and premium experiences — all in one place.
-            </p>
-          </div>
-        </div>
-      </section>
+      <CinematicHero />
 
       <section className="container mx-auto px-4 py-10">
 
