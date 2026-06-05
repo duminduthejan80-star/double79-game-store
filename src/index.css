@@ -327,6 +327,22 @@ button:not(:disabled):hover, a:hover { transform: translateY(-1px); }
   transform: translateY(0) scale(1);
 }
 
+/* Richer 3D scroll reveal for cards */
+.reveal-3d {
+  perspective: 1200px;
+  opacity: 0;
+  transform: translateY(60px) rotateX(18deg) scale(0.92);
+  transform-origin: center bottom;
+  transition: opacity 0.9s cubic-bezier(0.2, 0.8, 0.2, 1),
+              transform 1s cubic-bezier(0.2, 0.8, 0.2, 1);
+  will-change: opacity, transform;
+}
+.reveal-3d.is-visible {
+  opacity: 1;
+  transform: translateY(0) rotateX(0) scale(1);
+}
+
+
 h1, h2 { text-shadow: 0 0 30px hsl(var(--primary) / 0.15); }
 
 @keyframes float-3d {

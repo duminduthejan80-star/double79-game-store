@@ -15,8 +15,8 @@ const GameCard = ({ game }: { game: Game }) => {
     const px = (e.clientX - r.left) / r.width;
     const py = (e.clientY - r.top) / r.height;
     setT({
-      rx: (py - 0.5) * -16,
-      ry: (px - 0.5) * 18,
+      rx: (py - 0.5) * -6,
+      ry: (px - 0.5) * 8,
       gx: px * 100,
       gy: py * 100,
       active: true,
