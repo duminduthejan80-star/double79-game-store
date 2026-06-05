@@ -100,7 +100,15 @@ const Index = () => {
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-            {filtered.map((g) => <div key={g.id} className="reveal-on-scroll"><GameCard game={g} /></div>)}
+            {filtered.map((g, i) => (
+              <div
+                key={g.id}
+                className="reveal-on-scroll reveal-3d"
+                style={{ transitionDelay: `${Math.min(i, 12) * 60}ms` }}
+              >
+                <GameCard game={g} />
+              </div>
+            ))}
           </div>
         )}
       </section>
