@@ -109,8 +109,9 @@ const CinematicHero = () => {
                   "linear-gradient(135deg, hsl(var(--primary)), hsl(210 95% 65%), hsl(var(--primary-glow)))",
               }}
             >
-              Game One
-            </span>
+              games one
+            </span>{" "}
+            WEB SITE
           </h1>
           <p
             className={`mt-5 text-base md:text-lg text-muted-foreground max-w-xl transition-all duration-1000 delay-300 ${
