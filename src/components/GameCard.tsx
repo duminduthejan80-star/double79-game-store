@@ -100,9 +100,9 @@ const GameCard = ({ game }: { game: Game }) => {
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col gap-2 p-4">
+      <div className="flex flex-1 flex-col gap-2 p-4" style={{ transform: "translateZ(30px)" }}>
         <div className="flex items-start justify-between gap-2">
-          <h3 className="font-semibold text-foreground line-clamp-1">{game.title}</h3>
+          <h3 className="font-semibold text-foreground line-clamp-1 group-hover:text-primary transition-colors">{game.title}</h3>
         </div>
         {game.genre && (
           <p className="text-xs text-muted-foreground line-clamp-1">{game.genre}</p>
@@ -111,6 +111,7 @@ const GameCard = ({ game }: { game: Game }) => {
           <span className="text-sm font-bold text-accent">Free</span>
         </div>
       </div>
+
     </Link>
   );
 };
