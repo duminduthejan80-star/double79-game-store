@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, ShieldCheck, BugOff, Virus, PackageX, CheckCircle2, Volume2, VolumeX } from "lucide-react";
+import { ArrowRight, ShieldCheck, BugOff, ShieldAlert, PackageX, CheckCircle2, Volume2, VolumeX } from "lucide-react";
 import introVideo from "@/assets/double70-intro.mp4.asset.json";
 
 const features = [
   { icon: ShieldCheck, label: "100% Security" },
   { icon: BugOff, label: "No Errors" },
-  { icon: Virus, label: "No Virus" },
+  { icon: ShieldAlert, label: "No Virus" },
   { icon: PackageX, label: "No Game Setup" },
   { icon: CheckCircle2, label: "100% Pre-Installed Games" },
 ];
