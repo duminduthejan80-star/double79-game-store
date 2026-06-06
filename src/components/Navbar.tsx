@@ -26,7 +26,7 @@ const Navbar = () => {
   const name = (user?.user_metadata?.full_name as string) || user?.email || "Player";
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border/60 bg-surface-1/80 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 liquid-glass border-b border-white/10">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 gap-2">
         <div className="flex items-center gap-3">
           <Link to="/home" className="flex items-center gap-2">
