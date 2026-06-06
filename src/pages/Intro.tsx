@@ -19,14 +19,40 @@ const Intro = () => {
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
+    // try unmuted autoplay first
     v.muted = false;
     v.volume = 1;
     v.play()
       .then(() => setMuted(false))
       .catch(() => {
+        // browser blocked — fall back to muted autoplay, then unmute on first user gesture
         v.muted = true;
         setMuted(true);
         v.play().catch(() => {});
+
+        const unmuteOnGesture = () => {
+          const vid = videoRef.current;
+          if (!vid) return;
+          vid.muted = false;
+          vid.volume = 1;
+          vid.play().catch(() => {});
+          setMuted(false);
+          cleanup();
+        };
+        const cleanup = () => {
+          window.removeEventListener("pointerdown", unmuteOnGesture);
+          window.removeEventListener("keydown", unmuteOnGesture);
+          window.removeEventListener("touchstart", unmuteOnGesture);
+          window.removeEventListener("scroll", unmuteOnGesture);
+          window.removeEventListener("mousemove", unmuteOnGesture);
+        };
+        window.addEventListener("pointerdown", unmuteOnGesture, { once: true });
+        window.addEventListener("keydown", unmuteOnGesture, { once: true });
+        window.addEventListener("touchstart", unmuteOnGesture, { once: true });
+        window.addEventListener("scroll", unmuteOnGesture, { once: true, passive: true });
+        window.addEventListener("mousemove", unmuteOnGesture, { once: true });
+
+        return cleanup;
       });
   }, []);
 
