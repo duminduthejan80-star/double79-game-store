@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Index from "./pages/Index.tsx";
+import Intro from "./pages/Intro.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Library from "./pages/Library.tsx";
 import Admin from "./pages/Admin.tsx";
@@ -42,7 +43,8 @@ const App = () => (
               <LoginStreakTracker />
               <Routes>
                 <Route path="/login" element={<Login />} />
-                <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                <Route path="/" element={<ProtectedRoute><Intro /></ProtectedRoute>} />
+                <Route path="/home" element={<ProtectedRoute><Index /></ProtectedRoute>} />
                 <Route path="/library" element={<ProtectedRoute><Library /></ProtectedRoute>} />
                 <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
                 <Route path="/downloads" element={<ProtectedRoute><Downloads /></ProtectedRoute>} />

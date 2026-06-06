@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const links = [
-  { to: "/", label: "Store", icon: Store },
+  { to: "/home", label: "Store", icon: Store },
   { to: "/library", label: "Library", icon: Library },
   { to: "/downloads", label: "Downloads", icon: Download },
   { to: "/admin", label: "Admin", icon: Shield },
@@ -29,7 +29,7 @@ const Navbar = () => {
     <header className="sticky top-0 z-50 border-b border-border/60 bg-surface-1/80 backdrop-blur-xl">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 gap-2">
         <div className="flex items-center gap-3">
-          <Link to="/" className="flex items-center gap-2">
+          <Link to="/home" className="flex items-center gap-2">
             <div className="h-10 w-10 rounded-full overflow-hidden ring-1 ring-primary/50 shadow-glow">
               <img src={logo} alt="Double79" className="h-full w-full object-cover" />
             </div>
@@ -57,7 +57,7 @@ const Navbar = () => {
             <NavLink
               key={to}
               to={to}
-              end={to === "/"}
+              end={to === "/home"}
               className={({ isActive }) =>
                 cn(
                   "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-smooth",
