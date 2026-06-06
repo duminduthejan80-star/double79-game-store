@@ -80,7 +80,7 @@ const Intro = () => {
       <div className="absolute top-0 left-0 right-0 flex justify-center pt-5 px-4 z-10">
         <div className="px-5 py-2 rounded-full glass-strong">
           <h1 className="text-xs sm:text-sm font-bold tracking-[0.35em] text-white text-glow">
-            DOUBLE70 OFICIAL WEBSITE
+            DOUBLE79 OFFICIAL WEBSITE
           </h1>
         </div>
       </div>
