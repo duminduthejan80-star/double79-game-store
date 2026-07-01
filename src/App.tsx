@@ -13,7 +13,6 @@ import Downloads from "./pages/Downloads.tsx";
 import Login from "./pages/Login.tsx";
 import { DownloadsProvider } from "@/lib/downloads";
 import { HardwareProfileProvider } from "@/lib/hardwareProfile";
-import DownloadWidget from "@/components/DownloadWidget";
 import SplashScreen from "@/components/SplashScreen";
 import CinematicBackground from "@/components/CinematicBackground";
 import { AuthProvider } from "@/lib/auth";
