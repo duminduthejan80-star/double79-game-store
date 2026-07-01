@@ -50,7 +50,7 @@ const App = () => (
                 <Route path="/game/:id" element={<ProtectedRoute><GameDetail /></ProtectedRoute>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
-              <DownloadWidget />
+              
               </AppShell>
             </HardwareProfileProvider>
           </DownloadsProvider>
