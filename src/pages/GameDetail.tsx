@@ -22,11 +22,11 @@ const Row = ({ label, value }: { label: string; value: string | null }) =>
 
 const GameDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { data: game, isLoading } = useGame(id);
   const { data: ownedIds = [] } = useLibrary();
   const addLib = useAddToLibrary();
   const owned = id ? ownedIds.includes(id) : false;
-  const { startDownload } = useDownloads();
 
   const heroImage = game?.image_url || game?.screenshots?.[0] || null;
 
