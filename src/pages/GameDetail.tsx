@@ -108,7 +108,6 @@ const GameDetail = () => {
               </div>
               <div className="flex items-start justify-between gap-3 mb-3">
                 <h1 className="text-4xl font-bold">{game.title}</h1>
-                <GenreMusic genre={game.genre} />
               </div>
               <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">{game.description}</p>
             </div>
