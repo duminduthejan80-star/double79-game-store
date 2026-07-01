@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Download, Wifi, WifiOff, Check, Calendar, User, Building2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import MediaGallery from "@/components/MediaGallery";
@@ -7,10 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import CanIRunIt from "@/components/CanIRunIt";
-import GenreMusic from "@/components/GenreMusic";
 import GameReviews from "@/components/GameReviews";
 import { useLibrary, useAddToLibrary } from "@/hooks/useLibrary";
-import { useDownloads } from "@/lib/downloads";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -24,11 +22,11 @@ const Row = ({ label, value }: { label: string; value: string | null }) =>
 
 const GameDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { data: game, isLoading } = useGame(id);
   const { data: ownedIds = [] } = useLibrary();
   const addLib = useAddToLibrary();
   const owned = id ? ownedIds.includes(id) : false;
-  const { startDownload } = useDownloads();
 
   const heroImage = game?.image_url || game?.screenshots?.[0] || null;
 
@@ -49,12 +47,7 @@ const GameDetail = () => {
       toast.error("No download link available");
       return;
     }
-    startDownload({
-      url: game.download_url,
-      title: game.title,
-      gameId: game.id,
-      imageUrl: game.image_url || undefined,
-    });
+    window.open(game.download_url, "_blank", "noopener,noreferrer");
     // Record download → 24h follow-up email will be triggered by cron
     try {
       const { data: auth } = await supabase.auth.getUser();
@@ -87,9 +80,13 @@ const GameDetail = () => {
       )}
       <Navbar />
       <div className="container mx-auto px-4 py-8">
-        <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6">
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"
+        >
           <ArrowLeft className="h-4 w-4" /> Back to store
-        </Link>
+        </button>
 
         <div className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
@@ -111,7 +108,6 @@ const GameDetail = () => {
               </div>
               <div className="flex items-start justify-between gap-3 mb-3">
                 <h1 className="text-4xl font-bold">{game.title}</h1>
-                <GenreMusic genre={game.genre} />
               </div>
               <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">{game.description}</p>
             </div>
