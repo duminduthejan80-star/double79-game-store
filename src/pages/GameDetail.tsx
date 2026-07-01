@@ -47,12 +47,7 @@ const GameDetail = () => {
       toast.error("No download link available");
       return;
     }
-    startDownload({
-      url: game.download_url,
-      title: game.title,
-      gameId: game.id,
-      imageUrl: game.image_url || undefined,
-    });
+    window.open(game.download_url, "_blank", "noopener,noreferrer");
     // Record download → 24h follow-up email will be triggered by cron
     try {
       const { data: auth } = await supabase.auth.getUser();
