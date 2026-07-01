@@ -1,5 +1,5 @@
 import { Link, NavLink } from "react-router-dom";
-import { Library, Shield, Store, Download, LogOut, MessageCircle } from "lucide-react";
+import { Library, Shield, Store, LogOut, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/logo.png";
 import { useAuth } from "@/lib/auth";
@@ -16,7 +16,6 @@ import {
 const links = [
   { to: "/home", label: "Store", icon: Store },
   { to: "/library", label: "Library", icon: Library },
-  { to: "/downloads", label: "Downloads", icon: Download },
   { to: "/admin", label: "Admin", icon: Shield },
 ];
 
