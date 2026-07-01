@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Download, Wifi, WifiOff, Check, Calendar, User, Building2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import MediaGallery from "@/components/MediaGallery";
@@ -7,10 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import CanIRunIt from "@/components/CanIRunIt";
-import GenreMusic from "@/components/GenreMusic";
 import GameReviews from "@/components/GameReviews";
 import { useLibrary, useAddToLibrary } from "@/hooks/useLibrary";
-import { useDownloads } from "@/lib/downloads";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
