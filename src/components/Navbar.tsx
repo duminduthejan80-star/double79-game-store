@@ -1,112 +1,100 @@
+import { useEffect, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
-import { Library, Shield, Store, LogOut, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import logo from "@/assets/logo.png";
 import { useAuth } from "@/lib/auth";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 const links = [
-  { to: "/home", label: "Store", icon: Store },
-  { to: "/library", label: "Library", icon: Library },
-  { to: "/admin", label: "Admin", icon: Shield },
+  { to: "/home", label: "store" },
+  { to: "/library", label: "library" },
+  { to: "/admin", label: "admin" },
 ];
 
 const Navbar = () => {
   const { user, signOut } = useAuth();
-  const avatar = (user?.user_metadata?.avatar_url as string) || "";
-  const name = (user?.user_metadata?.full_name as string) || user?.email || "Player";
+  const [open, setOpen] = useState(false);
+  const [nearTop, setNearTop] = useState(true);
+
+  useEffect(() => {
+    const onScroll = () => setNearTop(window.scrollY < 40);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
-    <header className="sticky top-0 z-50 liquid-glass border-b border-white/10">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4 gap-2">
-        <div className="flex items-center gap-3">
-          <Link to="/home" className="flex items-center gap-2">
-            <div className="h-10 w-10 rounded-full overflow-hidden ring-1 ring-primary/50 shadow-glow">
-              <img src={logo} alt="Double79" className="h-full w-full object-cover" />
-            </div>
-            <div className="leading-tight">
-              <div className="text-sm font-bold tracking-widest text-foreground">DOUBLE79</div>
-              <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Game Store</div>
-            </div>
-          </Link>
-          <a
-            href="https://www.youtube.com/channel/UCeUlnTEhYCeZGm8xL9NMZMQ"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="YouTube channel"
-            className="inline-flex items-center justify-center transition-all duration-300 ease-out hover:scale-110 [filter:drop-shadow(0_0_8px_rgba(255,0,0,0.6))] hover:[filter:drop-shadow(0_0_16px_rgba(255,0,0,0.95))]"
-          >
-            <svg viewBox="0 0 28 20" className="h-7 w-auto" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <path fill="#FF0000" d="M27.4 3.1a3.5 3.5 0 0 0-2.5-2.5C22.7 0 14 0 14 0S5.3 0 3.1.6A3.5 3.5 0 0 0 .6 3.1C0 5.3 0 10 0 10s0 4.7.6 6.9a3.5 3.5 0 0 0 2.5 2.5C5.3 20 14 20 14 20s8.7 0 10.9-.6a3.5 3.5 0 0 0 2.5-2.5C28 14.7 28 10 28 10s0-4.7-.6-6.9z"/>
-              <path fill="#FFFFFF" d="M11.2 14.3 18.4 10l-7.2-4.3v8.6z"/>
-            </svg>
-          </a>
-        </div>
+    <>
+      {/* Hover trigger strip at the top */}
+      <div
+        className="fixed top-0 left-0 right-0 h-14 z-40"
+        onMouseEnter={() => setOpen(true)}
+      />
 
-        <nav className="flex items-center gap-1">
-          {links.map(({ to, label, icon: Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={to === "/home"}
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-smooth",
-                  isActive
-                    ? "bg-secondary text-foreground"
-                    : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
-                )
-              }
-            >
-              <Icon className="h-4 w-4" />
-              <span className="hidden sm:inline">{label}</span>
-            </NavLink>
-          ))}
-        </nav>
-
-        <a
-          href={`https://wa.me/94704962595?text=${encodeURIComponent("Request Game\n\nGame Name: ")}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold bg-[hsl(142_70%_40%)] text-white hover:bg-[hsl(142_70%_35%)] transition-smooth shadow-glow"
-        >
-          <MessageCircle className="h-4 w-4" />
-          <span className="hidden sm:inline">Request Game</span>
-        </a>
-
-        {user && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="gap-2 px-2">
-                {avatar ? (
-                  <img src={avatar} alt={name} className="h-7 w-7 rounded-full" />
-                ) : (
-                  <div className="h-7 w-7 rounded-full bg-primary-gradient flex items-center justify-center text-xs font-bold text-primary-foreground">
-                    {name.charAt(0).toUpperCase()}
-                  </div>
-                )}
-                <span className="hidden md:inline text-sm">{name}</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel className="truncate">{user.email}</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive">
-                <LogOut className="h-4 w-4 mr-2" /> Sign out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+      <header
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        className={cn(
+          "fixed top-0 left-0 right-0 z-50",
+          "transition-all duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)]",
+          open || !nearTop ? "opacity-100 translate-y-0" : "opacity-30 -translate-y-0"
         )}
-      </div>
-    </header>
+      >
+        <div className="mx-auto max-w-6xl px-8 py-6 flex items-center justify-between">
+          {/* Just a mark — no name */}
+          <Link
+            to="/home"
+            className="text-[10px] tracking-[0.5em] uppercase text-muted-foreground hover:text-foreground"
+          >
+            d/79
+          </Link>
+
+          {/* Links — hidden until hover */}
+          <nav
+            className={cn(
+              "flex items-center gap-10 text-[11px] tracking-[0.35em] uppercase",
+              "transition-opacity duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)]",
+              open ? "opacity-100" : "opacity-0 pointer-events-none"
+            )}
+          >
+            {links.map(({ to, label }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={to === "/home"}
+                className={({ isActive }) =>
+                  cn(
+                    "text-muted-foreground hover:text-foreground",
+                    isActive && "text-foreground"
+                  )
+                }
+              >
+                {label}
+              </NavLink>
+            ))}
+            <a
+              href={`https://wa.me/94704962595?text=${encodeURIComponent("Request Game\n\nGame Name: ")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-foreground"
+            >
+              request
+            </a>
+            {user && (
+              <button
+                onClick={signOut}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                exit
+              </button>
+            )}
+          </nav>
+        </div>
+        <div
+          className={cn(
+            "mx-auto max-w-6xl h-px bg-border transition-opacity duration-[1200ms]",
+            open ? "opacity-100" : "opacity-0"
+          )}
+        />
+      </header>
+    </>
   );
 };
 
