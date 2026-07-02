@@ -11,6 +11,7 @@ import Admin from "./pages/Admin.tsx";
 import GameDetail from "./pages/GameDetail.tsx";
 import Downloads from "./pages/Downloads.tsx";
 import Login from "./pages/Login.tsx";
+import HowToDownload from "./pages/HowToDownload.tsx";
 import { DownloadsProvider } from "@/lib/downloads";
 import { HardwareProfileProvider } from "@/lib/hardwareProfile";
 import SplashScreen from "@/components/SplashScreen";
@@ -47,6 +48,7 @@ const App = () => (
                 <Route path="/library" element={<ProtectedRoute><Library /></ProtectedRoute>} />
                 <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
                 <Route path="/downloads" element={<ProtectedRoute><Downloads /></ProtectedRoute>} />
+                <Route path="/how-to-download" element={<ProtectedRoute><HowToDownload /></ProtectedRoute>} />
                 <Route path="/game/:id" element={<ProtectedRoute><GameDetail /></ProtectedRoute>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
