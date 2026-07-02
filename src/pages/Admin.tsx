@@ -52,13 +52,28 @@ const Admin = () => {
     }
   }, [editing]);
 
-  const login = (e: React.FormEvent) => {
+  const login = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (code === ADMIN_CODE) {
-      sessionStorage.setItem(SESSION_KEY, "1");
-      setAuthed(true);
-      toast.success("Welcome, admin");
-    } else toast.error("Invalid admin code");
+    if (code !== ADMIN_CODE) return toast.error("Invalid admin code");
+    const { data: sess } = await supabase.auth.getSession();
+    if (!sess.session) {
+      toast.error("Sign in with Google first");
+      window.location.href = "/login";
+      return;
+    }
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", sess.session.user.id)
+      .eq("role", "admin")
+      .maybeSingle();
+    if (!roles) {
+      toast.error("Your account is not an admin");
+      return;
+    }
+    sessionStorage.setItem(SESSION_KEY, "1");
+    setAuthed(true);
+    toast.success("Welcome, admin");
   };
 
   const logout = () => {
