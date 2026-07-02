@@ -1,7 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
+import { Search } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import CinematicHero from "@/components/CinematicHero";
 import GameCard from "@/components/GameCard";
+import FeaturedShowcase from "@/components/FeaturedShowcase";
+import VoiceSearchButton from "@/components/VoiceSearchButton";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useGames } from "@/hooks/useGames";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -9,101 +14,103 @@ import { cn } from "@/lib/utils";
 const Index = () => {
   const { data: games, isLoading } = useGames();
   const [q, setQ] = useState("");
-  const [searchOpen, setSearchOpen] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  // Press "/" to reveal the hidden search
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "/" && !searchOpen) {
-        e.preventDefault();
-        setSearchOpen(true);
-        setTimeout(() => inputRef.current?.focus(), 50);
-      }
-      if (e.key === "Escape" && searchOpen) {
-        setSearchOpen(false);
-        setQ("");
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [searchOpen]);
+  const [filter, setFilter] = useState("all");
+  const [flash, setFlash] = useState(false);
+  const [voiceQuery, setVoiceQuery] = useState("");
 
   const filtered = useMemo(() => {
     if (!games) return [];
     return games.filter((g) => {
-      if (!q) return true;
-      const s = q.toLowerCase();
-      return (
-        g.title.toLowerCase().includes(s) ||
-        (g.genre || "").toLowerCase().includes(s)
-      );
+      const matchesQ =
+        !q ||
+        g.title.toLowerCase().includes(q.toLowerCase()) ||
+        (g.genre || "").toLowerCase().includes(q.toLowerCase());
+      const matchesF =
+        filter === "all" ||
+        (filter === "online" && g.mode === "online") ||
+        (filter === "offline" && g.mode === "offline");
+      return matchesQ && matchesF;
     });
-  }, [games, q]);
+  }, [games, q, filter]);
+
+  const featured = useMemo(() => games?.filter((g) => g.featured) ?? [], [games]);
 
   return (
     <div className="min-h-screen">
       <Navbar />
 
+
       <CinematicHero />
 
-      <section className="mx-auto max-w-6xl px-8 py-24">
-        {/* barely-there section marker */}
-        <div className="flex items-baseline justify-between mb-16">
-          <div className="text-[10px] tracking-[0.5em] uppercase text-muted-foreground">
-            the collection
-          </div>
-          <button
-            onClick={() => setSearchOpen((v) => !v)}
-            className="text-[10px] tracking-[0.5em] uppercase text-muted-foreground hover:text-foreground"
-          >
-            {searchOpen ? "close" : "search"}
-          </button>
-        </div>
+      <section className="container mx-auto px-4 py-10">
 
-        {/* Hidden search — slides in only when asked */}
-        <div
-          className={cn(
-            "overflow-hidden transition-all duration-[1400ms] ease-[cubic-bezier(0.22,1,0.36,1)]",
-            searchOpen ? "max-h-24 opacity-100 mb-12" : "max-h-0 opacity-0"
-          )}
-        >
-          <input
-            ref={inputRef}
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="type a title, or press esc"
-            className="w-full bg-transparent border-0 border-b border-border py-4 text-lg font-light tracking-wide text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-foreground/40 transition-colors duration-[900ms]"
-          />
+        {featured.length > 0 && (
+          <div className="mb-12 reveal-on-scroll">
+            <h2 className="text-2xl font-bold mb-4">Featured</h2>
+            <FeaturedShowcase games={featured} />
+          </div>
+        )}
+
+        <h2 className="text-2xl font-bold mb-4 reveal-on-scroll">{filter === "online" ? "Online Games" : filter === "offline" ? "Offline Games" : "All Games"}</h2>
+        <div className="liquid-glass rounded-2xl p-3 flex flex-col md:flex-row md:items-center gap-4 mb-6">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
+            <Input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Search games..."
+              className={cn(
+                "pl-9 pr-12 bg-white/5 border-white/10 backdrop-blur-xl transition-all",
+                flash && "ring-2 ring-green-500 border-green-500"
+              )}
+            />
+            <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+              <VoiceSearchButton
+                onResult={(t) => {
+                  setQ(t);
+                  setVoiceQuery(t);
+                }}
+                onSuccess={() => {
+                  setFlash(true);
+                  setTimeout(() => setFlash(false), 700);
+                }}
+              />
+            </div>
+          </div>
+          <Tabs value={filter} onValueChange={setFilter}>
+            <TabsList className="liquid-glass border-0">
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="online">Online</TabsTrigger>
+              <TabsTrigger value="offline">Offline</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-16">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
             {Array.from({ length: 8 }).map((_, i) => (
-              <Skeleton key={i} className="aspect-[3/4]" />
+              <Skeleton key={i} className="aspect-[16/12] rounded-lg" />
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="py-32 text-center text-[10px] tracking-[0.4em] uppercase text-muted-foreground/50">
-            nothing found · quiet here
+          <div className="rounded-lg border border-dashed border-border p-16 text-center text-muted-foreground">
+            {voiceQuery && q === voiceQuery
+              ? `Could not find a match for "${voiceQuery}"`
+              : "No games found. Add some from the Admin panel."}
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-16">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
             {filtered.map((g, i) => (
               <div
                 key={g.id}
-                className="reveal-on-scroll is-visible"
-                style={{ transitionDelay: `${Math.min(i, 12) * 120}ms` }}
+                className="reveal-on-scroll reveal-3d"
+                style={{ transitionDelay: `${Math.min(i, 12) * 60}ms` }}
               >
                 <GameCard game={g} />
               </div>
             ))}
           </div>
         )}
-
-        <div className="mt-32 text-center text-[9px] tracking-[0.5em] uppercase text-muted-foreground/30">
-          press / to search · hover top to navigate
-        </div>
       </section>
     </div>
   );
