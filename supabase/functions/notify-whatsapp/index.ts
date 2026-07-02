@@ -19,27 +19,17 @@ serve(async (req) => {
       });
     }
 
-    const instanceId = Deno.env.get("greenapi_instance_id");
-    const token = Deno.env.get("greenapi_token");
-    const chatId = Deno.env.get("GREENAPI_GROUP_CHAT_ID");
-
-    if (!instanceId || !token || !chatId) {
-      console.error("Green API credentials missing");
-      return new Response(JSON.stringify({ error: "Service not configured" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
-    }
-
     const body = await req.json();
-
+    console.log("Received body in Edge Function:", body);
+    
+    // Green-API එකට රික්වෙස්ට් එක දානවා
     const res = await fetch(
-      `https://api.greenapi.com/waInstance${instanceId}/sendFileByUrl/${token}`,
+      "https://api.greenapi.com/waInstance7103980145/sendFileByUrl/56eccbf54d2e46e5a400f91884ea2ebf25091fa16db3405cba",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          chatId,
+          chatId: "120363385732296489@g.us",
           urlFile: body.imageUrl || "https://placehold.co/600x400?text=Game",
           fileName: (body.gameName || "Game") + ".jpg",
           caption: `🎮 *New Game Added!* 🎮\n\n📌 *Title:* ${body.gameName || "Unknown"}\n🔗 *Link:* ${body.link || "#"}`
@@ -48,6 +38,7 @@ serve(async (req) => {
     );
 
     const data = await res.json();
+    console.log("Green API Response:", data);
 
     return new Response(JSON.stringify({ success: true, greenApiResponse: data }), {
       status: 200,
@@ -55,8 +46,8 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error("notify-whatsapp error:", error instanceof Error ? error.message : "unknown");
-    return new Response(JSON.stringify({ error: "Internal error" }), {
+    console.error("Edge Function Error:", error);
+    return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
