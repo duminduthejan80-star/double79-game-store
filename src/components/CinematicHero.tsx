@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import introVideo from "@/assets/double70-intro.mp4.asset.json";
 
 const CinematicHero = () => {
   const ref = useRef<HTMLDivElement>(null);
@@ -29,7 +30,7 @@ const CinematicHero = () => {
       style={{ perspective: "1200px" }}
     >
       <video
-        src="/hero-bg.mp4"
+        src={introVideo.url}
         autoPlay
         loop
         muted
