@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import introVideo from "@/assets/double70-intro.mp4.asset.json";
 
 const CinematicHero = () => {
   const ref = useRef<HTMLDivElement>(null);
