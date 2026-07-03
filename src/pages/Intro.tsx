@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, ShieldCheck, BugOff, ShieldAlert, PackageX, CheckCircle2, Volume2, VolumeX } from "lucide-react";
-import introVideo from "@/assets/double70-intro.mp4.asset.json";
+
 
 const features = [
   { icon: ShieldCheck, label: "100% Security" },
@@ -68,7 +68,7 @@ const Intro = () => {
     <div className="fixed inset-0 z-50 overflow-hidden bg-black">
       <video
         ref={videoRef}
-        src={introVideo.url}
+        src="/hero-bg.mp4"
         autoPlay
         loop
         playsInline
