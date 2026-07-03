@@ -68,7 +68,7 @@ const Intro = () => {
     <div className="fixed inset-0 z-50 overflow-hidden bg-black">
       <video
         ref={videoRef}
-        src={introVideo.url}
+        src="/hero-bg.mp4"
         autoPlay
         loop
         playsInline
