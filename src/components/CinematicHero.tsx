@@ -30,7 +30,7 @@ const CinematicHero = () => {
       style={{ perspective: "1200px" }}
     >
       <video
-        src="/hero-bg.mp4"
+        src={introVideo.url}
         autoPlay
         loop
         muted
