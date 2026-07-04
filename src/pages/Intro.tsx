@@ -17,11 +17,25 @@ const features = [
 
 const Intro = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [muted, setMuted] = useState(true);
 
+  // Skip intro for returning users who already watched it once.
+  useEffect(() => {
+    if (user && localStorage.getItem(INTRO_SEEN_KEY(user.id)) === "1") {
+      navigate("/home", { replace: true });
+    }
+  }, [user, navigate]);
+
+  const goHome = () => {
+    if (user) localStorage.setItem(INTRO_SEEN_KEY(user.id), "1");
+    navigate("/home");
+  };
+
   useEffect(() => {
     const v = videoRef.current;
+
     if (!v) return;
 
     // Always start muted — guarantees autoplay on every browser (PC + mobile).
