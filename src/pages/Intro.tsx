@@ -19,41 +19,42 @@ const Intro = () => {
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
-    // try unmuted autoplay first
-    v.muted = false;
+
+    // Always start muted — guarantees autoplay on every browser (PC + mobile).
+    v.muted = true;
     v.volume = 1;
-    v.play()
-      .then(() => setMuted(false))
-      .catch(() => {
-        // browser blocked — fall back to muted autoplay, then unmute on first user gesture
+    setMuted(true);
+
+    const startPlayback = () => {
+      v.play().catch(() => {
+        // extremely rare — retry muted
         v.muted = true;
-        setMuted(true);
         v.play().catch(() => {});
-
-        const unmuteOnGesture = () => {
-          const vid = videoRef.current;
-          if (!vid) return;
-          vid.muted = false;
-          vid.volume = 1;
-          vid.play().catch(() => {});
-          setMuted(false);
-          cleanup();
-        };
-        const cleanup = () => {
-          window.removeEventListener("pointerdown", unmuteOnGesture);
-          window.removeEventListener("keydown", unmuteOnGesture);
-          window.removeEventListener("touchstart", unmuteOnGesture);
-          window.removeEventListener("scroll", unmuteOnGesture);
-          window.removeEventListener("mousemove", unmuteOnGesture);
-        };
-        window.addEventListener("pointerdown", unmuteOnGesture, { once: true });
-        window.addEventListener("keydown", unmuteOnGesture, { once: true });
-        window.addEventListener("touchstart", unmuteOnGesture, { once: true });
-        window.addEventListener("scroll", unmuteOnGesture, { once: true, passive: true });
-        window.addEventListener("mousemove", unmuteOnGesture, { once: true });
-
-        return cleanup;
       });
+    };
+
+    startPlayback();
+
+    // Try to unmute after first user gesture (doesn't stop playback).
+    const unmuteOnGesture = () => {
+      const vid = videoRef.current;
+      if (!vid) return;
+      vid.muted = false;
+      vid.volume = 1;
+      setMuted(false);
+      // don't call play again — video is already playing
+      cleanup();
+    };
+    const cleanup = () => {
+      window.removeEventListener("pointerdown", unmuteOnGesture);
+      window.removeEventListener("keydown", unmuteOnGesture);
+      window.removeEventListener("touchstart", unmuteOnGesture);
+    };
+    window.addEventListener("pointerdown", unmuteOnGesture, { once: true });
+    window.addEventListener("keydown", unmuteOnGesture, { once: true });
+    window.addEventListener("touchstart", unmuteOnGesture, { once: true });
+
+    return cleanup;
   }, []);
 
   const toggleMute = () => {
@@ -61,8 +62,10 @@ const Intro = () => {
     if (!v) return;
     v.muted = !v.muted;
     setMuted(v.muted);
-    if (!v.muted) v.play().catch(() => {});
+    // ensure video keeps playing after toggle
+    if (v.paused) v.play().catch(() => {});
   };
+
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-black">
