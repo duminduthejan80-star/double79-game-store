@@ -164,7 +164,7 @@ const Intro = () => {
       {/* Bottom GO button */}
       <div className="absolute bottom-10 left-0 right-0 flex justify-center z-10">
         <button
-          onClick={() => navigate("/home")}
+          onClick={goHome}
           className="group relative inline-flex items-center gap-3 px-10 py-4 rounded-full font-bold text-white text-lg tracking-widest uppercase
             bg-gradient-to-r from-sky-500 via-blue-500 to-indigo-600
             shadow-[0_0_40px_rgba(56,189,248,0.7),0_10px_40px_rgba(37,99,235,0.5)]
