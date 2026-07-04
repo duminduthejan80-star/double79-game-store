@@ -2,6 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, ShieldCheck, BugOff, ShieldAlert, PackageX, CheckCircle2, Volume2, VolumeX } from "lucide-react";
 import introVideo from "@/assets/gojo-intro.mp4.asset.json";
+import { useAuth } from "@/lib/auth";
+
+const INTRO_SEEN_KEY = (uid: string | null | undefined) => `intro-seen:${uid ?? "guest"}`;
+
 
 const features = [
   { icon: ShieldCheck, label: "100% Security" },
