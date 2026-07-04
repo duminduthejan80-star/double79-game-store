@@ -2,6 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, ShieldCheck, BugOff, ShieldAlert, PackageX, CheckCircle2, Volume2, VolumeX } from "lucide-react";
 import introVideo from "@/assets/gojo-intro.mp4.asset.json";
+import { useAuth } from "@/lib/auth";
+
+const INTRO_SEEN_KEY = (uid: string | null | undefined) => `intro-seen:${uid ?? "guest"}`;
+
 
 const features = [
   { icon: ShieldCheck, label: "100% Security" },
@@ -13,11 +17,25 @@ const features = [
 
 const Intro = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [muted, setMuted] = useState(true);
 
+  // Skip intro for returning users who already watched it once.
+  useEffect(() => {
+    if (user && localStorage.getItem(INTRO_SEEN_KEY(user.id)) === "1") {
+      navigate("/home", { replace: true });
+    }
+  }, [user, navigate]);
+
+  const goHome = () => {
+    if (user) localStorage.setItem(INTRO_SEEN_KEY(user.id), "1");
+    navigate("/home");
+  };
+
   useEffect(() => {
     const v = videoRef.current;
+
     if (!v) return;
 
     // Always start muted — guarantees autoplay on every browser (PC + mobile).
@@ -80,6 +98,28 @@ const Intro = () => {
       />
       <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/80 pointer-events-none" />
 
+      {/* Tap-anywhere to unmute (only shown while muted) */}
+      {muted && (
+        <button
+          type="button"
+          onClick={() => {
+            const v = videoRef.current;
+            if (!v) return;
+            v.muted = false;
+            v.volume = 1;
+            setMuted(false);
+            if (v.paused) v.play().catch(() => {});
+          }}
+          className="absolute inset-0 z-[5] flex items-end justify-center pb-32 cursor-pointer bg-transparent"
+          aria-label="Tap for sound"
+        >
+          <span className="px-4 py-2 rounded-full glass text-xs sm:text-sm font-semibold text-white/90 flex items-center gap-2 animate-pulse">
+            <Volume2 className="h-4 w-4" /> Tap for sound
+          </span>
+        </button>
+      )}
+
+
       {/* Top title */}
       <div className="absolute top-0 left-0 right-0 flex justify-center pt-5 px-4 z-10">
         <div className="px-5 py-2 rounded-full glass-strong">
@@ -124,7 +164,7 @@ const Intro = () => {
       {/* Bottom GO button */}
       <div className="absolute bottom-10 left-0 right-0 flex justify-center z-10">
         <button
-          onClick={() => navigate("/home")}
+          onClick={goHome}
           className="group relative inline-flex items-center gap-3 px-10 py-4 rounded-full font-bold text-white text-lg tracking-widest uppercase
             bg-gradient-to-r from-sky-500 via-blue-500 to-indigo-600
             shadow-[0_0_40px_rgba(56,189,248,0.7),0_10px_40px_rgba(37,99,235,0.5)]
