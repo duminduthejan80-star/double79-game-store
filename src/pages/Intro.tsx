@@ -4,6 +4,8 @@ import { ArrowRight, ShieldCheck, BugOff, ShieldAlert, PackageX, CheckCircle2, V
 import introVideo from "@/assets/gojo-intro.mp4.asset.json";
 import { useAuth } from "@/lib/auth";
 
+// sessionStorage: survives refresh, cleared when tab/browser closed —
+// so returning users skip on refresh but see intro again after closing the tab.
 const INTRO_SEEN_KEY = (uid: string | null | undefined) => `intro-seen:${uid ?? "guest"}`;
 
 
