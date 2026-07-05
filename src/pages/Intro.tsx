@@ -4,6 +4,8 @@ import { ArrowRight, ShieldCheck, BugOff, ShieldAlert, PackageX, CheckCircle2, V
 import introVideo from "@/assets/gojo-intro.mp4.asset.json";
 import { useAuth } from "@/lib/auth";
 
+// sessionStorage: survives refresh, cleared when tab/browser closed —
+// so returning users skip on refresh but see intro again after closing the tab.
 const INTRO_SEEN_KEY = (uid: string | null | undefined) => `intro-seen:${uid ?? "guest"}`;
 
 
@@ -21,46 +23,47 @@ const Intro = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [muted, setMuted] = useState(true);
 
-  // Skip intro for returning users who already watched it once.
+  // Skip intro only within the same tab session (survives refresh, not tab close).
   useEffect(() => {
-    if (user && localStorage.getItem(INTRO_SEEN_KEY(user.id)) === "1") {
+    if (user && sessionStorage.getItem(INTRO_SEEN_KEY(user.id)) === "1") {
       navigate("/home", { replace: true });
     }
   }, [user, navigate]);
 
   const goHome = () => {
-    if (user) localStorage.setItem(INTRO_SEEN_KEY(user.id), "1");
+    if (user) sessionStorage.setItem(INTRO_SEEN_KEY(user.id), "1");
     navigate("/home");
   };
 
   useEffect(() => {
     const v = videoRef.current;
-
     if (!v) return;
 
-    // Always start muted — guarantees autoplay on every browser (PC + mobile).
-    v.muted = true;
     v.volume = 1;
-    setMuted(true);
 
-    const startPlayback = () => {
-      v.play().catch(() => {
-        // extremely rare — retry muted
+    // Try unmuted autoplay first (works when browser has autoplay-with-sound permission).
+    // If blocked, fall back to muted autoplay and unmute on first user gesture.
+    const tryUnmuted = async () => {
+      try {
+        v.muted = false;
+        setMuted(false);
+        await v.play();
+      } catch {
         v.muted = true;
-        v.play().catch(() => {});
-      });
+        setMuted(true);
+        try { await v.play(); } catch {}
+      }
     };
 
-    startPlayback();
+    tryUnmuted();
 
-    // Try to unmute after first user gesture (doesn't stop playback).
     const unmuteOnGesture = () => {
       const vid = videoRef.current;
       if (!vid) return;
       vid.muted = false;
       vid.volume = 1;
       setMuted(false);
-      // don't call play again — video is already playing
+      if (vid.paused) vid.play().catch(() => {});
       cleanup();
     };
     const cleanup = () => {
@@ -92,32 +95,11 @@ const Intro = () => {
         src={introVideo.url}
         autoPlay
         loop
-        muted
         playsInline
         className="absolute inset-0 w-full h-full object-cover"
       />
       <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/80 pointer-events-none" />
 
-      {/* Tap-anywhere to unmute (only shown while muted) */}
-      {muted && (
-        <button
-          type="button"
-          onClick={() => {
-            const v = videoRef.current;
-            if (!v) return;
-            v.muted = false;
-            v.volume = 1;
-            setMuted(false);
-            if (v.paused) v.play().catch(() => {});
-          }}
-          className="absolute inset-0 z-[5] flex items-end justify-center pb-32 cursor-pointer bg-transparent"
-          aria-label="Tap for sound"
-        >
-          <span className="px-4 py-2 rounded-full glass text-xs sm:text-sm font-semibold text-white/90 flex items-center gap-2 animate-pulse">
-            <Volume2 className="h-4 w-4" /> Tap for sound
-          </span>
-        </button>
-      )}
 
 
       {/* Top title */}
