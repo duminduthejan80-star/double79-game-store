@@ -4,11 +4,6 @@ import { ArrowRight, ShieldCheck, BugOff, ShieldAlert, PackageX, CheckCircle2, V
 import introVideo from "@/assets/gojo-intro.mp4.asset.json";
 import { useAuth } from "@/lib/auth";
 
-// sessionStorage: survives refresh, cleared when tab/browser closed —
-// so returning users skip on refresh but see intro again after closing the tab.
-const INTRO_SEEN_KEY = (uid: string | null | undefined) => `intro-seen:${uid ?? "guest"}`;
-
-
 const features = [
   { icon: ShieldCheck, label: "100% Security" },
   { icon: BugOff, label: "No Errors" },
@@ -23,15 +18,8 @@ const Intro = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [muted, setMuted] = useState(true);
 
-  // Skip intro only within the same tab session (survives refresh, not tab close).
-  useEffect(() => {
-    if (user && sessionStorage.getItem(INTRO_SEEN_KEY(user.id)) === "1") {
-      navigate("/home", { replace: true });
-    }
-  }, [user, navigate]);
-
+  // Always show intro on every page load / refresh — no skip.
   const goHome = () => {
-    if (user) sessionStorage.setItem(INTRO_SEEN_KEY(user.id), "1");
     navigate("/home");
   };
 
