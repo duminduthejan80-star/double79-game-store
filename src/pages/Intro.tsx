@@ -95,32 +95,11 @@ const Intro = () => {
         src={introVideo.url}
         autoPlay
         loop
-        muted
         playsInline
         className="absolute inset-0 w-full h-full object-cover"
       />
       <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/80 pointer-events-none" />
 
-      {/* Tap-anywhere to unmute (only shown while muted) */}
-      {muted && (
-        <button
-          type="button"
-          onClick={() => {
-            const v = videoRef.current;
-            if (!v) return;
-            v.muted = false;
-            v.volume = 1;
-            setMuted(false);
-            if (v.paused) v.play().catch(() => {});
-          }}
-          className="absolute inset-0 z-[5] flex items-end justify-center pb-32 cursor-pointer bg-transparent"
-          aria-label="Tap for sound"
-        >
-          <span className="px-4 py-2 rounded-full glass text-xs sm:text-sm font-semibold text-white/90 flex items-center gap-2 animate-pulse">
-            <Volume2 className="h-4 w-4" /> Tap for sound
-          </span>
-        </button>
-      )}
 
 
       {/* Top title */}
