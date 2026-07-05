@@ -66,14 +66,13 @@ const Intro = () => {
       if (vid.paused) vid.play().catch(() => {});
       cleanup();
     };
+    const events = ["pointerdown", "pointermove", "mousemove", "mousedown", "click", "keydown", "touchstart", "touchmove", "wheel", "scroll"] as const;
     const cleanup = () => {
-      window.removeEventListener("pointerdown", unmuteOnGesture);
-      window.removeEventListener("keydown", unmuteOnGesture);
-      window.removeEventListener("touchstart", unmuteOnGesture);
+      events.forEach((ev) => window.removeEventListener(ev, unmuteOnGesture));
     };
-    window.addEventListener("pointerdown", unmuteOnGesture, { once: true });
-    window.addEventListener("keydown", unmuteOnGesture, { once: true });
-    window.addEventListener("touchstart", unmuteOnGesture, { once: true });
+    events.forEach((ev) =>
+      window.addEventListener(ev, unmuteOnGesture, { once: true, passive: true } as AddEventListenerOptions),
+    );
 
     return cleanup;
   }, []);
