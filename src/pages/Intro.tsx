@@ -37,32 +37,33 @@ const Intro = () => {
 
   useEffect(() => {
     const v = videoRef.current;
-
     if (!v) return;
 
-    // Always start muted — guarantees autoplay on every browser (PC + mobile).
-    v.muted = true;
     v.volume = 1;
-    setMuted(true);
 
-    const startPlayback = () => {
-      v.play().catch(() => {
-        // extremely rare — retry muted
+    // Try unmuted autoplay first (works when browser has autoplay-with-sound permission).
+    // If blocked, fall back to muted autoplay and unmute on first user gesture.
+    const tryUnmuted = async () => {
+      try {
+        v.muted = false;
+        setMuted(false);
+        await v.play();
+      } catch {
         v.muted = true;
-        v.play().catch(() => {});
-      });
+        setMuted(true);
+        try { await v.play(); } catch {}
+      }
     };
 
-    startPlayback();
+    tryUnmuted();
 
-    // Try to unmute after first user gesture (doesn't stop playback).
     const unmuteOnGesture = () => {
       const vid = videoRef.current;
       if (!vid) return;
       vid.muted = false;
       vid.volume = 1;
       setMuted(false);
-      // don't call play again — video is already playing
+      if (vid.paused) vid.play().catch(() => {});
       cleanup();
     };
     const cleanup = () => {
