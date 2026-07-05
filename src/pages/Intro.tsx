@@ -23,15 +23,15 @@ const Intro = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [muted, setMuted] = useState(true);
 
-  // Skip intro for returning users who already watched it once.
+  // Skip intro only within the same tab session (survives refresh, not tab close).
   useEffect(() => {
-    if (user && localStorage.getItem(INTRO_SEEN_KEY(user.id)) === "1") {
+    if (user && sessionStorage.getItem(INTRO_SEEN_KEY(user.id)) === "1") {
       navigate("/home", { replace: true });
     }
   }, [user, navigate]);
 
   const goHome = () => {
-    if (user) localStorage.setItem(INTRO_SEEN_KEY(user.id), "1");
+    if (user) sessionStorage.setItem(INTRO_SEEN_KEY(user.id), "1");
     navigate("/home");
   };
 
