@@ -51,7 +51,7 @@ export const GameReviews = ({ gameId }: { gameId: string }) => {
       .eq("game_id", gameId)
       .order("created_at", { ascending: true })
       .limit(200)
-      .then(({ data }) => { if (mounted && data) setItems(data as Feedback[]); });
+      .then(({ data }) => { if (mounted && data) setItems(data as unknown as Feedback[]); });
 
 
     const ch = supabase
