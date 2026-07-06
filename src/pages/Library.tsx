@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import { useGames } from "@/hooks/useGames";
 import { useLibrary, useRemoveFromLibrary } from "@/hooks/useLibrary";
-import { useDownloads } from "@/lib/downloads";
+import { supabase } from "@/integrations/supabase/client";
 import { Library as LibraryIcon, Search, Download, Wifi, WifiOff, Gamepad2, Trash2, Calendar, User as UserIcon, Building2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,7 @@ const Library = () => {
   const { data: games } = useGames();
   const { data: ownedIds = [] } = useLibrary();
   const remove = useRemoveFromLibrary();
-  const { startDownload } = useDownloads();
+  
   const [q, setQ] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -38,15 +38,29 @@ const Library = () => {
 
   const selected = owned.find((g) => g.id === selectedId) ?? null;
 
-  const handleDownload = (game: Game) => {
+  const handleDownload = async (game: Game) => {
     if (!game.download_url) return toast.error("No download link available");
-    startDownload({
-      url: game.download_url,
-      title: game.title,
-      gameId: game.id,
-      imageUrl: game.image_url || undefined,
-    });
+    window.open(game.download_url, "_blank", "noopener,noreferrer");
+    try {
+      const { data: auth } = await supabase.auth.getUser();
+      const u = auth?.user;
+      if (u) {
+        const userName = (u.user_metadata?.full_name as string) ||
+                         (u.user_metadata?.name as string) ||
+                         u.email?.split("@")[0] || "Player";
+        await supabase.from("game_downloads").insert({
+          user_id: u.id,
+          user_email: u.email!,
+          user_name: userName,
+          game_id: game.id,
+          game_title: game.title,
+        });
+      }
+    } catch (e) {
+      console.warn("Failed to record download", e);
+    }
   };
+
 
   const handleRemove = async (game: Game) => {
     if (!confirm(`Remove "${game.title}" from your library?`)) return;
