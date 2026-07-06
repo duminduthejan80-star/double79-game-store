@@ -46,12 +46,13 @@ export const GameReviews = ({ gameId }: { gameId: string }) => {
   useEffect(() => {
     let mounted = true;
     supabase
-      .from("game_feedback")
+      .from("game_feedback_public" as any)
       .select("id, user_name, rating, comment, created_at")
       .eq("game_id", gameId)
       .order("created_at", { ascending: true })
       .limit(200)
-      .then(({ data }) => { if (mounted && data) setItems(data as Feedback[]); });
+      .then(({ data }) => { if (mounted && data) setItems(data as unknown as Feedback[]); });
+
 
     const ch = supabase
       .channel(`feedback-${gameId}`)
