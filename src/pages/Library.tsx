@@ -87,9 +87,9 @@ const Library = () => {
             Your library is empty. Get games from the store to see them here.
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] gap-4 rounded-lg border border-border bg-card-gradient overflow-hidden min-h-[600px]">
+          <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] gap-4 rounded-2xl lg-panel overflow-hidden min-h-[600px]">
             {/* Sidebar */}
-            <aside className="border-r border-border/60 bg-surface-1/50 flex flex-col">
+            <aside className="border-r border-white/10 bg-white/[0.03] flex flex-col">
               <div className="p-3 border-b border-border/60">
                 <div className="relative">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -97,7 +97,7 @@ const Library = () => {
                     value={q}
                     onChange={(e) => setQ(e.target.value)}
                     placeholder="Search library"
-                    className="pl-8 h-9 bg-surface-2 border-border text-sm"
+                    className="pl-8 h-9 text-sm"
                   />
                 </div>
               </div>
@@ -110,7 +110,7 @@ const Library = () => {
                       "w-full flex items-center gap-2.5 px-3 py-1.5 text-left text-sm transition-smooth",
                       selectedId === g.id
                         ? "bg-primary/15 text-foreground border-l-2 border-primary"
-                        : "text-muted-foreground hover:bg-surface-2 hover:text-foreground border-l-2 border-transparent"
+                        : "text-muted-foreground hover:bg-white/10 hover:text-foreground border-l-2 border-transparent"
                     )}
                   >
                     <div className="h-6 w-6 rounded-sm overflow-hidden bg-surface-2 flex-shrink-0 flex items-center justify-center">
@@ -207,7 +207,7 @@ const Library = () => {
                     </div>
 
                     {(selected.min_os || selected.min_cpu || selected.min_ram || selected.min_gpu || selected.min_storage) && (
-                      <div className="rounded-lg border border-border bg-surface-1 p-4">
+                      <div className="rounded-xl lg-panel p-4">
                         <h3 className="text-sm font-semibold mb-3">System Requirements (Minimum)</h3>
                         <div className="space-y-1.5 text-sm">
                           {selected.min_os && <div className="flex justify-between"><span className="text-muted-foreground">OS</span><span>{selected.min_os}</span></div>}

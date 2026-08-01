@@ -30,7 +30,7 @@ const GameCard = ({ game }: { game: Game }) => {
       to={`/game/${game.id}`}
       onMouseMove={handleMove}
       onMouseLeave={handleLeave}
-      className="group glass relative flex flex-col overflow-hidden rounded-xl border border-border/60 shadow-card will-change-transform animate-fade-in-up"
+      className="group lg-panel relative flex flex-col overflow-hidden rounded-2xl will-change-transform animate-fade-in-up"
       style={{
         transformStyle: "preserve-3d",
         transform: `perspective(1000px) rotateX(${t.rx}deg) rotateY(${t.ry}deg) translateZ(0) ${t.active ? "scale(1.08) translateY(-6px)" : ""}`,
