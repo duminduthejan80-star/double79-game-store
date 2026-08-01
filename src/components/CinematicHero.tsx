@@ -26,7 +26,7 @@ const CinematicHero = () => {
       ref={ref}
       onMouseMove={handleMove}
       onMouseLeave={handleLeave}
-      className="relative overflow-hidden border-b border-border/60 bg-surface-1"
+      className="relative overflow-hidden border-b border-white/10 bg-white/[0.02] backdrop-blur-xl"
       style={{ perspective: "1200px" }}
     >
       <video

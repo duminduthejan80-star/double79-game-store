@@ -90,14 +90,14 @@ const FeaturedShowcase = ({ games }: { games: Game[] }) => {
           <div className="flex items-center gap-1">
             <button
               onClick={() => goGame(-1)}
-              className="h-8 w-8 rounded-md bg-surface-2 hover:bg-surface-3 flex items-center justify-center transition-smooth"
+              className="h-8 w-8 rounded-lg lg-btn hover:brightness-125 flex items-center justify-center transition-smooth"
               aria-label="Previous game"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
             <button
               onClick={() => goGame(1)}
-              className="h-8 w-8 rounded-md bg-surface-2 hover:bg-surface-3 flex items-center justify-center transition-smooth"
+              className="h-8 w-8 rounded-lg lg-btn hover:brightness-125 flex items-center justify-center transition-smooth"
               aria-label="Next game"
             >
               <ChevronRight className="h-4 w-4" />
@@ -106,7 +106,7 @@ const FeaturedShowcase = ({ games }: { games: Game[] }) => {
         </div>
       )}
 
-      <div className="grid lg:grid-cols-[1fr_220px] gap-3 rounded-lg border border-border/60 bg-surface-1 p-3 shadow-card">
+      <div className="grid lg:grid-cols-[1fr_220px] gap-3 rounded-2xl lg-panel p-3">
         {/* Main viewer */}
         <Link to={`/game/${activeGame.id}`} className="relative aspect-video rounded-md overflow-hidden bg-black group block">
           {current ? (
@@ -185,7 +185,7 @@ const FeaturedShowcase = ({ games }: { games: Game[] }) => {
                 onMouseEnter={() => setSlideIdx(i)}
                 onClick={() => setSlideIdx(i)}
                 className={cn(
-                  "relative aspect-video rounded overflow-hidden bg-surface-3 ring-2 transition-smooth flex-shrink-0",
+                  "relative aspect-video rounded-lg overflow-hidden bg-white/5 ring-2 transition-smooth flex-shrink-0",
                   isActive ? "ring-primary" : "ring-transparent hover:ring-border"
                 )}
                 aria-label={`View media ${i + 1}`}
