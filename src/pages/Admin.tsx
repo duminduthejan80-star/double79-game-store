@@ -134,7 +134,7 @@ const Admin = () => {
       <div className="min-h-screen">
         <Navbar />
         <div className="container mx-auto px-4 py-20 flex justify-center">
-          <form onSubmit={login} className="w-full max-w-sm rounded-lg border border-border bg-card-gradient p-8 shadow-elevated">
+          <form onSubmit={login} className="w-full max-w-sm rounded-2xl lg-strong p-8">
             <div className="flex justify-center mb-4">
               <div className="h-14 w-14 rounded-full bg-primary-gradient flex items-center justify-center shadow-glow">
                 <Shield className="h-7 w-7 text-primary-foreground" />
@@ -251,7 +251,7 @@ const Admin = () => {
 
 
           <TabsContent value="games">
-            <div className="rounded-lg border border-border bg-card-gradient overflow-hidden">
+            <div className="rounded-2xl lg-panel overflow-hidden">
               <table className="w-full text-sm">
                 <thead className="bg-surface-3 text-left">
                   <tr>
@@ -357,7 +357,7 @@ const EmailTestPanel = () => {
   };
 
   return (
-    <div className="max-w-xl rounded-lg border border-border bg-card-gradient p-6 space-y-4">
+    <div className="max-w-xl rounded-2xl lg-panel p-6 space-y-4">
       <div>
         <h2 className="text-lg font-semibold">Feedback Email Test</h2>
         <p className="text-sm text-muted-foreground mt-1">
@@ -445,16 +445,16 @@ const UsersPanel = () => {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        <div className="rounded-lg border border-border bg-card-gradient p-4">
+        <div className="rounded-2xl lg-panel p-4">
           <div className="text-xs text-muted-foreground">Total users</div>
           <div className="text-2xl font-bold">{data.total_users}</div>
         </div>
-        <div className="rounded-lg border border-border bg-card-gradient p-4">
+        <div className="rounded-2xl lg-panel p-4">
           <div className="text-xs text-muted-foreground">Total downloads</div>
           <div className="text-2xl font-bold">{data.total_downloads}</div>
         </div>
       </div>
-      <div className="rounded-lg border border-border bg-card-gradient overflow-hidden">
+      <div className="rounded-2xl lg-panel overflow-hidden">
         {data.users.map((u) => (
           <Collapsible key={u.id} className="border-b border-border/50 last:border-b-0">
             <CollapsibleTrigger className="w-full flex items-center gap-4 p-4 hover:bg-surface-2/50 text-left">
@@ -468,7 +468,7 @@ const UsersPanel = () => {
               </div>
               <ChevronDown className="h-4 w-4 text-muted-foreground" />
             </CollapsibleTrigger>
-            <CollapsibleContent className="px-4 pb-4 bg-surface-1/40">
+            <CollapsibleContent className="px-4 pb-4 bg-white/[0.04]">
               <div className="grid md:grid-cols-2 gap-4 pt-2">
                 <div>
                   <div className="text-sm font-semibold mb-2">Library ({u.library.length})</div>
