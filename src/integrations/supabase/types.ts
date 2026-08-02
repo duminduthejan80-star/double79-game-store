@@ -109,6 +109,7 @@ export type Database = {
       }
       games: {
         Row: {
+          categories: string[]
           created_at: string
           description: string | null
           developer: string | null
@@ -133,6 +134,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          categories?: string[]
           created_at?: string
           description?: string | null
           developer?: string | null
@@ -157,6 +159,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          categories?: string[]
           created_at?: string
           description?: string | null
           developer?: string | null
