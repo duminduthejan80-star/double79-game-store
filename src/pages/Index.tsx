@@ -25,10 +25,7 @@ const Index = () => {
         !q ||
         g.title.toLowerCase().includes(q.toLowerCase()) ||
         (g.genre || "").toLowerCase().includes(q.toLowerCase());
-      const matchesF =
-        filter === "all" ||
-        (filter === "online" && g.mode === "online") ||
-        (filter === "offline" && g.mode === "offline");
+      const matchesF = filter === "all" || (g.categories || []).includes(filter);
       return matchesQ && matchesF;
     });
   }, [games, q, filter]);
