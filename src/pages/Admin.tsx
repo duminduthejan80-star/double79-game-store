@@ -15,6 +15,7 @@ import { Shield, Plus, Pencil, Trash2, LogOut, Users, ChevronDown } from "lucide
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Game, GameInput } from "@/types/game";
+import { GAME_CATEGORIES } from "@/lib/categories";
 
 const ADMIN_CODE = "7997";
 const SESSION_KEY = "d79_admin_ok";
@@ -26,6 +27,7 @@ const empty: GameInput = {
   genre: "", developer: "", publisher: "", release_date: null,
   min_os: "", min_cpu: "", min_ram: "", min_gpu: "", min_storage: "",
   featured: false,
+  categories: [],
   screenshots: [],
   trailer_url: "",
 };
@@ -197,6 +199,36 @@ const Admin = () => {
                     </div>
                     <div className="col-span-2"><Label>Trailer URL (YouTube link or .mp4)</Label><Input value={form.trailer_url ?? ""} onChange={(e) => setForm({ ...form, trailer_url: e.target.value })} placeholder="https://..." /></div>
                     <div className="col-span-2"><Label>Download URL</Label><Input value={form.download_url ?? ""} onChange={(e) => setForm({ ...form, download_url: e.target.value })} placeholder="https://..." /></div>
+
+                    <div className="col-span-2">
+                      <Label>Categories (select any number)</Label>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {GAME_CATEGORIES.map((c) => {
+                          const active = (form.categories ?? []).includes(c);
+                          return (
+                            <button
+                              key={c}
+                              type="button"
+                              onClick={() =>
+                                setForm({
+                                  ...form,
+                                  categories: active
+                                    ? (form.categories ?? []).filter((x) => x !== c)
+                                    : [...(form.categories ?? []), c],
+                                })
+                              }
+                              className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
+                                active
+                                  ? "bg-primary text-primary-foreground border-primary"
+                                  : "lg-field text-muted-foreground hover:text-foreground"
+                              }`}
+                            >
+                              {active ? "✓ " : ""}{c}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
 
                     <div><Label>Genre</Label><Input value={form.genre ?? ""} onChange={(e) => setForm({ ...form, genre: e.target.value })} /></div>
                     <div>

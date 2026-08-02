@@ -10,6 +10,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useGames } from "@/hooks/useGames";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { GAME_CATEGORIES } from "@/lib/categories";
 
 const Index = () => {
   const { data: games, isLoading } = useGames();
@@ -25,10 +26,7 @@ const Index = () => {
         !q ||
         g.title.toLowerCase().includes(q.toLowerCase()) ||
         (g.genre || "").toLowerCase().includes(q.toLowerCase());
-      const matchesF =
-        filter === "all" ||
-        (filter === "online" && g.mode === "online") ||
-        (filter === "offline" && g.mode === "offline");
+      const matchesF = filter === "all" || (g.categories || []).includes(filter);
       return matchesQ && matchesF;
     });
   }, [games, q, filter]);
@@ -51,7 +49,7 @@ const Index = () => {
           </div>
         )}
 
-        <h2 className="text-2xl font-bold mb-4 reveal-on-scroll">{filter === "online" ? "Online Games" : filter === "offline" ? "Offline Games" : "All Games"}</h2>
+        <h2 className="text-2xl font-bold mb-4 reveal-on-scroll">{filter === "all" ? "All Games" : `${filter} Games`}</h2>
         <div className="liquid-glass rounded-2xl p-3 flex flex-col md:flex-row md:items-center gap-4 mb-6">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
@@ -77,11 +75,12 @@ const Index = () => {
               />
             </div>
           </div>
-          <Tabs value={filter} onValueChange={setFilter}>
-            <TabsList className="liquid-glass border-0">
+          <Tabs value={filter} onValueChange={setFilter} className="md:ml-auto">
+            <TabsList className="liquid-glass border-0 flex flex-wrap h-auto justify-start">
               <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="online">Online</TabsTrigger>
-              <TabsTrigger value="offline">Offline</TabsTrigger>
+              {GAME_CATEGORIES.map((c) => (
+                <TabsTrigger key={c} value={c}>{c}</TabsTrigger>
+              ))}
             </TabsList>
           </Tabs>
         </div>

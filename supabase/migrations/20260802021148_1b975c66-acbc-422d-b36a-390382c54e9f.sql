@@ -1,0 +1,1 @@
+ALTER TABLE public.games ADD COLUMN IF NOT EXISTS categories text[] NOT NULL DEFAULT '{}'::text[];

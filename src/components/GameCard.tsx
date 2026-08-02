@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Wifi, WifiOff, Gamepad2 } from "lucide-react";
+import { Gamepad2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { Game } from "@/types/game";
 
@@ -69,10 +69,11 @@ const GameCard = ({ game }: { game: Game }) => {
           {game.featured && (
             <Badge className="bg-accent text-accent-foreground border-0">Featured</Badge>
           )}
-          <Badge variant="secondary" className="ml-auto bg-background/70 backdrop-blur-md">
-            {game.mode === "online" ? <Wifi className="h-3 w-3 mr-1" /> : <WifiOff className="h-3 w-3 mr-1" />}
-            {game.mode}
-          </Badge>
+          {(game.categories?.length ?? 0) > 0 && (
+            <Badge variant="secondary" className="ml-auto bg-background/70 backdrop-blur-md">
+              {game.categories[0]}
+            </Badge>
+          )}
         </div>
       </div>
 
