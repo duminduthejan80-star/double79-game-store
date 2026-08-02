@@ -69,11 +69,17 @@ const GameCard = ({ game }: { game: Game }) => {
           {game.featured && (
             <Badge className="bg-accent text-accent-foreground border-0">Featured</Badge>
           )}
-          {(game.categories?.length ?? 0) > 0 && (
-            <Badge variant="secondary" className="ml-auto bg-background/70 backdrop-blur-md">
-              {game.categories[0]}
+          <div className="ml-auto flex flex-wrap justify-end gap-1">
+            {(game.categories?.length ?? 0) > 0 && (
+              <Badge variant="secondary" className="bg-background/70 backdrop-blur-md">
+                {game.categories[0]}
+              </Badge>
+            )}
+            <Badge variant="secondary" className="bg-background/70 backdrop-blur-md capitalize">
+              {game.mode === "online" ? <Wifi className="h-3 w-3 mr-1" /> : <WifiOff className="h-3 w-3 mr-1" />}
+              {game.mode}
             </Badge>
-          )}
+          </div>
         </div>
       </div>
 
