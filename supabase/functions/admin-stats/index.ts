@@ -23,14 +23,15 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
-  const [profilesRes, libRes, dlRes, gamesRes] = await Promise.all([
+  const [profilesRes, libRes, dlRes, gamesRes, gdRes] = await Promise.all([
     supabase.from("profiles").select("id, email, display_name, avatar_url, created_at"),
     supabase.from("user_library").select("user_id, game_id, created_at"),
     supabase.from("download_events").select("user_id, game_id, game_title, created_at").order("created_at", { ascending: false }),
+    supabase.from("game_downloads").select("user_id, game_id, game_title, downloaded_at").order("downloaded_at", { ascending: false }),
     supabase.from("games").select("id, title"),
   ]);
 
-  const err = profilesRes.error || libRes.error || dlRes.error || gamesRes.error;
+  const err = profilesRes.error || libRes.error || dlRes.error || gamesRes.error || gdRes.error;
   if (err) {
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
@@ -38,11 +39,33 @@ Deno.serve(async (req) => {
     });
   }
 
+  const allDownloads = [
+    ...(dlRes.data ?? []).map((d) => ({
+      user_id: d.user_id,
+      game_id: d.game_id,
+      game_title: d.game_title,
+      created_at: d.created_at,
+    })),
+    ...(gdRes.data ?? []).map((d) => ({
+      user_id: d.user_id,
+      game_id: d.game_id,
+      game_title: d.game_title,
+      created_at: d.downloaded_at,
+    })),
+  ].sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+
   const gameMap = new Map((gamesRes.data ?? []).map((g) => [g.id, g.title]));
 
   const users = (profilesRes.data ?? []).map((p) => {
     const libs = (libRes.data ?? []).filter((l) => l.user_id === p.id);
-    const dls = (dlRes.data ?? []).filter((d) => d.user_id === p.id);
+    const seen = new Set<string>();
+    const dls = allDownloads.filter((d) => {
+      if (d.user_id !== p.id) return false;
+      const k = `${d.game_id}|${d.created_at}`;
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
     return {
       id: p.id,
       email: p.email,
@@ -67,7 +90,7 @@ Deno.serve(async (req) => {
   return new Response(
     JSON.stringify({
       total_users: users.length,
-      total_downloads: (dlRes.data ?? []).length,
+      total_downloads: allDownloads.length,
       users,
     }),
     { headers: { ...corsHeaders, "Content-Type": "application/json" } },

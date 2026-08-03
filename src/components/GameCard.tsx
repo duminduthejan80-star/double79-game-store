@@ -1,11 +1,14 @@
 import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Wifi, WifiOff, Gamepad2 } from "lucide-react";
+import { Wifi, WifiOff, Gamepad2, Download } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { Game } from "@/types/game";
+import { useDownloadCounts } from "@/hooks/useDownloadCounts";
 
 const GameCard = ({ game }: { game: Game }) => {
   const ref = useRef<HTMLAnchorElement>(null);
+  const { data: counts } = useDownloadCounts();
+  const downloads = counts?.[game.id] ?? 0;
   const [t, setT] = useState({ rx: 0, ry: 0, gx: 50, gy: 50, active: false });
 
   const handleMove = (e: React.MouseEvent) => {
@@ -90,8 +93,14 @@ const GameCard = ({ game }: { game: Game }) => {
         {game.genre && (
           <p className="text-xs text-muted-foreground line-clamp-1">{game.genre}</p>
         )}
-        <div className="mt-auto flex items-center justify-between pt-2">
-          <span className="text-sm font-bold text-accent">Free</span>
+        <div className="mt-auto flex items-center justify-between gap-2 pt-2">
+          <span className="rounded-full border border-emerald-400/30 bg-emerald-500/15 px-2.5 py-0.5 text-xs font-bold text-emerald-400">
+            Free
+          </span>
+          <span className="flex items-center gap-1.5 rounded-full lg-field px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+            <Download className="h-3 w-3" />
+            {downloads.toLocaleString()}
+          </span>
         </div>
       </div>
 
