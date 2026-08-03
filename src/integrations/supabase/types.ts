@@ -320,6 +320,13 @@ export type Database = {
       }
     }
     Functions: {
+      game_download_counts: {
+        Args: never
+        Returns: {
+          downloads: number
+          game_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
