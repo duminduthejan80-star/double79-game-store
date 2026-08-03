@@ -25,10 +25,10 @@ Deno.serve(async (req) => {
 
   const [profilesRes, libRes, dlRes, gamesRes, gdRes] = await Promise.all([
     supabase.from("profiles").select("id, email, display_name, avatar_url, created_at"),
-    supabase.from("user_library").select("user_id, game_id, created_at"),
-    supabase.from("download_events").select("user_id, game_id, game_title, created_at").order("created_at", { ascending: false }),
-    supabase.from("game_downloads").select("user_id, game_id, game_title, downloaded_at").order("downloaded_at", { ascending: false }),
-    supabase.from("games").select("id, title"),
+    supabase.from("user_library").select("user_id, game_id, created_at, games(title)").limit(50000),
+    supabase.from("download_events").select("user_id, game_id, game_title, created_at").order("created_at", { ascending: false }).limit(50000),
+    supabase.from("game_downloads").select("user_id, game_id, game_title, downloaded_at").order("downloaded_at", { ascending: false }).limit(50000),
+    supabase.from("games").select("id, title").limit(50000),
   ]);
 
   const err = profilesRes.error || libRes.error || dlRes.error || gamesRes.error || gdRes.error;
@@ -54,7 +54,8 @@ Deno.serve(async (req) => {
     })),
   ].sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
 
-  const gameMap = new Map((gamesRes.data ?? []).map((g) => [g.id, g.title]));
+  const gameMap = new Map((gamesRes.data ?? []).map((g) => [String(g.id), g.title as string]));
+  console.log("games loaded", gameMap.size);
 
   const users = (profilesRes.data ?? []).map((p) => {
     const libs = (libRes.data ?? []).filter((l) => l.user_id === p.id);
@@ -76,12 +77,12 @@ Deno.serve(async (req) => {
       download_count: dls.length,
       library: libs.map((l) => ({
         game_id: l.game_id,
-        title: gameMap.get(l.game_id) ?? "Unknown",
+        title: (l as any).games?.title ?? gameMap.get(String(l.game_id)) ?? "Unknown",
         added_at: l.created_at,
       })),
       downloads: dls.map((d) => ({
         game_id: d.game_id,
-        title: d.game_title ?? gameMap.get(d.game_id) ?? "Unknown",
+        title: d.game_title ?? gameMap.get(String(d.game_id)) ?? "Unknown",
         at: d.created_at,
       })),
     };
