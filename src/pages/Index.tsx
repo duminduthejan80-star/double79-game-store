@@ -50,18 +50,19 @@ const Index = () => {
         )}
 
         <h2 className="text-2xl font-bold mb-4 reveal-on-scroll">{filter === "all" ? "All Games" : `${filter} Games`}</h2>
-        <div className="liquid-glass rounded-2xl p-3 flex flex-col md:flex-row md:items-center gap-4 mb-6">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
+        <div className="liquid-glass rounded-2xl p-3 flex flex-col gap-4 mb-6">
+          <div className="relative w-full">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
             <Input
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search games..."
               className={cn(
-                "pl-9 pr-12 bg-white/5 border-white/10 backdrop-blur-xl transition-all",
+                "h-14 pl-12 pr-16 text-lg md:text-xl font-medium rounded-xl bg-white/5 border-white/10 backdrop-blur-xl transition-all placeholder:text-base",
                 flash && "ring-2 ring-green-500 border-green-500"
               )}
             />
+
             <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
               <VoiceSearchButton
                 onResult={(t) => {
