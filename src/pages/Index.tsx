@@ -63,7 +63,7 @@ const Index = () => {
               )}
             />
 
-            <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+            <div className="absolute right-3 top-1/2 -translate-y-1/2">
               <VoiceSearchButton
                 onResult={(t) => {
                   setQ(t);
@@ -76,7 +76,8 @@ const Index = () => {
               />
             </div>
           </div>
-          <Tabs value={filter} onValueChange={setFilter} className="md:ml-auto">
+          <Tabs value={filter} onValueChange={setFilter}>
+
             <TabsList className="liquid-glass border-0 flex flex-wrap h-auto justify-start">
               <TabsTrigger value="all">All</TabsTrigger>
               {GAME_CATEGORIES.map((c) => (
