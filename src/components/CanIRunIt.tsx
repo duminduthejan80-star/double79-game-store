@@ -148,7 +148,7 @@ const CanIRunIt = ({ game }: Props) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const hasAnyReq = !!(game.min_cpu || game.min_gpu || game.min_ram || game.min_storage);
+  const hasAnyReq = !!(game.min_cpu || game.min_gpu || game.min_ram);
   if (!hasAnyReq) return null;
 
   // Scanning UI
