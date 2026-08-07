@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Wifi, WifiOff, Gamepad2, Download } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+
 import type { Game } from "@/types/game";
 import { useDownloadCounts } from "@/hooks/useDownloadCounts";
 
