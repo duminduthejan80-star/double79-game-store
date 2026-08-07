@@ -68,23 +68,24 @@ const GameCard = ({ game }: { game: Game }) => {
             <Gamepad2 className="h-12 w-12 opacity-30" />
           </div>
         )}
-        <div className="absolute inset-x-0 top-0 flex items-start justify-between p-2">
+        <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-2">
           {game.featured && (
-            <Badge className="bg-accent text-accent-foreground border-0">Featured</Badge>
+            <span className="glass-chip glass-chip-accent">Featured</span>
           )}
-          <div className="ml-auto flex flex-wrap justify-end gap-1">
+          <div className="ml-auto flex flex-wrap justify-end gap-1.5">
             {(game.categories ?? []).map((c) => (
-              <Badge key={c} variant="secondary" className="bg-background/70 backdrop-blur-md">
+              <span key={c} className="glass-chip">
                 {c}
-              </Badge>
+              </span>
             ))}
-            <Badge variant="secondary" className="bg-background/70 backdrop-blur-md capitalize">
-              {game.mode === "online" ? <Wifi className="h-3 w-3 mr-1" /> : <WifiOff className="h-3 w-3 mr-1" />}
+            <span className="glass-chip capitalize">
+              {game.mode === "online" ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
               {game.mode}
-            </Badge>
+            </span>
           </div>
 
         </div>
+
       </div>
 
       <div className="flex flex-1 flex-col gap-2 p-4" style={{ transform: "translateZ(30px)" }}>
