@@ -75,16 +75,11 @@ const ProfileEditor = ({ onSaved }: { onSaved?: () => void }) => {
         <Label htmlFor="gpu" className="flex items-center gap-2"><Monitor className="h-4 w-4" /> GPU</Label>
         <Input id="gpu" placeholder="e.g. NVIDIA RTX 3060" value={draft.gpu} onChange={(e) => update("gpu", e.target.value)} />
       </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-2">
-          <Label htmlFor="ram" className="flex items-center gap-2"><MemoryStick className="h-4 w-4" /> RAM (GB)</Label>
-          <Input id="ram" type="number" min={0} placeholder="16" value={draft.ram || ""} onChange={(e) => update("ram", parseFloat(e.target.value) || 0)} />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="storage" className="flex items-center gap-2"><HardDrive className="h-4 w-4" /> Storage (GB)</Label>
-          <Input id="storage" type="number" min={0} placeholder="500" value={draft.storage || ""} onChange={(e) => update("storage", parseFloat(e.target.value) || 0)} />
-        </div>
+      <div className="space-y-2">
+        <Label htmlFor="ram" className="flex items-center gap-2"><MemoryStick className="h-4 w-4" /> RAM (GB)</Label>
+        <Input id="ram" type="number" min={0} placeholder="16" value={draft.ram || ""} onChange={(e) => update("ram", parseFloat(e.target.value) || 0)} />
       </div>
+
       <DialogFooter>
         <Button onClick={save} className="w-full">Save profile</Button>
       </DialogFooter>
@@ -153,7 +148,7 @@ const CanIRunIt = ({ game }: Props) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const hasAnyReq = !!(game.min_cpu || game.min_gpu || game.min_ram || game.min_storage);
+  const hasAnyReq = !!(game.min_cpu || game.min_gpu || game.min_ram);
   if (!hasAnyReq) return null;
 
   // Scanning UI
