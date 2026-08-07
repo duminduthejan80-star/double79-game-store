@@ -209,14 +209,12 @@ const Admin = () => {
                             <button
                               key={c}
                               type="button"
-                              onClick={() =>
-                                setForm({
-                                  ...form,
-                                  categories: active
-                                    ? (form.categories ?? []).filter((x) => x !== c)
-                                    : [...(form.categories ?? []), c],
-                                })
-                              }
+                              onClick={() => {
+                                const next = active
+                                  ? (form.categories ?? []).filter((x) => x !== c)
+                                  : [...(form.categories ?? []), c];
+                                setForm({ ...form, categories: next, genre: next.join(", ") });
+                              }}
                               className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
                                 active
                                   ? "bg-primary text-primary-foreground border-primary"
@@ -230,7 +228,11 @@ const Admin = () => {
                       </div>
                     </div>
 
-                    <div><Label>Genre</Label><Input value={form.genre ?? ""} onChange={(e) => setForm({ ...form, genre: e.target.value })} /></div>
+                    <div>
+                      <Label>Genre (auto from categories)</Label>
+                      <Input value={form.genre ?? ""} readOnly placeholder="Select categories above" />
+                    </div>
+
                     <div>
                       <Label>Mode</Label>
                       <Select value={form.mode} onValueChange={(v) => setForm({ ...form, mode: v })}>
