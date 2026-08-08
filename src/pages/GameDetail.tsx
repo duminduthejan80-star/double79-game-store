@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Download, Wifi, WifiOff, Check, Calendar, User, Building2 } from "lucide-react";
+import { startDesktopDownload } from "@/lib/desktopBridge";
 import Navbar from "@/components/Navbar";
 import MediaGallery from "@/components/MediaGallery";
 import { useGame } from "@/hooks/useGames";

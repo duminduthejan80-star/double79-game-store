@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
+import { startDesktopDownload } from "@/lib/desktopBridge";
 import { useGames } from "@/hooks/useGames";
 import { useLibrary, useRemoveFromLibrary } from "@/hooks/useLibrary";
 import { supabase } from "@/integrations/supabase/client";
