@@ -53,8 +53,9 @@ const App = () => (
                 <Route path="/game/:id" element={<ProtectedRoute><GameDetail /></ProtectedRoute>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
-              
+              <DesktopDownloadManager />
               </AppShell>
+
             </HardwareProfileProvider>
           </DownloadsProvider>
         </AuthProvider>
