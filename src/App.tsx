@@ -19,6 +19,7 @@ import CinematicBackground from "@/components/CinematicBackground";
 import { AuthProvider } from "@/lib/auth";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import LoginStreakTracker from "@/components/LoginStreakTracker";
+import DesktopDownloadManager from "@/components/DesktopDownloadManager";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 
 const queryClient = new QueryClient();
