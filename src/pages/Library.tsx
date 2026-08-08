@@ -40,7 +40,19 @@ const Library = () => {
 
   const handleDownload = async (game: Game) => {
     if (!game.download_url) return toast.error("No download link available");
-    window.open(game.download_url, "_blank", "noopener,noreferrer");
+    try {
+      const res = await startDesktopDownload(game.download_url, game.title);
+      if (res === "cancelled") return;
+      if (res === "unavailable") {
+        window.open(game.download_url, "_blank", "noopener,noreferrer");
+      } else {
+        toast.success(`Downloading ${game.title}`);
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "Download failed to start");
+      return;
+    }
+
     try {
       const { data: auth } = await supabase.auth.getUser();
       const u = auth?.user;
