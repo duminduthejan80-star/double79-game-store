@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Download, Wifi, WifiOff, Check, Calendar, User, Building2 } from "lucide-react";
+import { startDesktopDownload } from "@/lib/desktopBridge";
 import Navbar from "@/components/Navbar";
 import MediaGallery from "@/components/MediaGallery";
 import { useGame } from "@/hooks/useGames";
@@ -47,7 +48,20 @@ const GameDetail = () => {
       toast.error("No download link available");
       return;
     }
-    window.open(game.download_url, "_blank", "noopener,noreferrer");
+    // Desktop app: pick a folder (Steam-style) and download inside the app
+    try {
+      const res = await startDesktopDownload(game.download_url, game.title);
+      if (res === "cancelled") return;
+      if (res === "unavailable") {
+        window.open(game.download_url, "_blank", "noopener,noreferrer");
+      } else {
+        toast.success(`Downloading ${game.title}`);
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "Download failed to start");
+      return;
+    }
+
     // Record download → 24h follow-up email will be triggered by cron
     try {
       const { data: auth } = await supabase.auth.getUser();

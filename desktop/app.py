@@ -1,10 +1,12 @@
 """
 Double79 Game Store - Desktop App (Windows / macOS / Linux)
 
-Fixes vs a plain webview wrapper:
+Features:
   * Login is remembered  -> private_mode=False + a real profile folder
-  * Intro video + YouTube -> modern engine (Edge WebView2 / WKWebView) + desktop user agent
+  * Intro video + YouTube -> modern engine + desktop user agent
   * New game notifications -> background poller with native OS notifications
+  * Built-in download manager -> folder picker + threaded direct downloads
+    with real-time progress, speed (MB/s), percent and time remaining.
 
 Run:
     pip install -r requirements.txt
@@ -18,6 +20,7 @@ import threading
 import time
 import urllib.parse
 import urllib.request
+import uuid
 
 import webview
 
@@ -31,6 +34,7 @@ SUPABASE_ANON_KEY = (
     "LCJpYXQiOjE3Nzc1NTYxNzQsImV4cCI6MjA5MzEzMjE3NH0."
     "4tHpSMAqazpG4VWnmhGl7MdY0BLjonOMUNhD-vtVbG8"
 )
+RESOLVE_ENDPOINT = f"{SUPABASE_URL}/functions/v1/resolve-download"
 
 POLL_SECONDS = 60
 
@@ -41,6 +45,7 @@ PROFILE_DIR = os.path.join(
     "Double79GameStore",
 )
 STATE_FILE = os.path.join(PROFILE_DIR, "last_seen_game.json")
+SETTINGS_FILE = os.path.join(PROFILE_DIR, "settings.json")
 os.makedirs(PROFILE_DIR, exist_ok=True)
 
 # Desktop Chrome UA: Google OAuth refuses "embedded webview" user agents
@@ -72,7 +77,7 @@ def notify(title: str, message: str) -> None:
 
 
 # --------------------------------------------------------------- new games
-def _load_last_seen() -> str | None:
+def _load_last_seen() -> "str | None":
     try:
         with open(STATE_FILE, "r", encoding="utf-8") as fh:
             return json.load(fh).get("created_at")
@@ -88,7 +93,7 @@ def _save_last_seen(created_at: str) -> None:
         pass
 
 
-def _fetch_games(since: str | None):
+def _fetch_games(since: "str | None"):
     params = {
         "select": "id,title,created_at",
         "order": "created_at.desc",
@@ -135,25 +140,246 @@ def watch_new_games() -> None:
         _save_last_seen(last_seen)
 
 
+# ---------------------------------------------------------- download engine
+def _safe_name(name: str) -> str:
+    keep = "".join(c for c in name if c.isalnum() or c in " ._-()[]")
+    return (keep.strip() or "download")[:120]
+
+
+def _resolve_direct(url: str) -> str:
+    """Ask the backend to turn a share-page URL into a direct file URL so the
+    download happens inside the app instead of opening Gofile in a browser."""
+    try:
+        body = json.dumps({"url": url}).encode("utf-8")
+        req = urllib.request.Request(
+            RESOLVE_ENDPOINT,
+            data=body,
+            headers={
+                "Content-Type": "application/json",
+                "apikey": SUPABASE_ANON_KEY,
+                "Authorization": f"Bearer {SUPABASE_ANON_KEY}",
+            },
+        )
+        with urllib.request.urlopen(req, timeout=45) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        return data.get("direct") or url
+    except Exception as exc:
+        print(f"[resolve] failed: {exc}")
+        return url
+
+
+class DownloadJob:
+    def __init__(self, job_id: str, title: str, url: str, folder: str):
+        self.id = job_id
+        self.title = title
+        self.url = url
+        self.folder = folder
+        self.path = ""
+        self.status = "resolving"  # resolving|downloading|completed|failed|cancelled
+        self.total = 0
+        self.received = 0
+        self.speed = 0.0  # bytes/s
+        self.time_left = 0  # seconds
+        self.error = ""
+        self.cancel = threading.Event()
+
+    def to_dict(self):
+        pct = (self.received / self.total * 100) if self.total else 0
+        return {
+            "id": self.id,
+            "title": self.title,
+            "status": self.status,
+            "path": self.path,
+            "folder": self.folder,
+            "totalBytes": self.total,
+            "receivedBytes": self.received,
+            "percent": round(pct, 2),
+            "speed": round(self.speed, 2),
+            "speedMBps": round(self.speed / (1024 * 1024), 2),
+            "timeLeft": int(self.time_left),
+            "error": self.error,
+        }
+
+
+class Api:
+    """Exposed to the website as window.pywebview.api"""
+
+    def __init__(self):
+        self.jobs = {}
+        self.lock = threading.Lock()
+        self.window = None
+
+    # ---- environment
+    def ping(self):
+        return {"desktop": True, "app": APP_NAME}
+
+    def _settings(self):
+        try:
+            with open(SETTINGS_FILE, "r", encoding="utf-8") as fh:
+                return json.load(fh)
+        except Exception:
+            return {}
+
+    def _save_settings(self, data):
+        try:
+            with open(SETTINGS_FILE, "w", encoding="utf-8") as fh:
+                json.dump(data, fh)
+        except Exception:
+            pass
+
+    # ---- folder picker (Steam-like "choose install location")
+    def choose_folder(self):
+        last = self._settings().get("last_folder") or os.path.expanduser("~")
+        try:
+            result = self.window.create_file_dialog(
+                webview.FOLDER_DIALOG, directory=last
+            )
+        except Exception as exc:
+            return {"folder": None, "error": str(exc)}
+        if not result:
+            return {"folder": None}
+        folder = result[0] if isinstance(result, (list, tuple)) else result
+        settings = self._settings()
+        settings["last_folder"] = folder
+        self._save_settings(settings)
+        return {"folder": folder}
+
+    # ---- downloads
+    def start_download(self, url, title, folder=None):
+        if not url:
+            return {"error": "No download link"}
+        if not folder:
+            picked = self.choose_folder()
+            folder = picked.get("folder")
+            if not folder:
+                return {"cancelled": True}
+
+        job = DownloadJob(uuid.uuid4().hex[:10], title or "Game", url, folder)
+        with self.lock:
+            self.jobs[job.id] = job
+        threading.Thread(target=self._run_job, args=(job,), daemon=True).start()
+        return {"id": job.id, "folder": folder}
+
+    def list_downloads(self):
+        with self.lock:
+            return [j.to_dict() for j in self.jobs.values()]
+
+    def cancel_download(self, job_id):
+        with self.lock:
+            job = self.jobs.get(job_id)
+        if job:
+            job.cancel.set()
+        return {"ok": True}
+
+    def remove_download(self, job_id):
+        with self.lock:
+            job = self.jobs.get(job_id)
+            if job:
+                job.cancel.set()
+                self.jobs.pop(job_id, None)
+        return {"ok": True}
+
+    def open_folder(self, path):
+        target = path or ""
+        if target and os.path.isfile(target):
+            target = os.path.dirname(target)
+        try:
+            if sys.platform.startswith("win"):
+                os.startfile(target)  # noqa: S606
+            elif sys.platform == "darwin":
+                os.system(f'open "{target}"')
+            else:
+                os.system(f'xdg-open "{target}"')
+        except Exception as exc:
+            return {"error": str(exc)}
+        return {"ok": True}
+
+    # ---- worker
+    def _run_job(self, job: DownloadJob):
+        try:
+            direct = _resolve_direct(job.url)
+            job.status = "downloading"
+
+            req = urllib.request.Request(direct, headers={"User-Agent": USER_AGENT})
+            with urllib.request.urlopen(req, timeout=60) as resp:
+                filename = ""
+                disp = resp.headers.get("Content-Disposition") or ""
+                if "filename=" in disp:
+                    filename = disp.split("filename=")[-1].strip('";\' ')
+                if not filename:
+                    filename = os.path.basename(urllib.parse.urlparse(direct).path)
+                if not filename or "." not in filename:
+                    filename = f"{_safe_name(job.title)}.zip"
+                filename = _safe_name(urllib.parse.unquote(filename))
+
+                job.path = os.path.join(job.folder, filename)
+                job.total = int(resp.headers.get("Content-Length") or 0)
+
+                start = time.time()
+                last_tick = start
+                last_bytes = 0
+                with open(job.path, "wb") as fh:
+                    while True:
+                        if job.cancel.is_set():
+                            job.status = "cancelled"
+                            break
+                        chunk = resp.read(256 * 1024)
+                        if not chunk:
+                            break
+                        fh.write(chunk)
+                        job.received += len(chunk)
+
+                        now = time.time()
+                        if now - last_tick >= 0.4:
+                            job.speed = (job.received - last_bytes) / (now - last_tick)
+                            last_bytes = job.received
+                            last_tick = now
+                            if job.total and job.speed > 0:
+                                job.time_left = max(0, (job.total - job.received) / job.speed)
+
+            if job.status == "cancelled":
+                try:
+                    os.remove(job.path)
+                except Exception:
+                    pass
+                return
+
+            job.speed = 0
+            job.time_left = 0
+            if not job.total:
+                job.total = job.received
+            job.status = "completed"
+            notify("Download complete", f"{job.title} saved to {job.folder}")
+        except Exception as exc:
+            job.status = "failed"
+            job.error = str(exc)
+            job.speed = 0
+            notify("Download failed", f"{job.title}: {exc}")
+
+
 # ------------------------------------------------------------------- main
 def main() -> None:
     threading.Thread(target=watch_new_games, daemon=True).start()
 
+    api = Api()
     window = webview.create_window(
         APP_NAME,
         SITE_URL,
+        js_api=api,
         width=1400,
         height=900,
         min_size=(1000, 650),
         background_color="#05070d",
         text_select=False,
     )
+    api.window = window
 
-    # New windows/target=_blank (download links) open in the system browser
+    # New windows/target=_blank (external links) open in the system browser
     def _on_loaded():
         try:
             window.evaluate_js(
                 """
+                window.__D79_DESKTOP__ = true;
                 document.addEventListener('click', function (e) {
                   var a = e.target && e.target.closest ? e.target.closest('a[target="_blank"]') : null;
                   if (a && a.href) { e.preventDefault(); window.open(a.href, '_blank'); }
