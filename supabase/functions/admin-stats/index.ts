@@ -5,23 +5,37 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-admin-code",
 };
 
-const ADMIN_CODE = "7997";
+const ADMIN_CODE = "4998";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
-
-  const code = req.headers.get("x-admin-code");
-  if (code !== ADMIN_CODE) {
-    return new Response(JSON.stringify({ error: "unauthorized" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
+
+  const deny = () =>
+    new Response(JSON.stringify({ error: "unauthorized" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+
+  if (req.headers.get("x-admin-code") !== ADMIN_CODE) return deny();
+
+  // Server-side role verification: the caller must be a signed-in admin
+  const token = (req.headers.get("Authorization") || "").replace("Bearer ", "");
+  if (!token) return deny();
+  const { data: userData, error: userErr } = await supabase.auth.getUser(token);
+  if (userErr || !userData.user) return deny();
+  const { data: roleRow } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userData.user.id)
+    .eq("role", "admin")
+    .maybeSingle();
+  if (!roleRow) return deny();
+
 
   const [profilesRes, libRes, dlRes, gamesRes, gdRes] = await Promise.all([
     supabase.from("profiles").select("id, email, display_name, avatar_url, created_at"),
