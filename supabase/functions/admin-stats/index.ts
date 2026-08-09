@@ -15,26 +15,29 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
-  const deny = () =>
-    new Response(JSON.stringify({ error: "unauthorized" }), {
+  const deny = (why: string) => {
+    console.log("admin-stats denied:", why);
+    return new Response(JSON.stringify({ error: "unauthorized", reason: why }), {
       status: 401,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
+  };
 
-  if (req.headers.get("x-admin-code") !== ADMIN_CODE) return deny();
+  if (req.headers.get("x-admin-code") !== ADMIN_CODE) return deny("bad_code");
 
   // Server-side role verification: the caller must be a signed-in admin
-  const token = (req.headers.get("Authorization") || "").replace("Bearer ", "");
-  if (!token) return deny();
+  const token = (req.headers.get("Authorization") || "").replace("Bearer ", "").trim();
+  if (!token) return deny("no_token");
   const { data: userData, error: userErr } = await supabase.auth.getUser(token);
-  if (userErr || !userData.user) return deny();
+  if (userErr || !userData.user) return deny(`bad_token:${userErr?.message ?? "no_user"}`);
   const { data: roleRow } = await supabase
     .from("user_roles")
     .select("role")
     .eq("user_id", userData.user.id)
     .eq("role", "admin")
     .maybeSingle();
-  if (!roleRow) return deny();
+  if (!roleRow) return deny(`not_admin:${userData.user.email}`);
+
 
 
   const [profilesRes, libRes, dlRes, gamesRes, gdRes] = await Promise.all([
