@@ -17,7 +17,7 @@ const links = [
   { to: "/home", label: "Store", icon: Store },
   { to: "/library", label: "Library", icon: Library },
   { to: "/how-to-download", label: "How to Download", icon: HelpCircle },
-  { to: "/admin", label: "Admin", icon: Shield },
+  
 ];
 
 const Navbar = () => {
