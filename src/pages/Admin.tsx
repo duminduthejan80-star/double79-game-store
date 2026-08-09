@@ -143,6 +143,26 @@ const Admin = () => {
     }
   };
 
+  if (isAdmin === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-muted-foreground">
+        Checking access...
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen">
+        <Navbar />
+        <div className="container mx-auto px-4 py-24 text-center">
+          <h1 className="text-2xl font-bold mb-2">404 — Page not found</h1>
+          <p className="text-muted-foreground text-sm">This page does not exist.</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!authed) {
     return (
       <div className="min-h-screen">
