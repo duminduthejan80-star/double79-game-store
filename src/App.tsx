@@ -47,7 +47,7 @@ const App = () => (
                 <Route path="/" element={<ProtectedRoute><Intro /></ProtectedRoute>} />
                 <Route path="/home" element={<ProtectedRoute><Index /></ProtectedRoute>} />
                 <Route path="/library" element={<ProtectedRoute><Library /></ProtectedRoute>} />
-                <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+                <Route path="/d79-ctrl-x9k4m2" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
                 <Route path="/downloads" element={<ProtectedRoute><Downloads /></ProtectedRoute>} />
                 <Route path="/how-to-download" element={<ProtectedRoute><HowToDownload /></ProtectedRoute>} />
                 <Route path="/game/:id" element={<ProtectedRoute><GameDetail /></ProtectedRoute>} />
