@@ -494,8 +494,11 @@ const UsersPanel = () => {
   const load = async () => {
     setLoading(true); setErr(null);
     try {
+      const { data: sess } = await supabase.auth.getSession();
+      const token = sess.session?.access_token;
+      if (!token) throw new Error("Please sign in again");
       const { data: res, error } = await supabase.functions.invoke("admin-stats", {
-        headers: { "x-admin-code": ADMIN_CODE },
+        headers: { "x-admin-code": ADMIN_CODE, Authorization: `Bearer ${token}` },
       });
       if (error) throw error;
       setData(res);
