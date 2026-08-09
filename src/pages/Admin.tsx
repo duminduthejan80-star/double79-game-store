@@ -463,7 +463,7 @@ const UsersPanel = () => {
     setLoading(true); setErr(null);
     try {
       const { data: res, error } = await supabase.functions.invoke("admin-stats", {
-        headers: { "x-admin-code": "7997" },
+        headers: { "x-admin-code": ADMIN_CODE },
       });
       if (error) throw error;
       setData(res);

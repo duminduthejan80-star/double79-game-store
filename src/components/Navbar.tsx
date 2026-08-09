@@ -1,5 +1,5 @@
 import { Link, NavLink } from "react-router-dom";
-import { Library, Shield, Store, LogOut, MessageCircle, HelpCircle } from "lucide-react";
+import { Library, Store, LogOut, MessageCircle, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/logo.png";
 import { useAuth } from "@/lib/auth";
