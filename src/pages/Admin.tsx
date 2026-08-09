@@ -17,7 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Game, GameInput } from "@/types/game";
 import { GAME_CATEGORIES } from "@/lib/categories";
 
-const ADMIN_CODE = "7997";
+const ADMIN_CODE = "4998";
 const SESSION_KEY = "d79_admin_ok";
 const STORE_BASE_URL = "https://double79-game-store.lovable.app/games/";
 
@@ -35,6 +35,18 @@ const empty: GameInput = {
 const Admin = () => {
   const [authed, setAuthed] = useState(() => sessionStorage.getItem(SESSION_KEY) === "1");
   const [code, setCode] = useState("");
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const { data: userRes } = await supabase.auth.getUser();
+      const uid = userRes.user?.id;
+      if (!uid) return setIsAdmin(false);
+      const { data } = await supabase.rpc("has_role", { _user_id: uid, _role: "admin" });
+      setIsAdmin(!!data);
+    })();
+  }, []);
+
 
   const { data: games } = useGames();
   const upsert = useUpsertGame();
