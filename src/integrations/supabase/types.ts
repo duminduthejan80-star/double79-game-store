@@ -114,6 +114,7 @@ export type Database = {
           description: string | null
           developer: string | null
           download_url: string | null
+          download_url_pro: string | null
           featured: boolean
           genre: string | null
           id: string
@@ -139,6 +140,7 @@ export type Database = {
           description?: string | null
           developer?: string | null
           download_url?: string | null
+          download_url_pro?: string | null
           featured?: boolean
           genre?: string | null
           id?: string
@@ -164,6 +166,7 @@ export type Database = {
           description?: string | null
           developer?: string | null
           download_url?: string | null
+          download_url_pro?: string | null
           featured?: boolean
           genre?: string | null
           id?: string
@@ -212,6 +215,63 @@ export type Database = {
         }
         Relationships: []
       }
+      pro_codes: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          expires_at: string
+          id: string
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          expires_at: string
+          id?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: []
+      }
+      pro_subscriptions: {
+        Row: {
+          activated_at: string
+          code: string | null
+          created_at: string
+          expires_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activated_at?: string
+          code?: string | null
+          created_at?: string
+          expires_at: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activated_at?: string
+          code?: string | null
+          created_at?: string
+          expires_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -219,6 +279,7 @@ export type Database = {
           display_name: string | null
           email: string | null
           id: string
+          phone: string | null
           updated_at: string
         }
         Insert: {
@@ -227,6 +288,7 @@ export type Database = {
           display_name?: string | null
           email?: string | null
           id: string
+          phone?: string | null
           updated_at?: string
         }
         Update: {
@@ -235,6 +297,7 @@ export type Database = {
           display_name?: string | null
           email?: string | null
           id?: string
+          phone?: string | null
           updated_at?: string
         }
         Relationships: []
