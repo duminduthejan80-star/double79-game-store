@@ -187,6 +187,14 @@ const GameDetail = () => {
 
         <GameReviews gameId={game.id} />
       </div>
+
+      <DownloadChoiceDialog
+        open={dlOpen}
+        onOpenChange={setDlOpen}
+        freeUrl={game.download_url}
+        proUrl={game.download_url_pro}
+        onPick={(url) => { void startDownload(url); }}
+      />
     </div>
   );
 };
