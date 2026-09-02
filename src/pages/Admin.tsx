@@ -22,7 +22,7 @@ const SESSION_KEY = "d79_admin_ok";
 const STORE_BASE_URL = "https://double79-game-store.lovable.app/games/";
 
 const empty: GameInput = {
-  title: "", description: "", image_url: "", download_url: "",
+  title: "", description: "", image_url: "", download_url: "", download_url_pro: "",
   price: 0, is_free: true, mode: "offline",
   genre: "", developer: "", publisher: "", release_date: null,
   min_os: "", min_cpu: "", min_ram: "", min_gpu: "", min_storage: "",
@@ -230,7 +230,8 @@ const Admin = () => {
                       />
                     </div>
                     <div className="col-span-2"><Label>Trailer URL (YouTube link or .mp4)</Label><Input value={form.trailer_url ?? ""} onChange={(e) => setForm({ ...form, trailer_url: e.target.value })} placeholder="https://..." /></div>
-                    <div className="col-span-2"><Label>Download URL</Label><Input value={form.download_url ?? ""} onChange={(e) => setForm({ ...form, download_url: e.target.value })} placeholder="https://..." /></div>
+                    <div className="col-span-2"><Label>Download URL (Free)</Label><Input value={form.download_url ?? ""} onChange={(e) => setForm({ ...form, download_url: e.target.value })} placeholder="https://..." /></div>
+                    <div className="col-span-2"><Label>Download URL (Pro)</Label><Input value={form.download_url_pro ?? ""} onChange={(e) => setForm({ ...form, download_url_pro: e.target.value })} placeholder="https://... (fast, no-ads link)" /></div>
 
                     <div className="col-span-2">
                       <Label>Categories (select any number)</Label>
@@ -312,6 +313,7 @@ const Admin = () => {
           <TabsList>
             <TabsTrigger value="games">Games</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
+            <TabsTrigger value="pro">Pro</TabsTrigger>
             <TabsTrigger value="email">Email Test</TabsTrigger>
           </TabsList>
 
@@ -361,6 +363,10 @@ const Admin = () => {
 
           <TabsContent value="users">
             <UsersPanel />
+          </TabsContent>
+
+          <TabsContent value="pro">
+            <ProPanel />
           </TabsContent>
 
           <TabsContent value="email">
