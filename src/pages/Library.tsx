@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import DownloadChoiceDialog from "@/components/DownloadChoiceDialog";
 import type { Game } from "@/types/game";
 
 const Library = () => {
@@ -19,6 +20,7 @@ const Library = () => {
   
   const [q, setQ] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [dlGame, setDlGame] = useState<Game | null>(null);
 
   const owned = useMemo<Game[]>(
     () => (games ?? []).filter((g) => ownedIds.includes(g.id)),
@@ -39,13 +41,17 @@ const Library = () => {
 
   const selected = owned.find((g) => g.id === selectedId) ?? null;
 
-  const handleDownload = async (game: Game) => {
-    if (!game.download_url) return toast.error("No download link available");
+  const handleDownload = (game: Game) => {
+    if (!game.download_url && !game.download_url_pro) return toast.error("No download link available");
+    setDlGame(game);
+  };
+
+  const startDownload = async (game: Game, url: string) => {
     try {
-      const res = await startDesktopDownload(game.download_url, game.title);
+      const res = await startDesktopDownload(url, game.title);
       if (res === "cancelled") return;
       if (res === "unavailable") {
-        window.open(game.download_url, "_blank", "noopener,noreferrer");
+        window.open(url, "_blank", "noopener,noreferrer");
       } else {
         toast.success(`Downloading ${game.title}`);
       }
@@ -242,6 +248,14 @@ const Library = () => {
           </div>
         )}
       </div>
+
+      <DownloadChoiceDialog
+        open={!!dlGame}
+        onOpenChange={(o) => { if (!o) setDlGame(null); }}
+        freeUrl={dlGame?.download_url ?? null}
+        proUrl={dlGame?.download_url_pro ?? null}
+        onPick={(url) => { if (dlGame) void startDownload(dlGame, url); }}
+      />
     </div>
   );
 };
