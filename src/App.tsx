@@ -17,6 +17,7 @@ import { HardwareProfileProvider } from "@/lib/hardwareProfile";
 import SplashScreen from "@/components/SplashScreen";
 import CinematicBackground from "@/components/CinematicBackground";
 import { AuthProvider } from "@/lib/auth";
+import { AuthGateProvider } from "@/components/AuthGate";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import LoginStreakTracker from "@/components/LoginStreakTracker";
 import DesktopDownloadManager from "@/components/DesktopDownloadManager";
@@ -59,6 +60,7 @@ const App = () => (
 
             </HardwareProfileProvider>
           </DownloadsProvider>
+          </AuthGateProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
