@@ -1,5 +1,4 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -7,8 +6,8 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const SMTP_USER = Deno.env.get("SMTP_USER")!;
-const SMTP_PASSWORD = Deno.env.get("SMTP_PASSWORD")!;
+const BREVO_API_KEY = Deno.env.get("BREVO_API_KEY")!;
+const FROM_EMAIL = Deno.env.get("FEEDBACK_FROM_EMAIL") || Deno.env.get("SMTP_USER") || "";
 const FROM_NAME = Deno.env.get("FEEDBACK_FROM_NAME") || "Double79";
 const SITE_URL = Deno.env.get("SITE_URL") || "https://double79-game-store.lovable.app";
 
@@ -20,9 +19,9 @@ function buildHtml(name: string, gameTitle: string, gameId: string) {
     <tr><td style="padding:32px;">
       <h1 style="margin:0 0 12px;font-size:22px;color:#f8fafc">හායි ${name},</h1>
       <p style="font-size:16px;line-height:1.6;margin:0 0 16px;color:#cbd5e1">
-        ඔයා ඊයේ ගත්ත <strong style="color:#fbbf24">${gameTitle}</strong> ගේම් එක හොදයිද?
-        ඔයා එය එන්ජෝයි කරාද? ගේම් එකේ කිසිම error එකක් ආවද?
-        අපේ website ගැන අදහස් කියන්න.
+        ඔයා ඩවුන්ලෝඩ් කරපු <strong style="color:#fbbf24">${gameTitle}</strong> ගේම් එක වැඩ කරාද?
+        Errors මුකුත් ආවද? ඔයාගේ අදහස අපිට කියන්න.
+        මොකක් හරි ගැටළුවක් තියෙනවා නම් අපිට මැසේජ් එකක් දාන්න!
       </p>
       <p style="margin:24px 0;text-align:center">
         <a href="${link}" style="background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:600;display:inline-block">
@@ -35,62 +34,58 @@ function buildHtml(name: string, gameTitle: string, gameId: string) {
 </body></html>`;
 }
 
-function makeSmtpClient() {
-  return new SMTPClient({
-    connection: {
-      hostname: "smtp.gmail.com",
-      port: 587,
-      tls: false, // STARTTLS upgrade on 587
-      auth: { username: SMTP_USER, password: SMTP_PASSWORD },
+async function sendOne(to: string, name: string, gameTitle: string, gameId: string) {
+  const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+    method: "POST",
+    headers: {
+      "api-key": BREVO_API_KEY,
+      "Content-Type": "application/json",
+      Accept: "application/json",
     },
+    body: JSON.stringify({
+      sender: { name: FROM_NAME, email: FROM_EMAIL },
+      to: [{ email: to, name }],
+      subject: `${gameTitle} ගැන ඔයාගේ අදහස කියන්න`,
+      htmlContent: buildHtml(name, gameTitle, gameId),
+    }),
   });
-}
-
-
-async function sendOne(client: SMTPClient, to: string, name: string, gameTitle: string, gameId: string) {
-  await client.send({
-    from: `${FROM_NAME} <${SMTP_USER}>`,
-    to,
-    subject: `${gameTitle} ගැන ඔයාගේ අදහස කියන්න`,
-    html: buildHtml(name, gameTitle, gameId),
-  });
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(`Brevo ${res.status}: ${txt}`);
+  }
 }
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    if (!SMTP_USER || !SMTP_PASSWORD) {
-      throw new Error("SMTP_USER / SMTP_PASSWORD not configured");
-    }
+    if (!BREVO_API_KEY) throw new Error("BREVO_API_KEY not configured");
+    if (!FROM_EMAIL) throw new Error("FEEDBACK_FROM_EMAIL not configured");
 
-    // Test mode: send a sample feedback email to a single address and return status
     let body: any = null;
     if (req.method === "POST") {
       try { body = await req.json(); } catch (_) { body = null; }
     }
+
+    // Test mode: send a sample feedback email to a single address
     if (body?.test === true) {
-      const to = String(body.to || SMTP_USER);
+      const to = String(body.to || FROM_EMAIL);
       const name = String(body.name || "Tester");
       const gameTitle = String(body.gameTitle || "Sample Game");
       const gameId = String(body.gameId || "00000000-0000-0000-0000-000000000000");
-      const client = makeSmtpClient();
       try {
-        await sendOne(client, to, name, gameTitle, gameId);
-        try { await client.close(); } catch (_) { /* noop */ }
+        await sendOne(to, name, gameTitle, gameId);
         return new Response(
           JSON.stringify({ ok: true, mode: "test", to, delivered: true }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       } catch (e: any) {
-        try { await client.close(); } catch (_) { /* noop */ }
         return new Response(
           JSON.stringify({ ok: false, mode: "test", to, delivered: false, error: e?.message ?? String(e) }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
     }
-
 
     const admin = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -108,11 +103,9 @@ Deno.serve(async (req) => {
     if (error) throw error;
 
     let sent = 0, failed = 0;
-    const client = makeSmtpClient();
-
     for (const r of rows ?? []) {
       try {
-        await sendOne(client, r.user_email, r.user_name || "Player", r.game_title, r.game_id);
+        await sendOne(r.user_email, r.user_name || "Player", r.game_title, r.game_id);
         await admin.from("game_downloads").update({
           email_status: "sent", email_sent_at: new Date().toISOString(),
         }).eq("id", r.id);
@@ -123,8 +116,6 @@ Deno.serve(async (req) => {
         failed++;
       }
     }
-
-    try { await client.close(); } catch (_) { /* noop */ }
 
     return new Response(JSON.stringify({ ok: true, sent, failed, considered: rows?.length ?? 0 }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } });
