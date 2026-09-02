@@ -56,6 +56,7 @@ const Admin = () => {
   const [editing, setEditing] = useState<Game | null>(null);
   const [form, setForm] = useState<GameInput>(empty);
   const [autoUpscale, setAutoUpscale] = useState(false);
+  const [steamBusy, setSteamBusy] = useState(false);
 
   useEffect(() => {
     if (editing) {
@@ -305,6 +306,17 @@ const Admin = () => {
                 </form>
               </DialogContent>
             </Dialog>
+            <Button variant="outline" disabled={steamBusy} onClick={async () => {
+              setSteamBusy(true);
+              try {
+                const { data: session } = await supabase.auth.getSession();
+                const { data, error } = await supabase.functions.invoke("steam-import", {
+                  headers: { "x-admin-code": ADMIN_CODE, Authorization: `Bearer ${session.session?.access_token}` },
+                });
+                if (error || !data?.ok) throw new Error((data as any)?.error || error?.message || "Import failed");
+                toast.success(`Steam import: ${data.added} added, ${data.skipped} skipped, ${data.failed} failed`);
+              } catch (e: any) { toast.error(e.message); } finally { setSteamBusy(false); }
+            }}>{steamBusy ? "Importing..." : "Import Steam Games"}</Button>
             <Button variant="outline" onClick={logout}><LogOut className="h-4 w-4 mr-2" /> Logout</Button>
           </div>
         </div>
