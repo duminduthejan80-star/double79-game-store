@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Download, Wifi, WifiOff, Check, Calendar, User, Building2 } from "lucide-react";
 import { startDesktopDownload } from "@/lib/desktopBridge";
@@ -12,6 +13,8 @@ import GameReviews from "@/components/GameReviews";
 import { useLibrary, useAddToLibrary } from "@/hooks/useLibrary";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuthGate } from "@/components/AuthGate";
+import DownloadChoiceDialog from "@/components/DownloadChoiceDialog";
 
 const Row = ({ label, value }: { label: string; value: string | null }) =>
   value ? (
@@ -27,6 +30,8 @@ const GameDetail = () => {
   const { data: game, isLoading } = useGame(id);
   const { data: ownedIds = [] } = useLibrary();
   const addLib = useAddToLibrary();
+  const { requireAuth } = useAuthGate();
+  const [dlOpen, setDlOpen] = useState(false);
   const owned = id ? ownedIds.includes(id) : false;
 
   const heroImage = game?.image_url || game?.screenshots?.[0] || null;
@@ -35,6 +40,7 @@ const GameDetail = () => {
   if (!game) return <div className="min-h-screen"><Navbar /><div className="container mx-auto p-10">Game not found.</div></div>;
 
   const handleGet = async () => {
+    if (!requireAuth(game.id)) return;
     try {
       await addLib.mutateAsync(game.id);
       toast.success(`${game.title} added to your library`);
@@ -43,17 +49,21 @@ const GameDetail = () => {
     }
   };
 
-  const handleDownload = async () => {
-    if (!game.download_url) {
+  const handleDownload = () => {
+    if (!game.download_url && !game.download_url_pro) {
       toast.error("No download link available");
       return;
     }
+    setDlOpen(true);
+  };
+
+  const startDownload = async (url: string) => {
     // Desktop app: pick a folder (Steam-style) and download inside the app
     try {
-      const res = await startDesktopDownload(game.download_url, game.title);
+      const res = await startDesktopDownload(url, game.title);
       if (res === "cancelled") return;
       if (res === "unavailable") {
-        window.open(game.download_url, "_blank", "noopener,noreferrer");
+        window.open(url, "_blank", "noopener,noreferrer");
       } else {
         toast.success(`Downloading ${game.title}`);
       }
@@ -177,6 +187,14 @@ const GameDetail = () => {
 
         <GameReviews gameId={game.id} />
       </div>
+
+      <DownloadChoiceDialog
+        open={dlOpen}
+        onOpenChange={setDlOpen}
+        freeUrl={game.download_url}
+        proUrl={game.download_url_pro}
+        onPick={(url) => { void startDownload(url); }}
+      />
     </div>
   );
 };

@@ -3,6 +3,7 @@ import { Library, Store, LogOut, MessageCircle, HelpCircle } from "lucide-react"
 import { cn } from "@/lib/utils";
 import logo from "@/assets/logo.png";
 import { useAuth } from "@/lib/auth";
+import { useProStatus } from "@/hooks/usePro";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -22,6 +23,7 @@ const links = [
 
 const Navbar = () => {
   const { user, signOut } = useAuth();
+  const { data: pro } = useProStatus();
   const avatar = (user?.user_metadata?.avatar_url as string) || "";
   const name = (user?.user_metadata?.full_name as string) || user?.email || "Player";
 
@@ -97,7 +99,12 @@ const Navbar = () => {
                 <Button variant="ghost" size="sm" className="gap-3 rounded-full border-l border-white/15 pl-3 pr-2 hover:bg-white/[0.06]">
                   <span className="hidden md:flex flex-col items-end leading-tight">
                     <span className="text-xs font-semibold text-foreground/90 max-w-[180px] truncate">{name}</span>
-                    <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-primary/80">Member</span>
+                    <span className={cn(
+                      "text-[9px] font-bold uppercase tracking-[0.2em]",
+                      pro?.isPro ? "text-amber-300" : "text-emerald-400"
+                    )}>
+                      {pro?.isPro ? `Pro · ${pro.daysLeft}d` : "Free"}
+                    </span>
                   </span>
                   <span className="relative">
                     <span className="absolute -inset-1 rounded-full bg-primary/40 blur-md opacity-40" />

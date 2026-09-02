@@ -22,7 +22,7 @@ const SESSION_KEY = "d79_admin_ok";
 const STORE_BASE_URL = "https://double79-game-store.lovable.app/games/";
 
 const empty: GameInput = {
-  title: "", description: "", image_url: "", download_url: "",
+  title: "", description: "", image_url: "", download_url: "", download_url_pro: "",
   price: 0, is_free: true, mode: "offline",
   genre: "", developer: "", publisher: "", release_date: null,
   min_os: "", min_cpu: "", min_ram: "", min_gpu: "", min_storage: "",
@@ -56,6 +56,7 @@ const Admin = () => {
   const [editing, setEditing] = useState<Game | null>(null);
   const [form, setForm] = useState<GameInput>(empty);
   const [autoUpscale, setAutoUpscale] = useState(false);
+  const [steamBusy, setSteamBusy] = useState(false);
 
   useEffect(() => {
     if (editing) {
@@ -230,7 +231,8 @@ const Admin = () => {
                       />
                     </div>
                     <div className="col-span-2"><Label>Trailer URL (YouTube link or .mp4)</Label><Input value={form.trailer_url ?? ""} onChange={(e) => setForm({ ...form, trailer_url: e.target.value })} placeholder="https://..." /></div>
-                    <div className="col-span-2"><Label>Download URL</Label><Input value={form.download_url ?? ""} onChange={(e) => setForm({ ...form, download_url: e.target.value })} placeholder="https://..." /></div>
+                    <div className="col-span-2"><Label>Download URL (Free)</Label><Input value={form.download_url ?? ""} onChange={(e) => setForm({ ...form, download_url: e.target.value })} placeholder="https://..." /></div>
+                    <div className="col-span-2"><Label>Download URL (Pro)</Label><Input value={form.download_url_pro ?? ""} onChange={(e) => setForm({ ...form, download_url_pro: e.target.value })} placeholder="https://... (fast, no-ads link)" /></div>
 
                     <div className="col-span-2">
                       <Label>Categories (select any number)</Label>
@@ -304,6 +306,17 @@ const Admin = () => {
                 </form>
               </DialogContent>
             </Dialog>
+            <Button variant="outline" disabled={steamBusy} onClick={async () => {
+              setSteamBusy(true);
+              try {
+                const { data: session } = await supabase.auth.getSession();
+                const { data, error } = await supabase.functions.invoke("steam-import", {
+                  headers: { "x-admin-code": ADMIN_CODE, Authorization: `Bearer ${session.session?.access_token}` },
+                });
+                if (error || !data?.ok) throw new Error((data as any)?.error || error?.message || "Import failed");
+                toast.success(`Steam import: ${data.added} added, ${data.skipped} skipped, ${data.failed} failed`);
+              } catch (e: any) { toast.error(e.message); } finally { setSteamBusy(false); }
+            }}>{steamBusy ? "Importing..." : "Import Steam Games"}</Button>
             <Button variant="outline" onClick={logout}><LogOut className="h-4 w-4 mr-2" /> Logout</Button>
           </div>
         </div>
@@ -312,6 +325,7 @@ const Admin = () => {
           <TabsList>
             <TabsTrigger value="games">Games</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
+            <TabsTrigger value="pro">Pro</TabsTrigger>
             <TabsTrigger value="email">Email Test</TabsTrigger>
           </TabsList>
 
@@ -363,12 +377,77 @@ const Admin = () => {
             <UsersPanel />
           </TabsContent>
 
+          <TabsContent value="pro">
+            <ProPanel />
+          </TabsContent>
+
           <TabsContent value="email">
             <EmailTestPanel />
           </TabsContent>
         </Tabs>
 
       </div>
+    </div>
+  );
+};
+
+const ProPanel = () => {
+  const [genCode, setGenCode] = useState<string | null>(null);
+  const [expiresAt, setExpiresAt] = useState<number | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    if (!expiresAt) return;
+    const t = setInterval(() => setTick((x) => x + 1), 1000);
+    return () => clearInterval(t);
+  }, [expiresAt]);
+
+  const secsLeft = expiresAt ? Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000)) : 0;
+  const expired = !!genCode && secsLeft <= 0;
+
+  const generate = async () => {
+    setBusy(true);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const token = session.session?.access_token;
+      const { data, error } = await supabase.functions.invoke("pro-code", {
+        headers: { "x-admin-code": ADMIN_CODE, Authorization: `Bearer ${token}` },
+      });
+      if (error || !data?.ok) throw new Error((data as any)?.error || error?.message || "Failed");
+      setGenCode(data.code);
+      setExpiresAt(new Date(data.expires_at).getTime());
+      toast.success("New Pro code generated");
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="rounded-2xl lg-panel p-8 max-w-md mx-auto text-center">
+      <h2 className="text-xl font-bold mb-1 text-amber-300">Pro Activation Codes</h2>
+      <p className="text-sm text-muted-foreground mb-6">
+        Codes expire after 1 minute. Once redeemed, the user gets 30 days of Pro.
+      </p>
+      {genCode && (
+        <div className="mb-5">
+          <div className={`text-4xl font-mono font-bold tracking-[0.3em] ${expired ? "text-muted-foreground line-through" : "text-amber-300"}`}>
+            {genCode}
+          </div>
+          <div className={`text-xs mt-2 font-semibold ${expired ? "text-destructive" : "text-emerald-400"}`}>
+            {expired ? "EXPIRED" : `Expires in ${secsLeft}s`}
+          </div>
+        </div>
+      )}
+      <Button
+        onClick={generate}
+        disabled={busy}
+        className="w-full bg-amber-400 text-slate-950 hover:bg-amber-300 font-bold"
+      >
+        {genCode ? "Regenerate Code" : "Generate Code"}
+      </Button>
     </div>
   );
 };
