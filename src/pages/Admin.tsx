@@ -379,6 +379,67 @@ const Admin = () => {
   );
 };
 
+const ProPanel = () => {
+  const [genCode, setGenCode] = useState<string | null>(null);
+  const [expiresAt, setExpiresAt] = useState<number | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    if (!expiresAt) return;
+    const t = setInterval(() => setTick((x) => x + 1), 1000);
+    return () => clearInterval(t);
+  }, [expiresAt]);
+
+  const secsLeft = expiresAt ? Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000)) : 0;
+  const expired = !!genCode && secsLeft <= 0;
+
+  const generate = async () => {
+    setBusy(true);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const token = session.session?.access_token;
+      const { data, error } = await supabase.functions.invoke("pro-code", {
+        headers: { "x-admin-code": ADMIN_CODE, Authorization: `Bearer ${token}` },
+      });
+      if (error || !data?.ok) throw new Error((data as any)?.error || error?.message || "Failed");
+      setGenCode(data.code);
+      setExpiresAt(new Date(data.expires_at).getTime());
+      toast.success("New Pro code generated");
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="rounded-2xl lg-panel p-8 max-w-md mx-auto text-center">
+      <h2 className="text-xl font-bold mb-1 text-amber-300">Pro Activation Codes</h2>
+      <p className="text-sm text-muted-foreground mb-6">
+        Codes expire after 1 minute. Once redeemed, the user gets 30 days of Pro.
+      </p>
+      {genCode && (
+        <div className="mb-5">
+          <div className={`text-4xl font-mono font-bold tracking-[0.3em] ${expired ? "text-muted-foreground line-through" : "text-amber-300"}`}>
+            {genCode}
+          </div>
+          <div className={`text-xs mt-2 font-semibold ${expired ? "text-destructive" : "text-emerald-400"}`}>
+            {expired ? "EXPIRED" : `Expires in ${secsLeft}s`}
+          </div>
+        </div>
+      )}
+      <Button
+        onClick={generate}
+        disabled={busy}
+        className="w-full bg-amber-400 text-slate-950 hover:bg-amber-300 font-bold"
+      >
+        {genCode ? "Regenerate Code" : "Generate Code"}
+      </Button>
+    </div>
+  );
+};
+
 const EmailTestPanel = () => {
   const [to, setTo] = useState("");
   const [sending, setSending] = useState(false);
