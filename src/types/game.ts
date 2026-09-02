@@ -4,6 +4,7 @@ export interface Game {
   description: string | null;
   image_url: string | null;
   download_url: string | null;
+  download_url_pro: string | null;
   price: number;
   is_free: boolean;
   mode: string; // 'online' | 'offline' | 'both'
