@@ -245,6 +245,48 @@ export type Database = {
         }
         Relationships: []
       }
+      pro_receipts: {
+        Row: {
+          ai_notes: string | null
+          amount: number | null
+          created_at: string
+          id: string
+          image_hash: string | null
+          image_path: string
+          reason: string | null
+          ref_no: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_notes?: string | null
+          amount?: number | null
+          created_at?: string
+          id?: string
+          image_hash?: string | null
+          image_path: string
+          reason?: string | null
+          ref_no?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_notes?: string | null
+          amount?: number | null
+          created_at?: string
+          id?: string
+          image_hash?: string | null
+          image_path?: string
+          reason?: string | null
+          ref_no?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       pro_subscriptions: {
         Row: {
           activated_at: string
