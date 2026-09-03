@@ -44,7 +44,7 @@ export const AuthGateProvider = ({ children }: { children: ReactNode }) => {
     [user],
   );
 
-  // After a Google redirect back: finish the pending library add + ask for phone once.
+  // After a Google redirect back: finish the pending library add + require a phone number.
   useEffect(() => {
     if (loading || !user) return;
     const pending = localStorage.getItem(PENDING_LIB_KEY);
@@ -63,10 +63,10 @@ export const AuthGateProvider = ({ children }: { children: ReactNode }) => {
         .select("phone")
         .eq("id", user.id)
         .maybeSingle();
-      if (pending && !profile?.phone) {
+      if (!profile?.phone) {
         setStep("phone");
         setOpen(true);
-      } else if (!pending) {
+      } else {
         setOpen(false);
       }
     })();
