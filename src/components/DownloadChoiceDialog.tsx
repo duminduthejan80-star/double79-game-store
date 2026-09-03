@@ -1,13 +1,13 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Crown, Download, Gauge, ShieldAlert, ShieldCheck, MessageCircle, Zap, BadgeX } from "lucide-react";
+import { Crown, Download, Gauge, ShieldAlert, ShieldCheck, Zap, BadgeX, Upload, Loader2, CheckCircle2, XCircle, Smartphone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useProStatus, useInvalidatePro } from "@/hooks/usePro";
 import { toast } from "sonner";
 
-const OWNER_WA = "94704962595";
+const RELOAD_NUMBER = "0704962595";
+const RELOAD_AMOUNT = 200;
 
 interface Props {
   open: boolean;
@@ -17,12 +17,22 @@ interface Props {
   onPick: (url: string, tier: "free" | "pro") => void;
 }
 
+type Verdict = { status: "accepted" | "rejected"; reason?: string | null } | null;
+
 const DownloadChoiceDialog = ({ open, onOpenChange, freeUrl, proUrl, onPick }: Props) => {
   const { data: pro } = useProStatus();
   const invalidatePro = useInvalidatePro();
-  const [showCode, setShowCode] = useState(false);
-  const [code, setCode] = useState("");
+  const [showPay, setShowPay] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [verdict, setVerdict] = useState<Verdict>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const reset = () => {
+    setShowPay(false);
+    setPreview(null);
+    setVerdict(null);
+  };
 
   const pickFree = () => {
     if (!freeUrl) return toast.error("No free download link available");
@@ -38,27 +48,50 @@ const DownloadChoiceDialog = ({ open, onOpenChange, freeUrl, proUrl, onPick }: P
       onOpenChange(false);
       return;
     }
-    setShowCode(true);
+    setVerdict(null);
+    setPreview(null);
+    setShowPay(true);
   };
 
-  const redeem = async () => {
-    const c = code.trim().toUpperCase();
-    if (c.length < 4) return toast.error("Enter the code you received");
+  const onFile = async (file: File) => {
+    if (!file.type.startsWith("image/")) return toast.error("Upload an image of the receipt");
+    if (file.size > 8_000_000) return toast.error("Image too large (max 8MB)");
+    const dataUrl: string = await new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(String(r.result));
+      r.onerror = rej;
+      r.readAsDataURL(file);
+    });
+    setPreview(dataUrl);
+    setVerdict(null);
+  };
+
+  const submitReceipt = async () => {
+    if (!preview) return toast.error("Upload the receipt photo first");
     setBusy(true);
-    const { data, error } = await supabase.functions.invoke("pro-redeem", { body: { code: c } });
+    setVerdict(null);
+    const { data, error } = await supabase.functions.invoke("pro-receipt", { body: { image: preview } });
     setBusy(false);
-    if (error || !data?.ok) {
-      toast.error(data?.error || "Invalid or expired code");
+    if (error && !data) {
+      setVerdict({ status: "rejected", reason: "Could not verify right now — try again" });
       return;
     }
-    toast.success("Pro activated for 30 days 🎉");
-    invalidatePro();
-    setShowCode(false);
-    setCode("");
+    if (data?.status === "accepted") {
+      setVerdict({ status: "accepted" });
+      invalidatePro();
+      return;
+    }
+    setVerdict({ status: "rejected", reason: data?.reason || "Receipt rejected" });
+  };
+
+  const continuePro = () => {
     const url = proUrl || freeUrl;
+    reset();
     if (url) {
       onPick(url, "pro");
       onOpenChange(false);
+    } else {
+      toast.error("No pro download link available");
     }
   };
 
