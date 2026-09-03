@@ -96,13 +96,15 @@ const DownloadChoiceDialog = ({ open, onOpenChange, freeUrl, proUrl, onPick }: P
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) setShowCode(false); }}>
+    <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) reset(); }}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="text-center text-2xl">Choose your download</DialogTitle>
+          <DialogTitle className="text-center text-2xl">
+            {showPay ? "Activate Pro" : "Choose your download"}
+          </DialogTitle>
         </DialogHeader>
 
-        {!showCode ? (
+        {!showPay ? (
           <div className="grid sm:grid-cols-2 gap-4 pt-2">
             {/* FREE */}
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 flex flex-col backdrop-blur-xl">
