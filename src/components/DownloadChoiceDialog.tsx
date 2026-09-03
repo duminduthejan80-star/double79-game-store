@@ -149,38 +149,75 @@ const DownloadChoiceDialog = ({ open, onOpenChange, freeUrl, proUrl, onPick }: P
             </div>
           </div>
         ) : (
-          <div className="pt-2 max-w-sm mx-auto text-center">
+          <div className="pt-2 max-w-md mx-auto text-center">
             <Crown className="h-10 w-10 text-amber-300 mx-auto mb-3" />
-            <h3 className="text-lg font-bold mb-1">Enter your Pro code</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Your account is not Pro yet. Enter the activation code below.
-            </p>
-            <Input
-              value={code}
-              onChange={(e) => setCode(e.target.value.toUpperCase())}
-              placeholder="ABC123"
-              maxLength={12}
-              className="text-center text-xl tracking-[0.4em] font-bold"
-              autoFocus
-            />
-            <Button
-              className="w-full mt-3 bg-amber-400 text-slate-950 hover:bg-amber-300 font-bold"
-              disabled={busy}
-              onClick={redeem}
-            >
-              Activate Pro
-            </Button>
-            <a
-              href={`https://wa.me/${OWNER_WA}?text=${encodeURIComponent("game store pro code please")}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-md border border-[hsl(142_70%_45%)]/50 px-4 py-2.5 text-sm font-bold text-[hsl(142_70%_55%)] hover:bg-[hsl(142_70%_45%)]/10"
-            >
-              <MessageCircle className="h-4 w-4" /> Get a code
-            </a>
+
+            <div className="rounded-2xl border border-amber-300/30 bg-amber-400/[0.07] p-4 text-left">
+              <div className="flex items-center gap-2 text-amber-300 font-bold">
+                <Smartphone className="h-4 w-4" /> Step 1 — Reload
+              </div>
+              <p className="mt-2 text-sm text-amber-100/90">
+                Do a <b>Mobitel normal money reload of Rs.{RELOAD_AMOUNT}</b> to this number:
+              </p>
+              <div className="mt-2 text-2xl font-bold tracking-widest text-amber-200">{RELOAD_NUMBER}</div>
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-left">
+              <div className="flex items-center gap-2 font-bold">
+                <Upload className="h-4 w-4" /> Step 2 — Upload the receipt
+              </div>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Upload a clear photo of the reload receipt. It is checked automatically.
+              </p>
+
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); e.target.value = ""; }}
+              />
+
+              {preview ? (
+                <img src={preview} alt="Uploaded reload receipt" className="mt-3 max-h-56 w-full rounded-xl object-contain bg-black/30" />
+              ) : null}
+
+              <Button variant="outline" className="w-full mt-3" onClick={() => fileRef.current?.click()}>
+                {preview ? "Choose a different photo" : "Upload receipt photo"}
+              </Button>
+            </div>
+
+            {verdict?.status === "rejected" && (
+              <div className="mt-4 flex items-start gap-2 rounded-xl border border-destructive/50 bg-destructive/15 p-3 text-left text-sm font-bold text-destructive">
+                <XCircle className="h-5 w-5 shrink-0" />
+                <span className="uppercase tracking-wide">{verdict.reason}</span>
+              </div>
+            )}
+
+            {verdict?.status === "accepted" && (
+              <div className="mt-4 flex items-center gap-2 rounded-xl border border-emerald-400/50 bg-emerald-400/15 p-3 text-left text-sm font-bold text-emerald-400">
+                <CheckCircle2 className="h-5 w-5 shrink-0" />
+                PRO ACTIVE NOW — 30 days
+              </div>
+            )}
+
+            {verdict?.status === "accepted" ? (
+              <Button className="w-full mt-3 bg-emerald-500 text-slate-950 hover:bg-emerald-400 font-bold" onClick={continuePro}>
+                Continue to Pro download
+              </Button>
+            ) : (
+              <Button
+                className="w-full mt-3 bg-amber-400 text-slate-950 hover:bg-amber-300 font-bold"
+                disabled={busy || !preview}
+                onClick={submitReceipt}
+              >
+                {busy ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Checking receipt...</>) : "Submit receipt"}
+              </Button>
+            )}
+
             <button
               type="button"
-              onClick={() => setShowCode(false)}
+              onClick={reset}
               className="mt-3 text-xs text-muted-foreground hover:text-foreground"
             >
               ← Back
