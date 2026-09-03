@@ -40,12 +40,13 @@ Deno.serve(async (req) => {
 
 
 
-  const [profilesRes, libRes, dlRes, gamesRes, gdRes] = await Promise.all([
-    supabase.from("profiles").select("id, email, display_name, avatar_url, created_at"),
+  const [profilesRes, libRes, dlRes, gamesRes, gdRes, proRes] = await Promise.all([
+    supabase.from("profiles").select("id, email, display_name, avatar_url, phone, created_at"),
     supabase.from("user_library").select("user_id, game_id, created_at, games(title)").limit(50000),
     supabase.from("download_events").select("user_id, game_id, game_title, created_at").order("created_at", { ascending: false }).limit(50000),
     supabase.from("game_downloads").select("user_id, game_id, game_title, downloaded_at").order("downloaded_at", { ascending: false }).limit(50000),
     supabase.from("games").select("id, title").limit(50000),
+    supabase.from("pro_subscriptions").select("user_id, activated_at, expires_at"),
   ]);
 
   const err = profilesRes.error || libRes.error || dlRes.error || gamesRes.error || gdRes.error;
@@ -55,6 +56,10 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
+
+  const proMap = new Map(
+    (proRes.data ?? []).map((p) => [String(p.user_id), p as { activated_at: string; expires_at: string }]),
+  );
 
   const allDownloads = [
     ...(dlRes.data ?? []).map((d) => ({
