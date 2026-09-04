@@ -108,7 +108,21 @@ const Navbar = () => {
         </nav>
 
         <div className="relative flex items-center gap-3 pr-1">
+          <NavLink
+            to="/profiles"
+            className={({ isActive }) =>
+              cn(
+                "inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-3 py-2 text-xs font-semibold backdrop-blur-xl transition-all duration-300 hover:bg-white/[0.12]",
+                isActive ? "text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]" : "text-muted-foreground hover:text-foreground",
+              )
+            }
+          >
+            <Users className="h-4 w-4" />
+            <span className="hidden lg:inline">View other profiles</span>
+          </NavLink>
+
           <a
+
             href={`https://wa.me/94704962595?text=${encodeURIComponent("Request Game\n\nGame Name: ")}`}
             target="_blank"
             rel="noopener noreferrer"
