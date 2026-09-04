@@ -99,13 +99,14 @@ Deno.serve(async (req) => {
 
   const prompt = `You are a strict payment receipt verifier for a Sri Lankan mobile reload (Mobitel) top-up.
 Check the image and answer ONLY with JSON:
-{"is_receipt":bool,"edited":bool,"amount":number|null,"ref_no":string|null,"to_number":string|null,"reason":string}
+{"is_receipt":bool,"edited":bool,"amount":number|null,"ref_no":string|null,"to_number":string|null,"date":string|null,"reason":string}
 Rules:
 - "is_receipt": true only if it is a genuine mobile reload / bank transfer confirmation slip or SMS screenshot.
 - "edited": true if there are ANY signs of tampering: mismatched fonts, misaligned text baselines, blurry patches, cloned pixels, inconsistent colors, cropped-in numbers, photoshop artifacts.
 - "amount": the reload/transfer amount in LKR as a plain number.
 - "ref_no": the reference / transaction / serial number exactly as printed (null if absent).
 - "to_number": the recipient mobile number as printed.
+- "date": the transaction date printed on the receipt, normalized to "YYYY-MM-DD" (null if absent). Assume day-first format for ambiguous dates.
 - "reason": short English explanation.`;
 
   let ai: any = null;
@@ -151,6 +152,17 @@ Rules:
   const digits = String(ai.to_number ?? "").replace(/\D/g, "");
   if (digits && !digits.endsWith(TARGET_NUMBER.slice(-9))) {
     return await finish("rejected", `WRONG NUMBER — reload must go to ${TARGET_NUMBER}`, { ref_no: refNo, amount, ai_notes: notes });
+  }
+
+  // Receipt date must be TODAY (Sri Lanka time)
+  const todayLK = new Date(Date.now() + 5.5 * 3600_000).toISOString().slice(0, 10);
+  const rawDate = String(ai.date ?? "").trim();
+  const dm = rawDate.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (!dm) {
+    return await finish("rejected", "NO DATE — receipt date is not readable, upload today's receipt", { ref_no: refNo, amount, ai_notes: notes });
+  }
+  if (dm[0] !== todayLK) {
+    return await finish("rejected", `OLD RECEIPT — only today's (${todayLK}) receipt is accepted`, { ref_no: refNo, amount, ai_notes: notes });
   }
 
   // 3) Duplicate reference number check
