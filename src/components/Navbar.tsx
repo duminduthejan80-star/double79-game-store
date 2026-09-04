@@ -1,10 +1,24 @@
+import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
-import { Library, Store, LogOut, MessageCircle, HelpCircle } from "lucide-react";
+import { Library, Store, LogOut, MessageCircle, HelpCircle, Users, UserCog, ShieldOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/logo.png";
 import { useAuth } from "@/lib/auth";
-import { useProStatus } from "@/hooks/usePro";
+import { useProStatus, useInvalidatePro } from "@/hooks/usePro";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import ProfileSettingsDialog from "@/components/ProfileSettingsDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,8 +38,19 @@ const links = [
 const Navbar = () => {
   const { user, signOut } = useAuth();
   const { data: pro } = useProStatus();
+  const invalidatePro = useInvalidatePro();
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [confirmDeactivate, setConfirmDeactivate] = useState(false);
   const avatar = (user?.user_metadata?.avatar_url as string) || "";
   const name = (user?.user_metadata?.full_name as string) || user?.email || "Player";
+
+  const deactivatePro = async () => {
+    const { error } = await (supabase as any).rpc("deactivate_pro");
+    if (error) return toast.error(error.message);
+    invalidatePro();
+    toast.success("Pro deactivated");
+  };
+
 
   return (
     <header className="sticky top-0 z-50 px-3 pt-3 pb-1">
