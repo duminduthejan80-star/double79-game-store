@@ -128,6 +128,7 @@ const DownloadChoiceDialog = ({ open, onOpenChange, freeUrl, proUrl, onPick }: P
               <div className="flex items-center gap-2 mb-3">
                 <Crown className="h-5 w-5 text-amber-300" />
                 <span className="text-lg font-bold text-amber-300">Pro</span>
+                <span className="text-sm font-semibold text-foreground">- 1 month</span>
                 {pro?.isPro && (
                   <span className="ml-auto text-[10px] font-bold uppercase tracking-wider text-amber-200">
                     Active · {pro.daysLeft}d left
@@ -160,6 +161,9 @@ const DownloadChoiceDialog = ({ open, onOpenChange, freeUrl, proUrl, onPick }: P
                 Do a <b>Mobitel normal money reload of Rs.{RELOAD_AMOUNT}</b> to this number:
               </p>
               <div className="mt-2 text-2xl font-bold tracking-widest text-amber-200">{RELOAD_NUMBER}</div>
+              <p className="mt-3 rounded-lg border border-destructive/50 bg-destructive/15 p-2 text-xs font-bold text-destructive">
+                WARNING: reload eka dana davasema risit ekath meketa upload karala Pro active kara ganna. Anit davasaka risit ekak accept venne na.
+              </p>
             </div>
 
             <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-left">
