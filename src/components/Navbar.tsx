@@ -1,10 +1,24 @@
+import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
-import { Library, Store, LogOut, MessageCircle, HelpCircle } from "lucide-react";
+import { Library, Store, LogOut, MessageCircle, HelpCircle, Users, UserCog, ShieldOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/logo.png";
 import { useAuth } from "@/lib/auth";
-import { useProStatus } from "@/hooks/usePro";
+import { useProStatus, useInvalidatePro } from "@/hooks/usePro";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import ProfileSettingsDialog from "@/components/ProfileSettingsDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,8 +38,19 @@ const links = [
 const Navbar = () => {
   const { user, signOut } = useAuth();
   const { data: pro } = useProStatus();
+  const invalidatePro = useInvalidatePro();
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [confirmDeactivate, setConfirmDeactivate] = useState(false);
   const avatar = (user?.user_metadata?.avatar_url as string) || "";
   const name = (user?.user_metadata?.full_name as string) || user?.email || "Player";
+
+  const deactivatePro = async () => {
+    const { error } = await (supabase as any).rpc("deactivate_pro");
+    if (error) return toast.error(error.message);
+    invalidatePro();
+    toast.success("Pro deactivated");
+  };
+
 
   return (
     <header className="sticky top-0 z-50 px-3 pt-3 pb-1">
@@ -83,7 +108,21 @@ const Navbar = () => {
         </nav>
 
         <div className="relative flex items-center gap-3 pr-1">
+          <NavLink
+            to="/profiles"
+            className={({ isActive }) =>
+              cn(
+                "inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-3 py-2 text-xs font-semibold backdrop-blur-xl transition-all duration-300 hover:bg-white/[0.12]",
+                isActive ? "text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]" : "text-muted-foreground hover:text-foreground",
+              )
+            }
+          >
+            <Users className="h-4 w-4" />
+            <span className="hidden lg:inline">View other profiles</span>
+          </NavLink>
+
           <a
+
             href={`https://wa.me/94704962595?text=${encodeURIComponent("Request Game\n\nGame Name: ")}`}
             target="_blank"
             rel="noopener noreferrer"
