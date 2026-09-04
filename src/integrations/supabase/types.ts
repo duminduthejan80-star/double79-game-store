@@ -425,6 +425,7 @@ export type Database = {
       }
     }
     Functions: {
+      deactivate_pro: { Args: never; Returns: boolean }
       game_download_counts: {
         Args: never
         Returns: {
@@ -438,6 +439,27 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      public_profile_games: {
+        Args: { _user_id: string }
+        Returns: {
+          game_id: string
+          image_url: string
+          kind: string
+          title: string
+        }[]
+      }
+      public_profiles: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          display_name: string
+          download_count: number
+          id: string
+          is_pro: boolean
+          joined_at: string
+          library_count: number
+        }[]
       }
     }
     Enums: {
