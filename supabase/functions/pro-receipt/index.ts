@@ -154,6 +154,17 @@ Rules:
     return await finish("rejected", `WRONG NUMBER — reload must go to ${TARGET_NUMBER}`, { ref_no: refNo, amount, ai_notes: notes });
   }
 
+  // Receipt date must be TODAY (Sri Lanka time)
+  const todayLK = new Date(Date.now() + 5.5 * 3600_000).toISOString().slice(0, 10);
+  const rawDate = String(ai.date ?? "").trim();
+  const dm = rawDate.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (!dm) {
+    return await finish("rejected", "NO DATE — receipt date is not readable, upload today's receipt", { ref_no: refNo, amount, ai_notes: notes });
+  }
+  if (dm[0] !== todayLK) {
+    return await finish("rejected", `OLD RECEIPT — only today's (${todayLK}) receipt is accepted`, { ref_no: refNo, amount, ai_notes: notes });
+  }
+
   // 3) Duplicate reference number check
   if (refNo) {
     const { data: dupRef } = await supabase
