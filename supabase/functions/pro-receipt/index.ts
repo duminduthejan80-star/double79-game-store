@@ -99,13 +99,14 @@ Deno.serve(async (req) => {
 
   const prompt = `You are a strict payment receipt verifier for a Sri Lankan mobile reload (Mobitel) top-up.
 Check the image and answer ONLY with JSON:
-{"is_receipt":bool,"edited":bool,"amount":number|null,"ref_no":string|null,"to_number":string|null,"reason":string}
+{"is_receipt":bool,"edited":bool,"amount":number|null,"ref_no":string|null,"to_number":string|null,"date":string|null,"reason":string}
 Rules:
 - "is_receipt": true only if it is a genuine mobile reload / bank transfer confirmation slip or SMS screenshot.
 - "edited": true if there are ANY signs of tampering: mismatched fonts, misaligned text baselines, blurry patches, cloned pixels, inconsistent colors, cropped-in numbers, photoshop artifacts.
 - "amount": the reload/transfer amount in LKR as a plain number.
 - "ref_no": the reference / transaction / serial number exactly as printed (null if absent).
 - "to_number": the recipient mobile number as printed.
+- "date": the transaction date printed on the receipt, normalized to "YYYY-MM-DD" (null if absent). Assume day-first format for ambiguous dates.
 - "reason": short English explanation.`;
 
   let ai: any = null;
