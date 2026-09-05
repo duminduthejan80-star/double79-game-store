@@ -157,8 +157,20 @@ const Navbar = () => {
                   </span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuContent align="end" className="w-60">
                 <DropdownMenuLabel className="truncate">{user.email}</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
+                  <UserCog className="h-4 w-4 mr-2" /> Customize profile
+                </DropdownMenuItem>
+                {pro?.isPro && (
+                  <DropdownMenuItem
+                    onClick={() => setConfirmDeactivate(true)}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <ShieldOff className="h-4 w-4 mr-2" /> Deactivate Pro
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive">
                   <LogOut className="h-4 w-4 mr-2" /> Sign out
@@ -168,6 +180,29 @@ const Navbar = () => {
           )}
         </div>
       </div>
+
+      <ProfileSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
+
+      <AlertDialog open={confirmDeactivate} onOpenChange={setConfirmDeactivate}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Deactivate Pro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your Pro access will be turned off immediately and your money will{" "}
+              <span className="font-semibold text-destructive">not be refunded</span>. Are you sure?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>No</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={deactivatePro}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Yes, deactivate
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </header>
   );
 
