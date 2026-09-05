@@ -392,62 +392,93 @@ const Admin = () => {
 };
 
 const ProPanel = () => {
-  const [genCode, setGenCode] = useState<string | null>(null);
-  const [expiresAt, setExpiresAt] = useState<number | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [, setTick] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+  const [users, setUsers] = useState<UserStats[]>([]);
+  const [receipts, setReceipts] = useState<any[]>([]);
 
-  useEffect(() => {
-    if (!expiresAt) return;
-    const t = setInterval(() => setTick((x) => x + 1), 1000);
-    return () => clearInterval(t);
-  }, [expiresAt]);
-
-  const secsLeft = expiresAt ? Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000)) : 0;
-  const expired = !!genCode && secsLeft <= 0;
-
-  const generate = async () => {
-    setBusy(true);
+  const load = async () => {
+    setLoading(true); setErr(null);
     try {
-      const { data: session } = await supabase.auth.getSession();
-      const token = session.session?.access_token;
-      const { data, error } = await supabase.functions.invoke("pro-code", {
+      const { data: sess } = await supabase.auth.getSession();
+      const token = sess.session?.access_token;
+      if (!token) throw new Error("Please sign in again");
+      const { data: res, error } = await supabase.functions.invoke("admin-stats", {
         headers: { "x-admin-code": ADMIN_CODE, Authorization: `Bearer ${token}` },
       });
-      if (error || !data?.ok) throw new Error((data as any)?.error || error?.message || "Failed");
-      setGenCode(data.code);
-      setExpiresAt(new Date(data.expires_at).getTime());
-      toast.success("New Pro code generated");
-    } catch (e: any) {
-      toast.error(e.message);
-    } finally {
-      setBusy(false);
-    }
+      if (error) throw error;
+      setUsers(res?.users ?? []);
+      const { data: rec } = await (supabase as any)
+        .from("pro_receipts")
+        .select("id, user_id, status, amount, reference_no, rejection_reason, created_at")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      setReceipts(rec ?? []);
+    } catch (e: any) { setErr(e.message ?? "Failed to load"); }
+    finally { setLoading(false); }
   };
 
-  return (
-    <div className="rounded-2xl lg-panel p-8 max-w-md mx-auto text-center">
-      <h2 className="text-xl font-bold mb-1 text-amber-300">Pro Activation Codes</h2>
-      <p className="text-sm text-muted-foreground mb-6">
-        Codes expire after 1 minute. Once redeemed, the user gets 30 days of Pro.
-      </p>
-      {genCode && (
-        <div className="mb-5">
-          <div className={`text-4xl font-mono font-bold tracking-[0.3em] ${expired ? "text-muted-foreground line-through" : "text-amber-300"}`}>
-            {genCode}
+  useEffect(() => { load(); }, []);
+  if (loading) return <div className="p-10 text-center text-muted-foreground">Loading Pro data...</div>;
+  if (err) return <div className="p-10 text-center text-destructive">{err}</div>;
+
+  const proUsers = users.filter((u) => u.is_pro);
+  const freeUsers = users.filter((u) => !u.is_pro);
+  const nameOf = (id: string) => {
+    const u = users.find((x) => x.id === id);
+    return u?.display_name || u?.email || id.slice(0, 8);
+  };
+
+  const List = ({ title, list, tone }: { title: string; list: UserStats[]; tone: string }) => (
+    <div className="rounded-2xl lg-panel overflow-hidden">
+      <div className={`px-4 py-3 font-bold ${tone}`}>{title} ({list.length})</div>
+      {list.length === 0 && <div className="p-6 text-center text-sm text-muted-foreground">None yet.</div>}
+      {list.map((u) => (
+        <div key={u.id} className="flex items-center gap-3 border-t border-border/50 p-3">
+          <Avatar className="h-9 w-9">
+            {u.avatar_url && <AvatarImage src={u.avatar_url} />}
+            <AvatarFallback>{(u.display_name ?? u.email ?? "?").slice(0, 1).toUpperCase()}</AvatarFallback>
+          </Avatar>
+          <div className="min-w-0 flex-1">
+            <div className="truncate font-medium">{u.display_name ?? "—"}</div>
+            <div className="truncate text-xs text-muted-foreground">{u.email}</div>
           </div>
-          <div className={`text-xs mt-2 font-semibold ${expired ? "text-destructive" : "text-emerald-400"}`}>
-            {expired ? "EXPIRED" : `Expires in ${secsLeft}s`}
+          <div className="text-right text-xs">
+            <div className="font-semibold">{u.phone || "no phone"}</div>
+            <div className="text-muted-foreground">
+              {u.library_count} lib · {u.download_count} dl
+              {u.is_pro && u.pro_expires_at
+                ? ` · until ${new Date(u.pro_expires_at).toLocaleDateString()}`
+                : ""}
+            </div>
           </div>
         </div>
-      )}
-      <Button
-        onClick={generate}
-        disabled={busy}
-        className="w-full bg-amber-400 text-slate-950 hover:bg-amber-300 font-bold"
-      >
-        {genCode ? "Regenerate Code" : "Generate Code"}
-      </Button>
+      ))}
+    </div>
+  );
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-4 lg:grid-cols-2">
+        <List title="Pro users" list={proUsers} tone="text-amber-300" />
+        <List title="Free users" list={freeUsers} tone="text-emerald-400" />
+      </div>
+
+      <div className="rounded-2xl lg-panel overflow-hidden">
+        <div className="px-4 py-3 font-bold">Receipt history ({receipts.length})</div>
+        {receipts.length === 0 && <div className="p-6 text-center text-sm text-muted-foreground">No receipts yet.</div>}
+        {receipts.map((r) => (
+          <div key={r.id} className="flex items-center gap-3 border-t border-border/50 p-3 text-sm">
+            <div className="min-w-0 flex-1 truncate">{nameOf(r.user_id)}</div>
+            <div className="text-xs text-muted-foreground">{r.reference_no || "—"}</div>
+            <div className="text-xs">Rs.{r.amount ?? "—"}</div>
+            <div className={`text-xs font-bold ${r.status === "accepted" ? "text-emerald-400" : "text-destructive"}`}>
+              {String(r.status).toUpperCase()}
+            </div>
+            <div className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString()}</div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
@@ -561,6 +592,7 @@ const EmailTestPanel = () => {
 interface UserStats {
   id: string; email: string | null; display_name: string | null; avatar_url: string | null;
   joined_at: string; library_count: number; download_count: number;
+  phone?: string | null; is_pro?: boolean; pro_expires_at?: string | null;
   library: { game_id: string; title: string; added_at: string }[];
   downloads: { game_id: string; title: string; at: string }[];
 }
