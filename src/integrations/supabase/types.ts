@@ -130,6 +130,7 @@ export type Database = {
           publisher: string | null
           release_date: string | null
           screenshots: string[]
+          steam_appid: number | null
           title: string
           trailer_url: string | null
           updated_at: string
@@ -156,6 +157,7 @@ export type Database = {
           publisher?: string | null
           release_date?: string | null
           screenshots?: string[]
+          steam_appid?: number | null
           title: string
           trailer_url?: string | null
           updated_at?: string
@@ -182,6 +184,7 @@ export type Database = {
           publisher?: string | null
           release_date?: string | null
           screenshots?: string[]
+          steam_appid?: number | null
           title?: string
           trailer_url?: string | null
           updated_at?: string
