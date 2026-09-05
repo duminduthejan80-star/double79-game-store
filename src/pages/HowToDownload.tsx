@@ -1,6 +1,13 @@
 import Navbar from "@/components/Navbar";
-import videoAsset from "@/assets/how-to-download.mp4.asset.json";
+import freeVideoAsset from "@/assets/how-to-download-free.mp4.asset.json";
+import proVideoAsset from "@/assets/how-to-download-pro.mp4.asset.json";
 import openVideoAsset from "@/assets/how-to-open.mp4.asset.json";
+
+const VideoBlock = ({ src }: { src: string }) => (
+  <div className="rounded-xl overflow-hidden glass shadow-glow max-w-4xl mx-auto">
+    <video src={src} controls playsInline className="w-full h-auto bg-black" />
+  </div>
+);
 
 const HowToDownload = () => {
   return (
@@ -8,18 +15,19 @@ const HowToDownload = () => {
       <Navbar />
       <div className="container mx-auto px-4 py-10 space-y-12">
         <section>
-          <h1 className="text-4xl font-bold mb-2">How to Download</h1>
+          <h1 className="text-4xl font-bold mb-2">How to Download — Free</h1>
           <p className="text-muted-foreground mb-8">
-            Meka balala ganna kohomada game ekak download karanne kiyala.
+            Meka balala ganna kohomada free eken game ekak download karanne kiyala.
           </p>
-          <div className="rounded-xl overflow-hidden glass shadow-glow max-w-4xl mx-auto">
-            <video
-              src={videoAsset.url}
-              controls
-              playsInline
-              className="w-full h-auto bg-black"
-            />
-          </div>
+          <VideoBlock src={freeVideoAsset.url} />
+        </section>
+
+        <section>
+          <h2 className="text-3xl font-bold mb-2">How to Download — Pro</h2>
+          <p className="text-muted-foreground mb-8">
+            Meka balala ganna kohomada Pro eken game ekak download karanne kiyala.
+          </p>
+          <VideoBlock src={proVideoAsset.url} />
         </section>
 
         <section>
@@ -27,14 +35,7 @@ const HowToDownload = () => {
           <p className="text-muted-foreground mb-8">
             Meka balala ganna kohomada download kara game eka open karanne kiyala.
           </p>
-          <div className="rounded-xl overflow-hidden glass shadow-glow max-w-4xl mx-auto">
-            <video
-              src={openVideoAsset.url}
-              controls
-              playsInline
-              className="w-full h-auto bg-black"
-            />
-          </div>
+          <VideoBlock src={openVideoAsset.url} />
         </section>
       </div>
     </div>

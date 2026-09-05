@@ -122,6 +122,10 @@ export const AuthGateProvider = ({ children }: { children: ReactNode }) => {
               <p className="text-sm text-muted-foreground">
                 We use it to send you game updates and support messages.
               </p>
+              <p className="mt-2 rounded-lg border border-emerald-500/40 bg-emerald-500/10 p-2 text-xs font-semibold text-emerald-400">
+                This is for your safety — we use your number only to verify your account and help
+                you with downloads.
+              </p>
               <div className="text-left mt-2">
                 <Label>Phone number</Label>
                 <Input
@@ -132,12 +136,9 @@ export const AuthGateProvider = ({ children }: { children: ReactNode }) => {
                   autoFocus
                 />
               </div>
-              <div className="flex gap-2 mt-3">
-                <Button variant="ghost" className="flex-1" onClick={() => setOpen(false)}>
-                  Skip
-                </Button>
+              <div className="mt-3">
                 <Button
-                  className="flex-1 bg-primary-gradient text-primary-foreground hover:opacity-90"
+                  className="w-full bg-primary-gradient text-primary-foreground hover:opacity-90"
                   disabled={saving}
                   onClick={savePhone}
                 >
