@@ -112,14 +112,18 @@ Deno.serve(async (req) => {
     if (Array.isArray(body?.appids) && body.appids.length) appids = body.appids;
   } catch (_) { /* no body */ }
 
-  // Existing titles to avoid duplicates
-  const { data: existing } = await supabase.from("games").select("title");
+  // Existing titles + already-imported Steam ids, so a re-run never re-adds the same games
+  const { data: existing } = await supabase.from("games").select("title, steam_appid");
   const existingTitles = new Set((existing ?? []).map((g: any) => (g.title || "").toLowerCase().trim()));
+  const existingAppIds = new Set((existing ?? []).map((g: any) => g.steam_appid).filter(Boolean));
+
+  const queue = appids.filter((id) => !existingAppIds.has(id));
 
   let added = 0, skipped = 0, failed = 0;
   const errors: string[] = [];
 
-  for (const appid of appids) {
+  for (const appid of queue) {
+    if (added >= BATCH_SIZE) break;
     try {
       const d = await fetchAppDetails(appid);
       if (!d || d.type !== "game") { skipped++; continue; }
