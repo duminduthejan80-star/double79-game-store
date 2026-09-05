@@ -143,6 +143,7 @@ Deno.serve(async (req) => {
 
       const { error } = await supabase.from("games").insert({
         title,
+        steam_appid: appid,
         description: d.short_description || null,
         image_url: d.header_image || null,
         download_url: null,
@@ -175,5 +176,6 @@ Deno.serve(async (req) => {
     }
   }
 
-  return json({ ok: true, added, skipped, failed, errors: errors.slice(0, 10) });
+  const remaining = Math.max(0, queue.length - added - skipped);
+  return json({ ok: true, added, skipped, failed, remaining, errors: errors.slice(0, 10) });
 });
