@@ -22,6 +22,7 @@ import { AuthGateProvider } from "@/components/AuthGate";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import LoginStreakTracker from "@/components/LoginStreakTracker";
 import DesktopDownloadManager from "@/components/DesktopDownloadManager";
+import AiSupportChat from "@/components/AiSupportChat";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 
 const queryClient = new QueryClient();
@@ -58,6 +59,7 @@ const App = () => (
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <DesktopDownloadManager />
+              <AiSupportChat />
               </AppShell>
 
             </HardwareProfileProvider>
