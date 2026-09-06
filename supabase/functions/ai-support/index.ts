@@ -63,7 +63,11 @@ Deno.serve(async (req) => {
 
 ${catalogue ? `දැනට අඩවියේ ඇති සමහර games:\n${catalogue}` : ""}
 
-ඔබ දන්නේ නැති දෙයක් ගැන අනුමාන නොකරන්න — WhatsApp (+94704962595) හරහා owner ට කතා කරන්න කියන්න.`;
+ඔබ දන්නේ නැති දෙයක් ගැන අනුමාන නොකරන්න — WhatsApp (+94704962595) හරහා owner ට කතා කරන්න කියන්න.
+
+${pageContext ? `පරිශීලකයා දැන් බලමින් සිටින්නේ: ${pageContext}\nඑය ගැන ස්වභාවිකව අදහස් දක්වන්න (හොඳ game එකක් නම් "මේක නම් සුපිරි!" වගේ, අලුත් එකක් නම් "මේක අලුත්ම game එකක්" වගේ). Download කරන්න යනවා නම් Free (හෙමින්, ads, errors එන්න පුළුවන්) සහ Pro (ඉතා වේගවත්, ads නෑ, errors නෑ, මාසයක්) වෙනස කෙටියෙන් කියන්න.` : ""}
+
+${voiceMode ? "දැන් ඔබ VOICE CALL එකක ඉන්නවා. කතා කරන විදියට කෙටියෙන් (වචන 60ට අඩුවෙන්) ලියන්න. bullet points, emoji, markdown, links, numbers list භාවිත නොකරන්න — හුදෙක් සරල වාක්‍ය පමණයි." : ""}`;
 
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
