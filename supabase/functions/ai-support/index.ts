@@ -14,6 +14,8 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const messages = Array.isArray(body?.messages) ? body.messages.slice(-14) : [];
+    const pageContext = typeof body?.context === "string" ? body.context.slice(0, 800) : "";
+    const voiceMode = body?.voice === true;
     if (messages.length === 0) {
       return new Response(JSON.stringify({ error: "messages required" }), {
         status: 400,
