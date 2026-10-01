@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import { startDesktopDownload } from "@/lib/desktopBridge";
+import { directBrowserDownload } from "@/hooks/useDesktopDownloads";
 import { useGames } from "@/hooks/useGames";
 import { useLibrary, useRemoveFromLibrary } from "@/hooks/useLibrary";
 import { supabase } from "@/integrations/supabase/client";
@@ -46,14 +47,19 @@ const Library = () => {
     setDlGame(game);
   };
 
-  const startDownload = async (game: Game, url: string) => {
+  const startDownload = async (game: Game, url: string, tier: "free" | "pro") => {
     try {
-      const res = await startDesktopDownload(url, game.title);
-      if (res === "cancelled") return;
-      if (res === "unavailable") {
+      if (tier === "free") {
         window.open(url, "_blank", "noopener,noreferrer");
       } else {
-        toast.success(`Downloading ${game.title}`);
+        const res = await startDesktopDownload(url, game.title);
+        if (res === "cancelled") return;
+        if (res === "unavailable") {
+          directBrowserDownload(url, game.title);
+          toast.success(`Pro download started: ${game.title}`);
+        } else {
+          toast.success(`Downloading ${game.title}`);
+        }
       }
     } catch (e: any) {
       toast.error(e?.message || "Download failed to start");
@@ -254,7 +260,7 @@ const Library = () => {
         onOpenChange={(o) => { if (!o) setDlGame(null); }}
         freeUrl={dlGame?.download_url ?? null}
         proUrl={dlGame?.download_url_pro ?? null}
-        onPick={(url) => { if (dlGame) void startDownload(dlGame, url); }}
+        onPick={(url, tier) => { if (dlGame) void startDownload(dlGame, url, tier); }}
       />
     </div>
   );

@@ -7,6 +7,7 @@ import { Gamepad2, Phone } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import EmailAuthForm from "@/components/EmailAuthForm";
 
 const PENDING_LIB_KEY = "d79_pending_library_game";
 
@@ -108,6 +109,7 @@ export const AuthGateProvider = ({ children }: { children: ReactNode }) => {
               <Button onClick={signInWithGoogle} size="lg" variant="outline" className="w-full gap-3 mt-2">
                 <GoogleIcon /> Continue with Google
               </Button>
+              <EmailAuthForm />
             </>
           ) : (
             <>

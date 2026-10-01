@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
-import { Library, Store, LogOut, MessageCircle, HelpCircle, Users, UserCog, ShieldOff } from "lucide-react";
+import { Library, Store, LogOut, MessageCircle, HelpCircle, Users, UserCog, ShieldOff, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/logo.png";
 import { useAuth } from "@/lib/auth";
@@ -31,8 +31,8 @@ import {
 const links = [
   { to: "/home", label: "Store", icon: Store },
   { to: "/library", label: "Library", icon: Library },
+  { to: "/downloads", label: "Downloads", icon: Download },
   { to: "/how-to-download", label: "How to Download", icon: HelpCircle },
-  
 ];
 
 const Navbar = () => {
