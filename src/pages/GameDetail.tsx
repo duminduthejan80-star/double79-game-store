@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Download, Wifi, WifiOff, Check, Calendar, User, Building2 } from "lucide-react";
 import { startDesktopDownload } from "@/lib/desktopBridge";
+import { directBrowserDownload } from "@/hooks/useDesktopDownloads";
 import Navbar from "@/components/Navbar";
 import MediaGallery from "@/components/MediaGallery";
 import { useGame } from "@/hooks/useGames";
@@ -57,15 +58,19 @@ const GameDetail = () => {
     setDlOpen(true);
   };
 
-  const startDownload = async (url: string) => {
-    // Desktop app: pick a folder (Steam-style) and download inside the app
+  const startDownload = async (url: string, tier: "free" | "pro") => {
     try {
-      const res = await startDesktopDownload(url, game.title);
-      if (res === "cancelled") return;
-      if (res === "unavailable") {
+      if (tier === "free") {
         window.open(url, "_blank", "noopener,noreferrer");
       } else {
-        toast.success(`Downloading ${game.title}`);
+        const res = await startDesktopDownload(url, game.title);
+        if (res === "cancelled") return;
+        if (res === "unavailable") {
+          directBrowserDownload(url, game.title);
+          toast.success(`Pro download started: ${game.title}`);
+        } else {
+          toast.success(`Downloading ${game.title}`);
+        }
       }
     } catch (e: any) {
       toast.error(e?.message || "Download failed to start");
@@ -193,7 +198,7 @@ const GameDetail = () => {
         onOpenChange={setDlOpen}
         freeUrl={game.download_url}
         proUrl={game.download_url_pro}
-        onPick={(url) => { void startDownload(url); }}
+        onPick={(url, tier) => { void startDownload(url, tier); }}
       />
     </div>
   );
