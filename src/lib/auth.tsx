@@ -8,6 +8,8 @@ interface AuthCtx {
   session: Session | null;
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
+  signInWithEmail: (email: string, password: string) => Promise<string | null>;
+  signUpWithEmail: (email: string, password: string) => Promise<string | null>;
   signOut: () => Promise<void>;
 }
 
@@ -35,12 +37,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
+  const signInWithEmail = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    return error?.message ?? null;
+  };
+
+  const signUpWithEmail = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: window.location.origin },
+    });
+    return error?.message ?? null;
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
   };
 
   return (
-    <Ctx.Provider value={{ user: session?.user ?? null, session, loading, signInWithGoogle, signOut }}>
+    <Ctx.Provider value={{ user: session?.user ?? null, session, loading, signInWithGoogle, signInWithEmail, signUpWithEmail, signOut }}>
       {children}
     </Ctx.Provider>
   );

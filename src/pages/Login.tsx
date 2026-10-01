@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Gamepad2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
+import EmailAuthForm from "@/components/EmailAuthForm";
 
 const GoogleIcon = () => (
   <svg viewBox="0 0 24 24" className="h-5 w-5">
@@ -44,9 +45,7 @@ const Login = () => {
           <GoogleIcon />
           Continue with Google
         </Button>
-        <p className="mt-6 text-xs text-muted-foreground">
-          Your library is saved to your Google account.
-        </p>
+        <div className="mt-5"><EmailAuthForm /></div>
       </div>
     </div>
   );
