@@ -168,6 +168,82 @@ def _resolve_direct(url: str) -> str:
         return url
 
 
+# Gofile only serves the real file when the request carries an
+# "accountToken" cookie (a browser gets it on the first page visit — that's why
+# the first click opens a page and the second one downloads). We create a guest
+# token ourselves and send it, so the file downloads on the very first try.
+_GOFILE_TOKEN = {"value": None}
+
+
+def _gofile_token(fresh: bool = False) -> "str | None":
+    if _GOFILE_TOKEN["value"] and not fresh:
+        return _GOFILE_TOKEN["value"]
+    try:
+        req = urllib.request.Request(
+            "https://api.gofile.io/accounts",
+            data=b"{}",
+            method="POST",
+            headers={"User-Agent": USER_AGENT, "Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        tok = (data.get("data") or {}).get("token")
+        _GOFILE_TOKEN["value"] = tok
+        return tok
+    except Exception as exc:
+        print(f"[gofile] token failed: {exc}")
+        return None
+
+
+def _gofile_resolve_share(url: str, token: str) -> "str | None":
+    """Turn gofile.io/d/<id> into a direct link using the same token."""
+    import re
+    m = re.search(r"gofile\.io/d/([A-Za-z0-9]+)", url)
+    if not m:
+        return None
+    wt = "4fd6sg89d7s6"
+    try:
+        js = urllib.request.urlopen(
+            urllib.request.Request("https://gofile.io/dist/js/global.js",
+                                   headers={"User-Agent": USER_AGENT}), timeout=20
+        ).read().decode("utf-8", "ignore")
+        mm = re.search(r"appdata\.wt\s*=\s*[\"']([^\"']+)[\"']", js)
+        if mm:
+            wt = mm.group(1)
+    except Exception:
+        pass
+    req = urllib.request.Request(
+        f"https://api.gofile.io/contents/{m.group(1)}?wt={wt}",
+        headers={"User-Agent": USER_AGENT, "Authorization": f"Bearer {token}"},
+    )
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        data = json.loads(resp.read().decode("utf-8"))
+    children = (data.get("data") or {}).get("children") or {}
+    for child in children.values():
+        if child.get("link"):
+            return child["link"]
+    return None
+
+
+def _prepare_download(url: str, fresh: bool = False):
+    """Returns (direct_url, headers) ready for urllib."""
+    headers = {"User-Agent": USER_AGENT, "Accept": "*/*"}
+    if "gofile.io" in url.lower():
+        token = _gofile_token(fresh)
+        if token:
+            headers["Cookie"] = f"accountToken={token}"
+            headers["Referer"] = "https://gofile.io/"
+            if "/d/" in url:
+                try:
+                    link = _gofile_resolve_share(url, token)
+                    if link:
+                        return link, headers
+                except Exception as exc:
+                    print(f"[gofile] resolve failed: {exc}")
+            return url, headers
+    return _resolve_direct(url), headers
+
+
 class DownloadJob:
     def __init__(self, job_id: str, title: str, url: str, folder: str):
         self.id = job_id
@@ -297,14 +373,29 @@ class Api:
     # ---- worker
     def _run_job(self, job: DownloadJob):
         try:
-            direct = _resolve_direct(job.url)
+            direct, headers = _prepare_download(job.url)
             job.status = "downloading"
 
-            req = urllib.request.Request(direct, headers={"User-Agent": USER_AGENT})
-            with urllib.request.urlopen(req, timeout=60) as resp:
+            req = urllib.request.Request(direct, headers=headers)
+            resp = urllib.request.urlopen(req, timeout=60)
+            ctype = (resp.headers.get("Content-Type") or "").lower()
+            if "text/html" in ctype:
+                # Host returned a web page instead of the file — retry once
+                # with a fresh Gofile session token.
+                resp.close()
+                direct, headers = _prepare_download(job.url, fresh=True)
+                resp = urllib.request.urlopen(
+                    urllib.request.Request(direct, headers=headers), timeout=60
+                )
+                if "text/html" in (resp.headers.get("Content-Type") or "").lower():
+                    resp.close()
+                    raise RuntimeError("Host sent a web page, not the game file. Link may be expired.")
+            with resp:
                 filename = ""
                 disp = resp.headers.get("Content-Disposition") or ""
-                if "filename=" in disp:
+                if "filename*=" in disp:
+                    filename = disp.split("filename*=")[-1].split("''")[-1].strip('";\' ')
+                elif "filename=" in disp:
                     filename = disp.split("filename=")[-1].strip('";\' ')
                 if not filename:
                     filename = os.path.basename(urllib.parse.urlparse(direct).path)
