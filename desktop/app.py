@@ -168,11 +168,36 @@ def _resolve_direct(url: str) -> str:
         return url
 
 
-# Gofile only serves the real file when the request carries an
-# "accountToken" cookie (a browser gets it on the first page visit — that's why
-# the first click opens a page and the second one downloads). We create a guest
-# token ourselves and send it, so the file downloads on the very first try.
+# Gofile (2026): the API needs a dynamic X-Website-Token =
+# sha256(UA::lang::accountToken::4h-window::salt), and the file server needs an
+# "accountToken" cookie. Without them it redirects to the web page (that's why
+# a 4 KB page was saved instead of the game).
+import hashlib
+import re
+
 _GOFILE_TOKEN = {"value": None}
+_GOFILE_SALT = "12af056dacea0b"
+_GOFILE_LANG = "en-US"
+
+
+def _gofile_wt(account_token: str) -> str:
+    slot = int(time.time()) // 14400
+    raw = f"{USER_AGENT}::{_GOFILE_LANG}::{account_token}::{slot}::{_GOFILE_SALT}"
+    return hashlib.sha256(raw.encode()).hexdigest()
+
+
+def _gofile_headers(token: str = "") -> dict:
+    h = {
+        "User-Agent": USER_AGENT,
+        "Accept": "*/*",
+        "Origin": "https://gofile.io",
+        "Referer": "https://gofile.io/",
+        "X-Website-Token": _gofile_wt(token),
+        "X-BL": _GOFILE_LANG,
+    }
+    if token:
+        h["Authorization"] = f"Bearer {token}"
+    return h
 
 
 def _gofile_token(fresh: bool = False) -> "str | None":
@@ -180,10 +205,8 @@ def _gofile_token(fresh: bool = False) -> "str | None":
         return _GOFILE_TOKEN["value"]
     try:
         req = urllib.request.Request(
-            "https://api.gofile.io/accounts",
-            data=b"{}",
-            method="POST",
-            headers={"User-Agent": USER_AGENT, "Content-Type": "application/json"},
+            "https://api.gofile.io/accounts", data=b"{}", method="POST",
+            headers={**_gofile_headers(""), "Content-Type": "application/json"},
         )
         with urllib.request.urlopen(req, timeout=20) as resp:
             data = json.loads(resp.read().decode("utf-8"))
@@ -195,34 +218,31 @@ def _gofile_token(fresh: bool = False) -> "str | None":
         return None
 
 
-def _gofile_resolve_share(url: str, token: str) -> "str | None":
-    """Turn gofile.io/d/<id> into a direct link using the same token."""
-    import re
-    m = re.search(r"gofile\.io/d/([A-Za-z0-9]+)", url)
-    if not m:
+def _gofile_id(url: str) -> "str | None":
+    m = re.search(r"gofile\.io/(?:d|download/web|download/direct|download)/([A-Za-z0-9-]+)", url)
+    return m.group(1) if m else None
+
+
+def _gofile_resolve(url: str, token: str) -> "str | None":
+    """Works for share links (gofile.io/d/x) AND expired/old direct links."""
+    cid = _gofile_id(url)
+    if not cid:
         return None
-    wt = "4fd6sg89d7s6"
-    try:
-        js = urllib.request.urlopen(
-            urllib.request.Request("https://gofile.io/dist/js/global.js",
-                                   headers={"User-Agent": USER_AGENT}), timeout=20
-        ).read().decode("utf-8", "ignore")
-        mm = re.search(r"appdata\.wt\s*=\s*[\"']([^\"']+)[\"']", js)
-        if mm:
-            wt = mm.group(1)
-    except Exception:
-        pass
     req = urllib.request.Request(
-        f"https://api.gofile.io/contents/{m.group(1)}?wt={wt}",
-        headers={"User-Agent": USER_AGENT, "Authorization": f"Bearer {token}"},
+        f"https://api.gofile.io/contents/{cid}", headers=_gofile_headers(token)
     )
     with urllib.request.urlopen(req, timeout=30) as resp:
         data = json.loads(resp.read().decode("utf-8"))
-    children = (data.get("data") or {}).get("children") or {}
-    for child in children.values():
-        if child.get("link"):
-            return child["link"]
-    return None
+    if data.get("status") != "ok":
+        raise RuntimeError(f"Gofile: {data.get('status')}")
+    d = data.get("data") or {}
+    if d.get("link"):
+        return d["link"]
+    files = [c for c in (d.get("children") or {}).values() if c.get("link")]
+    if not files:
+        return None
+    files.sort(key=lambda c: c.get("size") or 0, reverse=True)
+    return files[0]["link"]
 
 
 def _prepare_download(url: str, fresh: bool = False):
@@ -230,17 +250,12 @@ def _prepare_download(url: str, fresh: bool = False):
     headers = {"User-Agent": USER_AGENT, "Accept": "*/*"}
     if "gofile.io" in url.lower():
         token = _gofile_token(fresh)
-        if token:
-            headers["Cookie"] = f"accountToken={token}"
-            headers["Referer"] = "https://gofile.io/"
-            if "/d/" in url:
-                try:
-                    link = _gofile_resolve_share(url, token)
-                    if link:
-                        return link, headers
-                except Exception as exc:
-                    print(f"[gofile] resolve failed: {exc}")
-            return url, headers
+        if not token:
+            raise RuntimeError("Could not connect to Gofile")
+        link = _gofile_resolve(url, token) or url
+        headers["Cookie"] = f"accountToken={token}"
+        headers["Referer"] = "https://gofile.io/"
+        return link, headers
     return _resolve_direct(url), headers
 
 
