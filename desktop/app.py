@@ -386,69 +386,110 @@ class Api:
         return {"ok": True}
 
     # ---- worker
+    def _open_stream(self, job: DownloadJob, start_at: int, fresh: bool):
+        """Opens the real file stream. Rejects web pages by content-type AND by
+        the first bytes, so an HTML page is never saved as a .rar."""
+        direct, headers = _prepare_download(job.url, fresh=fresh)
+        if start_at:
+            headers = {**headers, "Range": f"bytes={start_at}-"}
+        resp = urllib.request.urlopen(urllib.request.Request(direct, headers=headers), timeout=60)
+        ctype = (resp.headers.get("Content-Type") or "").lower()
+        head = resp.read(512)
+        sniff = head.lstrip()[:15].lower()
+        is_page = "text/html" in ctype or sniff.startswith((b"<!doctype", b"<html", b"<head", b"<?xml", b"{\"status"))
+        if is_page:
+            resp.close()
+            return None, None, None
+        return resp, direct, head
+
     def _run_job(self, job: DownloadJob):
+        part_path = ""
         try:
-            direct, headers = _prepare_download(job.url)
+            resp = direct = head = None
+            for attempt in range(4):  # fresh host session on every retry
+                resp, direct, head = self._open_stream(job, 0, fresh=attempt > 0)
+                if resp:
+                    break
+                time.sleep(1.5)
+            if not resp:
+                raise RuntimeError("The host keeps sending a web page instead of the game file. The link may be expired - ask the admin to update it.")
+
             job.status = "downloading"
+            filename = ""
+            disp = resp.headers.get("Content-Disposition") or ""
+            if "filename*=" in disp:
+                filename = disp.split("filename*=")[-1].split("''")[-1].strip('";\' ')
+            elif "filename=" in disp:
+                filename = disp.split("filename=")[-1].strip('";\' ')
+            if not filename:
+                filename = os.path.basename(urllib.parse.urlparse(direct).path)
+            if not filename or "." not in filename:
+                filename = f"{_safe_name(job.title)}.rar"
+            filename = _safe_name(urllib.parse.unquote(filename))
 
-            req = urllib.request.Request(direct, headers=headers)
-            resp = urllib.request.urlopen(req, timeout=60)
-            ctype = (resp.headers.get("Content-Type") or "").lower()
-            if "text/html" in ctype:
-                # Host returned a web page instead of the file — retry once
-                # with a fresh Gofile session token.
+            job.path = os.path.join(job.folder, filename)
+            part_path = job.path + ".part"
+            job.total = int(resp.headers.get("Content-Length") or 0)
+
+            last_tick = time.time()
+            last_bytes = 0
+            retries = 0
+            with open(part_path, "wb") as fh:
+                fh.write(head)
+                job.received = len(head)
+                while True:
+                    if job.cancel.is_set():
+                        job.status = "cancelled"
+                        break
+                    try:
+                        chunk = resp.read(512 * 1024)
+                    except Exception:
+                        chunk = None
+                    if chunk is None or (not chunk and job.total and job.received < job.total):
+                        # Connection dropped -> resume from where we stopped
+                        resp.close()
+                        retries += 1
+                        if retries > 8:
+                            raise RuntimeError("Connection lost too many times")
+                        time.sleep(min(2 * retries, 10))
+                        nresp, _, nhead = self._open_stream(job, job.received, fresh=True)
+                        if not nresp or nresp.status != 206:
+                            if nresp:
+                                nresp.close()
+                            raise RuntimeError("Could not resume the download")
+                        resp = nresp
+                        fh.write(nhead)
+                        job.received += len(nhead)
+                        continue
+                    if not chunk:
+                        break
+                    fh.write(chunk)
+                    job.received += len(chunk)
+
+                    now = time.time()
+                    if now - last_tick >= 0.4:
+                        job.speed = (job.received - last_bytes) / (now - last_tick)
+                        last_bytes = job.received
+                        last_tick = now
+                        if job.total and job.speed > 0:
+                            job.time_left = max(0, (job.total - job.received) / job.speed)
+            try:
                 resp.close()
-                direct, headers = _prepare_download(job.url, fresh=True)
-                resp = urllib.request.urlopen(
-                    urllib.request.Request(direct, headers=headers), timeout=60
-                )
-                if "text/html" in (resp.headers.get("Content-Type") or "").lower():
-                    resp.close()
-                    raise RuntimeError("Host sent a web page, not the game file. Link may be expired.")
-            with resp:
-                filename = ""
-                disp = resp.headers.get("Content-Disposition") or ""
-                if "filename*=" in disp:
-                    filename = disp.split("filename*=")[-1].split("''")[-1].strip('";\' ')
-                elif "filename=" in disp:
-                    filename = disp.split("filename=")[-1].strip('";\' ')
-                if not filename:
-                    filename = os.path.basename(urllib.parse.urlparse(direct).path)
-                if not filename or "." not in filename:
-                    filename = f"{_safe_name(job.title)}.zip"
-                filename = _safe_name(urllib.parse.unquote(filename))
-
-                job.path = os.path.join(job.folder, filename)
-                job.total = int(resp.headers.get("Content-Length") or 0)
-
-                start = time.time()
-                last_tick = start
-                last_bytes = 0
-                with open(job.path, "wb") as fh:
-                    while True:
-                        if job.cancel.is_set():
-                            job.status = "cancelled"
-                            break
-                        chunk = resp.read(256 * 1024)
-                        if not chunk:
-                            break
-                        fh.write(chunk)
-                        job.received += len(chunk)
-
-                        now = time.time()
-                        if now - last_tick >= 0.4:
-                            job.speed = (job.received - last_bytes) / (now - last_tick)
-                            last_bytes = job.received
-                            last_tick = now
-                            if job.total and job.speed > 0:
-                                job.time_left = max(0, (job.total - job.received) / job.speed)
+            except Exception:
+                pass
 
             if job.status == "cancelled":
                 try:
-                    os.remove(job.path)
+                    os.remove(part_path)
                 except Exception:
                     pass
                 return
+
+            if job.total and job.received < job.total:
+                raise RuntimeError("Download incomplete")
+            if os.path.exists(job.path):
+                os.remove(job.path)
+            os.replace(part_path, job.path)
 
             job.speed = 0
             job.time_left = 0
@@ -460,6 +501,11 @@ class Api:
             job.status = "failed"
             job.error = str(exc)
             job.speed = 0
+            if part_path and job.status != "completed":
+                try:
+                    os.remove(part_path)
+                except Exception:
+                    pass
             notify("Download failed", f"{job.title}: {exc}")
 
 
@@ -486,9 +532,18 @@ def main() -> None:
             window.evaluate_js(
                 """
                 window.__D79_DESKTOP__ = true;
+                // Safety net: any file-host link clicked inside the app goes to
+                // the built-in downloader (real file), never the web page.
+                var HOST = /(gofile\\.io\\/(d|download)\\/|buzzheavier\\.com|\\.(rar|zip|7z|iso)(\\?|$))/i;
                 document.addEventListener('click', function (e) {
-                  var a = e.target && e.target.closest ? e.target.closest('a[target="_blank"]') : null;
-                  if (a && a.href) { e.preventDefault(); window.open(a.href, '_blank'); }
+                  var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+                  if (!a || !a.href) return;
+                  if (HOST.test(a.href) && window.pywebview && window.pywebview.api) {
+                    e.preventDefault(); e.stopPropagation();
+                    window.pywebview.api.start_download(a.href, document.title || 'Game', null);
+                    return;
+                  }
+                  if (a.target === '_blank') { e.preventDefault(); window.open(a.href, '_blank'); }
                 }, true);
                 """
             )

@@ -59,11 +59,23 @@ export const chooseFolder = async (): Promise<string | null> => {
  * Starts a native download. Returns false when not running in the desktop app
  * (caller should fall back to opening the link in the browser).
  */
+const insideDesktopShell = () => {
+  const w = window as unknown as { __D79_DESKTOP__?: boolean; pywebview?: unknown };
+  return !!w.__D79_DESKTOP__ || !!w.pywebview;
+};
+
 export const startDesktopDownload = async (
   url: string,
   title: string,
 ): Promise<"started" | "cancelled" | "unavailable"> => {
-  const api = getApi();
+  // Inside the PC app the bridge can take a moment to appear — never fall
+  // back to a browser download there (that saves Gofile's page as a 4 KB file).
+  let api = getApi();
+  if (!api && insideDesktopShell()) {
+    await waitForDesktop(8000);
+    api = getApi();
+    if (!api) throw new Error("PC app is still loading — please click Download again.");
+  }
   if (!api) return "unavailable";
   const folder = await chooseFolder();
   if (!folder) return "cancelled";
