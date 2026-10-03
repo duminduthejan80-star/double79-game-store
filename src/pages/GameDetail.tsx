@@ -66,8 +66,9 @@ const GameDetail = () => {
         const res = await startDesktopDownload(url, game.title);
         if (res === "cancelled") return;
         if (res === "unavailable") {
-          directBrowserDownload(url, game.title);
-          toast.success(`Pro download started: ${game.title}`);
+          const mode = directBrowserDownload(url, game.title);
+          if (mode === "tab") toast.info("Opened the download in a new tab. For one-click direct downloads with progress, use the Double79 PC app.");
+          else toast.success(`Pro download started: ${game.title}`);
         } else {
           toast.success(`Downloading ${game.title}`);
         }
