@@ -532,9 +532,18 @@ def main() -> None:
             window.evaluate_js(
                 """
                 window.__D79_DESKTOP__ = true;
+                // Safety net: any file-host link clicked inside the app goes to
+                // the built-in downloader (real file), never the web page.
+                var HOST = /(gofile\\.io\\/(d|download)\\/|buzzheavier\\.com|\\.(rar|zip|7z|iso)(\\?|$))/i;
                 document.addEventListener('click', function (e) {
-                  var a = e.target && e.target.closest ? e.target.closest('a[target="_blank"]') : null;
-                  if (a && a.href) { e.preventDefault(); window.open(a.href, '_blank'); }
+                  var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+                  if (!a || !a.href) return;
+                  if (HOST.test(a.href) && window.pywebview && window.pywebview.api) {
+                    e.preventDefault(); e.stopPropagation();
+                    window.pywebview.api.start_download(a.href, document.title || 'Game', null);
+                    return;
+                  }
+                  if (a.target === '_blank') { e.preventDefault(); window.open(a.href, '_blank'); }
                 }, true);
                 """
             )
