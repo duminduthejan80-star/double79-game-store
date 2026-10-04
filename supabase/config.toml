@@ -17,6 +17,3 @@ verify_jwt = false
 
 [functions.download]
 verify_jwt = false
-
-[functions.download-selftest]
-verify_jwt = false
