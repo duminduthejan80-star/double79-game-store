@@ -202,7 +202,8 @@ async function handleStream(req: Request) {
     try {
       upstream = await openUpstream(game.download_url_pro, range, attempt > 0);
       if ((upstream.ok || upstream.status === 206) && !looksLikePage(upstream)) break;
-      await upstream.body?.cancel();
+      const peek = (await upstream.text().catch(() => "")).slice(0, 200);
+      console.warn("upstream rejected", attempt, upstream.status, upstream.headers.get("content-type"), upstream.url, peek);
     } catch (e) {
       console.error("upstream attempt", attempt, e);
     }
