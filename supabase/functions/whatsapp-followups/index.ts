@@ -39,7 +39,11 @@ Deno.serve(async (req) => {
     const name = (p.display_name || r.user_name || "Player").split("@")[0].slice(0, 40);
     const res = await sendTemplate(p.phone.replace(/\D/g, ""), "d79_game_feedback", [name, r.game_title.slice(0, 60)]);
     if (res.ok) { await mark("sent"); done.add(key); sent++; }
-    else { await mark("failed", `${res.status}: ${res.body}`.slice(0, 500)); failed++; }
+    else {
+      // Keep it queued so it retries (e.g. while the message is still waiting for Meta approval)
+      await admin.from("game_downloads").update({ whatsapp_followup_error: `${res.status}: ${res.body}`.slice(0, 500) }).eq("id", r.id);
+      failed++;
+    }
   }
   return new Response(JSON.stringify({ sent, skipped, failed }), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
