@@ -49,6 +49,9 @@ export type Database = {
           user_email: string
           user_id: string
           user_name: string | null
+          whatsapp_followup_at: string | null
+          whatsapp_followup_error: string | null
+          whatsapp_followup_status: string | null
         }
         Insert: {
           downloaded_at?: string
@@ -60,6 +63,9 @@ export type Database = {
           user_email: string
           user_id: string
           user_name?: string | null
+          whatsapp_followup_at?: string | null
+          whatsapp_followup_error?: string | null
+          whatsapp_followup_status?: string | null
         }
         Update: {
           downloaded_at?: string
@@ -71,6 +77,9 @@ export type Database = {
           user_email?: string
           user_id?: string
           user_name?: string | null
+          whatsapp_followup_at?: string | null
+          whatsapp_followup_error?: string | null
+          whatsapp_followup_status?: string | null
         }
         Relationships: []
       }
@@ -218,6 +227,39 @@ export type Database = {
         }
         Relationships: []
       }
+      phone_otps: {
+        Row: {
+          attempts: number
+          code_hash: string
+          consumed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          phone: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          code_hash: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          phone: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          phone?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       pro_codes: {
         Row: {
           code: string
@@ -325,6 +367,8 @@ export type Database = {
           email: string | null
           id: string
           phone: string | null
+          phone_verified: boolean
+          phone_verified_at: string | null
           updated_at: string
         }
         Insert: {
@@ -334,6 +378,8 @@ export type Database = {
           email?: string | null
           id: string
           phone?: string | null
+          phone_verified?: boolean
+          phone_verified_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -343,6 +389,8 @@ export type Database = {
           email?: string | null
           id?: string
           phone?: string | null
+          phone_verified?: boolean
+          phone_verified_at?: string | null
           updated_at?: string
         }
         Relationships: []

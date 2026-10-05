@@ -1,13 +1,12 @@
 import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Gamepad2, Phone } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import EmailAuthForm from "@/components/EmailAuthForm";
+import PhoneOtpStep from "@/components/PhoneOtpStep";
 
 const PENDING_LIB_KEY = "d79_pending_library_game";
 
@@ -28,11 +27,9 @@ const GoogleIcon = () => (
 );
 
 export const AuthGateProvider = ({ children }: { children: ReactNode }) => {
-  const { user, loading, signInWithGoogle } = useAuth();
+  const { user, loading, signInWithGoogle, signOut } = useAuth();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<"signin" | "phone">("signin");
-  const [phone, setPhone] = useState("");
-  const [saving, setSaving] = useState(false);
 
   const requireAuth = useCallback(
     (pendingGameId?: string) => {
@@ -61,10 +58,10 @@ export const AuthGateProvider = ({ children }: { children: ReactNode }) => {
       }
       const { data: profile } = await supabase
         .from("profiles")
-        .select("phone")
+        .select("phone_verified")
         .eq("id", user.id)
         .maybeSingle();
-      if (!profile?.phone) {
+      if (!profile?.phone_verified) {
         setStep("phone");
         setOpen(true);
       } else {
@@ -74,25 +71,17 @@ export const AuthGateProvider = ({ children }: { children: ReactNode }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, loading]);
 
-  const savePhone = async () => {
-    const clean = phone.replace(/[^\d+]/g, "");
-    if (clean.replace(/\D/g, "").length < 9) {
-      toast.error("Enter a valid phone number");
-      return;
-    }
-    setSaving(true);
-    const { error } = await supabase.from("profiles").update({ phone: clean }).eq("id", user!.id);
-    setSaving(false);
-    if (error) return toast.error(error.message);
-    toast.success("Phone number saved");
-    setOpen(false);
-  };
+  const phoneLocked = step === "phone" && !!user;
 
   return (
     <AuthGateCtx.Provider value={{ requireAuth }}>
       {children}
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-sm text-center">
+      <Dialog open={open} onOpenChange={(v) => { if (!phoneLocked) setOpen(v); }}>
+        <DialogContent
+          className={`max-w-sm text-center ${phoneLocked ? "[&>button]:hidden" : ""}`}
+          onInteractOutside={(e) => { if (phoneLocked) e.preventDefault(); }}
+          onEscapeKeyDown={(e) => { if (phoneLocked) e.preventDefault(); }}
+        >
           {step === "signin" ? (
             <>
               <DialogHeader>
@@ -119,34 +108,15 @@ export const AuthGateProvider = ({ children }: { children: ReactNode }) => {
                     <Phone className="h-7 w-7 text-primary-foreground" />
                   </div>
                 </div>
-                <DialogTitle className="text-center">Add your phone number</DialogTitle>
+                <DialogTitle className="text-center">Verify your WhatsApp number</DialogTitle>
               </DialogHeader>
               <p className="text-sm text-muted-foreground">
-                We use it to send you game updates and support messages.
+                This is required. We'll send a 6-digit code to your WhatsApp.
               </p>
-              <p className="mt-2 rounded-lg border border-emerald-500/40 bg-emerald-500/10 p-2 text-xs font-semibold text-emerald-400">
-                This is for your safety — we use your number only to verify your account and help
-                you with downloads.
-              </p>
-              <div className="text-left mt-2">
-                <Label>Phone number</Label>
-                <Input
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+94 70 496 2595"
-                  maxLength={20}
-                  autoFocus
-                />
-              </div>
-              <div className="mt-3">
-                <Button
-                  className="w-full bg-primary-gradient text-primary-foreground hover:opacity-90"
-                  disabled={saving}
-                  onClick={savePhone}
-                >
-                  Save
-                </Button>
-              </div>
+              <PhoneOtpStep onVerified={() => setOpen(false)} />
+              <button type="button" onClick={() => signOut()} className="mt-3 text-xs text-muted-foreground hover:text-foreground">
+                Sign out
+              </button>
             </>
           )}
         </DialogContent>

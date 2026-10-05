@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1791161704283,
+      "tag": "0000_whatsapp_phone_verification_and_followups",
+      "breakpoints": true
+    }
+  ]
+}
