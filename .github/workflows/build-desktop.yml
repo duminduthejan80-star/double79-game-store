@@ -1,0 +1,43 @@
+name: Build Double79 PC app
+
+on:
+  push:
+    branches: [main]
+    paths: ["desktop/**", ".github/workflows/build-desktop.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        working-directory: desktop
+        run: pip install -r requirements.txt
+      - name: Build exe
+        working-directory: desktop
+        run: pyinstaller --noconfirm --onefile --windowed --name "Double79GameStore" app.py
+      - name: Build installer
+        run: |
+          choco install innosetup -y --no-progress
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" desktop\installer.iss
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Double79-PC-App
+          path: |
+            desktop/dist/Double79GameStore.exe
+            desktop/Output/Double79-Setup.exe
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: pc-app-${{ github.run_number }}
+          name: Double79 PC App ${{ github.run_number }}
+          files: |
+            desktop/dist/Double79GameStore.exe
+            desktop/Output/Double79-Setup.exe
