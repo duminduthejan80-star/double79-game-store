@@ -90,7 +90,7 @@ async function tryWhapi(to: string, message: string) {
 
 /** Backup senders for plain text, tried in order until one works. */
 export async function sendGreenApiText(to: string, message: string) {
-  for (const fn of [tryWhapi, tryWaapi, tryGreen]) {
+  for (const fn of [tryGreen, tryWhapi, tryWaapi]) {
     try {
       const r = await fn(to, message);
       if (r.ok) return r;
@@ -107,6 +107,6 @@ export async function backupHealth() {
   const wi = Deno.env.get("WAAPI_INSTANCE_ID"), wt = Deno.env.get("WAAPI_TOKEN");
   out.waapi = wi && wt ? (await fetch(`https://waapi.app/api/v1/instances/${wi}/client/status`, { headers: { Authorization: `Bearer ${wt}` } }).then(async (r) => `${r.status} ${(await r.text()).slice(0, 120)}`)) : "missing";
   const gi = Deno.env.get("greenapi_instance_id"), gt = Deno.env.get("greenapi_token");
-  out.green = gi && gt ? (await fetch(`https://api.green-api.com/waInstance${gi}/getStateInstance/${gt}`).then((r) => r.status)) : "missing";
+  out.green = gi && gt ? (await fetch(`https://api.green-api.com/waInstance${gi}/getStateInstance/${gt}`).then(async (r) => `${r.status} ${await r.text()}`)) : "missing";
   return out;
 }
