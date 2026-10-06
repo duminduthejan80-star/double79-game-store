@@ -14,6 +14,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    if (new URL(req.url).searchParams.get("health") === "1") return json(await backupHealth());
     const token = (req.headers.get("Authorization") || "").replace("Bearer ", "");
     const { data: u } = await admin.auth.getUser(token);
     const user = u?.user;
