@@ -1,6 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
-import { normalizePhone, sendTemplate, sendGreenApiText } from "../_shared/whatsapp.ts";
+import { normalizePhone, sendTemplate, sendGreenApiText, backupHealth } from "../_shared/whatsapp.ts";
 
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
