@@ -32,9 +32,9 @@ Deno.serve(async (req) => {
       .eq("user_id", r.user_id).eq("game_id", r.game_id).eq("whatsapp_followup_status", "sent");
     if (done.has(key) || (count ?? 0) > 0) { await mark("duplicate"); skipped++; continue; }
 
-    const { data: p } = await admin.from("profiles").select("phone,phone_verified,display_name")
+    const { data: p } = await admin.from("profiles").select("phone,display_name")
       .eq("id", r.user_id).maybeSingle();
-    if (!p?.phone || !p.phone_verified) { await mark("no_phone"); skipped++; continue; }
+    if (!p?.phone || !/^\+947[0-9]{8}$/.test(p.phone)) { await mark("no_phone"); skipped++; continue; }
 
     const name = (p.display_name || r.user_name || "Player").split("@")[0].slice(0, 40);
     const res = await sendTemplate(p.phone.replace(/\D/g, ""), "d79_game_feedback", [name, r.game_title.slice(0, 60)]);
