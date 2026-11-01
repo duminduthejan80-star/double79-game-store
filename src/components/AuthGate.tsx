@@ -6,7 +6,8 @@ import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import EmailAuthForm from "@/components/EmailAuthForm";
-import PhoneOtpStep from "@/components/PhoneOtpStep";
+import PhoneNumberStep from "@/components/PhoneNumberStep";
+import { normalizeMobilePhone } from "@/lib/phone";
 
 const PENDING_LIB_KEY = "d79_pending_library_game";
 
@@ -58,10 +59,10 @@ export const AuthGateProvider = ({ children }: { children: ReactNode }) => {
       }
       const { data: profile } = await supabase
         .from("profiles")
-        .select("phone_verified")
+        .select("phone")
         .eq("id", user.id)
         .maybeSingle();
-      if (!profile?.phone_verified) {
+      if (!normalizeMobilePhone(profile?.phone ?? "")) {
         setStep("phone");
         setOpen(true);
       } else {
@@ -108,15 +109,15 @@ export const AuthGateProvider = ({ children }: { children: ReactNode }) => {
                     <Phone className="h-7 w-7 text-primary-foreground" />
                   </div>
                 </div>
-                <DialogTitle className="text-center">Verify your WhatsApp number</DialogTitle>
+                <DialogTitle className="text-center">Save your WhatsApp number</DialogTitle>
               </DialogHeader>
               <p className="text-sm text-muted-foreground">
-                This is required. We'll send a 6-digit code to your WhatsApp.
+                A valid mobile number is required.
               </p>
-              <PhoneOtpStep onVerified={() => setOpen(false)} />
-              <button type="button" onClick={() => signOut()} className="mt-3 text-xs text-muted-foreground hover:text-foreground">
+              <PhoneNumberStep onSaved={() => setOpen(false)} />
+              <Button variant="ghost" type="button" onClick={() => signOut()} className="mt-3 text-xs text-muted-foreground hover:text-foreground">
                 Sign out
-              </button>
+              </Button>
             </>
           )}
         </DialogContent>

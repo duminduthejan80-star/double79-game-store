@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { normalizeMobilePhone, PHONE_ERROR } from "@/lib/phone";
 
 interface Props {
   open: boolean;
@@ -63,10 +64,12 @@ const ProfileSettingsDialog = ({ open, onOpenChange }: Props) => {
   const save = async () => {
     if (!user) return;
     if (!name.trim()) return toast.error("Enter a display name");
+    const normalized = normalizeMobilePhone(phone);
+    if (!normalized) return toast.error(PHONE_ERROR);
     setSaving(true);
     const { error } = await supabase
       .from("profiles")
-      .update({ display_name: name.trim(), avatar_url: avatar, phone: phone.replace(/[^\d+]/g, "") || null })
+      .update({ display_name: name.trim(), avatar_url: avatar, phone: normalized })
       .eq("id", user.id);
     setSaving(false);
     if (error) return toast.error(error.message);
