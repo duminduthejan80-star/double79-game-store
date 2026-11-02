@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import DownloadChoiceDialog from "@/components/DownloadChoiceDialog";
+import InstalledGames from "@/components/InstalledGames";
 import type { Game } from "@/types/game";
 
 const Library = () => {
