@@ -1,0 +1,4 @@
+pywebview>=5.0
+requests>=2.31
+rarfile>=4.1
+pyinstaller>=6.0
