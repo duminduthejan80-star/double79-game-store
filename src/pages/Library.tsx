@@ -109,6 +109,8 @@ const Library = () => {
           <span className="text-sm text-muted-foreground">({owned.length})</span>
         </div>
 
+        <InstalledGames />
+
         {owned.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border p-16 text-center text-muted-foreground">
             Your library is empty. Get games from the store to see them here.

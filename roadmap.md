@@ -2,3 +2,11 @@
 - [x] Replace OTP with mandatory validated phone saving, including profile edits.
 - [x] Enforce number validation when saving and preserve honest verification status.
 - [x] Run validation tests and verify phone saving.
+- [x] Rebuild PC app in-project: Gofile direct downloads with live progress + resume.
+- [x] Auto-extract RAR/ZIP into a "Double79 Store" library folder, find game .exe.
+- [x] Steam-like Play / Open folder / Uninstall from Library (desktop bridge + UI).
+- [x] Persistent login in the PC app (private_mode=False, stored app data).
+- [x] GitHub Actions workflow to auto-build the .exe + installer on desktop/ changes.
+- [ ] User: connect project to GitHub so the .exe/ininstaller auto-builds (Releases page).
+- [ ] User: publish the site so the PC app loads the latest website code.
+- [ ] User: test a full Pro download end-to-end in the new PC app build.
