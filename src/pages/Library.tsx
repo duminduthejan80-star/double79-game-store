@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import DownloadChoiceDialog from "@/components/DownloadChoiceDialog";
+import InstalledGames from "@/components/InstalledGames";
 import type { Game } from "@/types/game";
 
 const Library = () => {
@@ -107,6 +108,8 @@ const Library = () => {
           <h1 className="text-2xl font-bold">My Library</h1>
           <span className="text-sm text-muted-foreground">({owned.length})</span>
         </div>
+
+        <InstalledGames />
 
         {owned.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border p-16 text-center text-muted-foreground">

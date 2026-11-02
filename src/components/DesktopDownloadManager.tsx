@@ -6,7 +6,9 @@ import { useDesktopDownloads } from "@/hooks/useDesktopDownloads";
 const DesktopDownloadManager = () => {
   const { available, items } = useDesktopDownloads();
   if (!available) return null;
-  const active = items.filter((i) => i.status === "downloading" || i.status === "resolving");
+  const active = items.filter(
+    (i) => i.status === "downloading" || i.status === "resolving" || i.status === "extracting"
+  );
   if (active.length === 0) return null;
   const top = active[0];
 
@@ -26,7 +28,7 @@ const DesktopDownloadManager = () => {
         </div>
       </div>
       <span className="font-mono font-bold tabular-nums">
-        {top.status === "resolving" ? "…" : `${top.percent.toFixed(0)}%`}
+        {top.status === "resolving" ? "…" : top.status === "extracting" ? "ZIP" : `${top.percent.toFixed(0)}%`}
       </span>
       {active.length > 1 && <span className="text-muted-foreground">+{active.length - 1}</span>}
     </Link>

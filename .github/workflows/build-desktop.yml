@@ -1,0 +1,57 @@
+name: Build PC app
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "desktop/**"
+      - ".github/workflows/build-desktop.yml"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python dependencies
+        run: pip install -r desktop/requirements.txt
+
+      - name: Fetch UnRAR (RAR extraction engine)
+        run: |
+          curl -L -o unrarw64.exe https://www.rarlab.com/rar/unrarw64.exe
+          7z x unrarw64.exe -odesktop/bin
+          dir desktop\bin
+
+      - name: Build exe with PyInstaller
+        run: |
+          pyinstaller --onefile --windowed --name Double79GameStore `
+            --add-binary "desktop/bin/UnRAR.exe;bin" `
+            --distpath dist desktop/app.py
+
+      - name: Install Inno Setup
+        run: choco install innosetup -y
+
+      - name: Build installer
+        run: iscc desktop/installer.iss
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: double79-pc-app
+          path: |
+            dist/Double79GameStore.exe
+            dist/Double79_Setup.exe
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: pc-app-${{ github.run_number }}
+          name: Double79 PC app ${{ github.run_number }}
+          files: |
+            dist/Double79GameStore.exe
+            dist/Double79_Setup.exe

@@ -5,7 +5,7 @@
 export interface DesktopDownload {
   id: string;
   title: string;
-  status: "resolving" | "downloading" | "completed" | "failed" | "cancelled";
+  status: "resolving" | "downloading" | "extracting" | "completed" | "failed" | "cancelled";
   path: string;
   folder: string;
   totalBytes: number;
@@ -17,8 +17,19 @@ export interface DesktopDownload {
   error: string;
 }
 
+export interface DesktopGame {
+  id: string;
+  title: string;
+  folder: string;
+  exe: string | null;
+  sizeBytes: number;
+  installedAt: number;
+  missing?: boolean;
+}
+
 type PyApi = {
   ping: () => Promise<unknown>;
+  get_library_root: () => Promise<{ root?: string }>;
   choose_folder: () => Promise<{ folder?: string | null; error?: string }>;
   start_download: (
     url: string,
@@ -29,6 +40,10 @@ type PyApi = {
   cancel_download: (id: string) => Promise<unknown>;
   remove_download: (id: string) => Promise<unknown>;
   open_folder: (path: string) => Promise<unknown>;
+  list_games: () => Promise<DesktopGame[]>;
+  play_game: (id: string) => Promise<{ ok?: boolean; error?: string }>;
+  uninstall_game: (id: string) => Promise<{ ok?: boolean; error?: string }>;
+  open_game_folder: (id: string) => Promise<unknown>;
 };
 
 const getApi = (): PyApi | null => {
@@ -99,6 +114,29 @@ export const listDesktopDownloads = async (): Promise<DesktopDownload[]> => {
 export const cancelDesktopDownload = (id: string) => getApi()?.cancel_download(id);
 export const removeDesktopDownload = (id: string) => getApi()?.remove_download(id);
 export const openDownloadFolder = (path: string) => getApi()?.open_folder(path);
+
+// ------------------------------------------------ installed games (Steam-like)
+export const listDesktopGames = async (): Promise<DesktopGame[]> => {
+  const api = getApi();
+  if (!api?.list_games) return [];
+  try {
+    return (await api.list_games()) ?? [];
+  } catch {
+    return [];
+  }
+};
+
+export const playDesktopGame = async (id: string): Promise<string | null> => {
+  const res = await getApi()?.play_game(id);
+  return res?.error ?? null;
+};
+
+export const uninstallDesktopGame = async (id: string): Promise<string | null> => {
+  const res = await getApi()?.uninstall_game(id);
+  return res?.error ?? null;
+};
+
+export const openDesktopGameFolder = (id: string) => getApi()?.open_game_folder(id);
 
 export const formatMB = (bytes: number) => {
   if (!bytes) return "0 MB";

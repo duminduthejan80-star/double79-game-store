@@ -1,5 +1,11 @@
 import { useEffect, useState } from "react";
-import { listDesktopDownloads, waitForDesktop, type DesktopDownload } from "@/lib/desktopBridge";
+import {
+  listDesktopDownloads,
+  listDesktopGames,
+  waitForDesktop,
+  type DesktopDownload,
+  type DesktopGame,
+} from "@/lib/desktopBridge";
 
 /** Live list of downloads running inside the PC app (polled every 500ms). */
 export const useDesktopDownloads = () => {
@@ -30,6 +36,37 @@ export const useDesktopDownloads = () => {
   }, [available]);
 
   return { available, items };
+};
+
+/** Live list of games installed by the PC app (polled every 2s). */
+export const useDesktopGames = () => {
+  const [available, setAvailable] = useState(false);
+  const [games, setGames] = useState<DesktopGame[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    waitForDesktop().then((ok) => !cancelled && setAvailable(ok));
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    if (!available) return;
+    let stop = false;
+    const tick = async () => {
+      const list = await listDesktopGames();
+      if (!stop) setGames(list);
+    };
+    tick();
+    const id = window.setInterval(tick, 2000);
+    window.addEventListener("d79:download-started", tick);
+    return () => {
+      stop = true;
+      window.clearInterval(id);
+      window.removeEventListener("d79:download-started", tick);
+    };
+  }, [available]);
+
+  return { available, games };
 };
 
 /** Hosts that need a visitor session (cookie) the browser can't fake —

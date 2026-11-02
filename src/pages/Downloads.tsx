@@ -12,7 +12,7 @@ import {
 } from "@/lib/desktopBridge";
 
 const Row = ({ item }: { item: DesktopDownload }) => {
-  const active = item.status === "downloading" || item.status === "resolving";
+  const active = item.status === "downloading" || item.status === "resolving" || item.status === "extracting";
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 backdrop-blur-xl">
       <div className="flex items-start justify-between gap-3">
@@ -21,6 +21,7 @@ const Row = ({ item }: { item: DesktopDownload }) => {
           <div className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
             {item.status === "resolving" && <><Loader2 className="h-4 w-4 animate-spin" /> Preparing…</>}
             {item.status === "downloading" && <><Download className="h-4 w-4 text-primary" /> Downloading</>}
+            {item.status === "extracting" && <><Loader2 className="h-4 w-4 animate-spin text-primary" /> Extracting files…</>}
             {item.status === "completed" && <><CheckCircle2 className="h-4 w-4 text-primary" /> Completed</>}
             {(item.status === "failed" || item.status === "cancelled") && (
               <><XCircle className="h-4 w-4 text-destructive" /> {item.status === "failed" ? `Failed ${item.error ? "· " + item.error : ""}` : "Cancelled"}</>
@@ -53,6 +54,11 @@ const Row = ({ item }: { item: DesktopDownload }) => {
         <Stat label="Downloaded" value={`${formatMB(item.receivedBytes)}${item.totalBytes ? " / " + formatMB(item.totalBytes) : ""}`} />
         <Stat label="Speed" value={item.status === "downloading" ? `${item.speedMBps.toFixed(2)} MB/s` : "—"} />
         <Stat label="Time left" value={item.status === "downloading" ? formatTimeLeft(item.timeLeft) : "—"} />
+        {item.status === "extracting" && (
+          <div className="col-span-2 sm:col-span-4 text-xs text-muted-foreground">
+            Unpacking the game into your library — it will appear in Library → Installed on this PC when ready.
+          </div>
+        )}
       </div>
     </div>
   );
