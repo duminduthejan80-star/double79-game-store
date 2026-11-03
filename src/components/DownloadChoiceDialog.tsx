@@ -113,9 +113,9 @@ const DownloadChoiceDialog = ({ open, onOpenChange, freeUrl, proUrl, onPick }: P
                 <span className="text-lg font-bold">Free</span>
               </div>
               <ul className="space-y-2 text-sm text-muted-foreground flex-1">
-                <li className="flex gap-2"><Gauge className="h-4 w-4 mt-0.5 shrink-0" /> Very slow download speed</li>
-                <li className="flex gap-2"><ShieldAlert className="h-4 w-4 mt-0.5 shrink-0" /> Ads on the download page</li>
-                <li className="flex gap-2"><BadgeX className="h-4 w-4 mt-0.5 shrink-0" /> Higher chance of game errors</li>
+                <li className="flex gap-2"><Gauge className="h-4 w-4 mt-0.5 shrink-0" /> Standard download speed</li>
+                <li className="flex gap-2"><Download className="h-4 w-4 mt-0.5 shrink-0" /> Direct PC download with live progress</li>
+                <li className="flex gap-2"><ShieldCheck className="h-4 w-4 mt-0.5 shrink-0" /> Auto-extract · Play · Uninstall</li>
                 <li className="flex gap-2"><ShieldAlert className="h-4 w-4 mt-0.5 shrink-0" /> No priority support</li>
               </ul>
               <Button variant="outline" className="w-full mt-5" onClick={pickFree}>
@@ -131,14 +131,14 @@ const DownloadChoiceDialog = ({ open, onOpenChange, freeUrl, proUrl, onPick }: P
                 <span className="text-sm font-semibold text-foreground">- 1 month</span>
                 {pro?.isPro && (
                   <span className="ml-auto text-[10px] font-bold uppercase tracking-wider text-amber-200">
-                    Active · {pro.daysLeft}d left
+                    {pro.isLifetime ? "Active · Lifetime" : `Active · ${pro.daysLeft}d left`}
                   </span>
                 )}
               </div>
               <ul className="space-y-2 text-sm text-amber-100/80 flex-1">
-                <li className="flex gap-2"><Zap className="h-4 w-4 mt-0.5 shrink-0" /> Very fast download speed</li>
-                <li className="flex gap-2"><ShieldCheck className="h-4 w-4 mt-0.5 shrink-0" /> No ads</li>
-                <li className="flex gap-2"><ShieldCheck className="h-4 w-4 mt-0.5 shrink-0" /> No errors — tested builds</li>
+                <li className="flex gap-2"><Zap className="h-4 w-4 mt-0.5 shrink-0" /> Uncapped download speed</li>
+                <li className="flex gap-2"><Download className="h-4 w-4 mt-0.5 shrink-0" /> Direct PC download with live progress</li>
+                <li className="flex gap-2"><ShieldCheck className="h-4 w-4 mt-0.5 shrink-0" /> Auto-extract · Play · Uninstall</li>
                 <li className="flex gap-2"><Crown className="h-4 w-4 mt-0.5 shrink-0" /> Priority support</li>
               </ul>
               <Button
