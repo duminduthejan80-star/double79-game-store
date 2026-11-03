@@ -1,4 +1,7 @@
 # Tasks
+- [ ] Give Free and Pro the same native download/install/play lifecycle with an admin-controlled Free speed limit.
+- [ ] Add admin Pro management by email with expiry, lifetime, and revocation.
+- [ ] Test download tier rules, speed limits, and Pro lifetime status.
 - [x] Replace OTP with mandatory validated phone saving, including profile edits.
 - [x] Enforce number validation when saving and preserve honest verification status.
 - [x] Run validation tests and verify phone saving.
