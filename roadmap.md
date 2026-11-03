@@ -1,7 +1,8 @@
 # Tasks
-- [ ] Give Free and Pro the same native download/install/play lifecycle with an admin-controlled Free speed limit.
-- [ ] Add admin Pro management by email with expiry, lifetime, and revocation.
-- [ ] Test download tier rules, speed limits, and Pro lifetime status.
+- [x] Give Free and Pro the same native download/install/play lifecycle with an admin-controlled Free speed limit.
+- [x] Add admin Pro management by email with expiry, lifetime, and revocation.
+- [x] Test download tier rules, speed limits, and Pro lifetime status; verify speed saves in signed-in admin UI.
+- [ ] Verify registered-account Pro activation end-to-end without altering existing subscriptions; blocked by absence of a disposable test account.
 - [x] Replace OTP with mandatory validated phone saving, including profile edits.
 - [x] Enforce number validation when saving and preserve honest verification status.
 - [x] Run validation tests and verify phone saving.
@@ -12,4 +13,4 @@
 - [x] GitHub Actions workflow to auto-build the .exe + installer on desktop/ changes.
 - [ ] User: connect project to GitHub so the .exe/ininstaller auto-builds (Releases page).
 - [ ] User: publish the site so the PC app loads the latest website code.
-- [ ] User: test a full Pro download end-to-end in the new PC app build.
+- [ ] User: test full Free and Pro Gofile download-to-Play on Windows in the rebuilt PC app; native tests use a local ZIP fixture, not a real Gofile game.

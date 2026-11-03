@@ -310,7 +310,7 @@ def throttle_download(job: dict, received: int, started: float) -> None:
     deadline = started + received / limit
     while time.monotonic() < deadline:
         _check_cancelled(job)
-        time.sleep(min(0.1, deadline - time.monotonic()))
+        time.sleep(max(0, min(0.1, deadline - time.monotonic())))
 
 
 def _download_worker(job: dict) -> None:
