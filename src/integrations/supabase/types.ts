@@ -38,6 +38,24 @@ export type Database = {
         }
         Relationships: []
       }
+      download_settings: {
+        Row: {
+          free_speed_mbps: number
+          id: boolean
+          updated_at: string
+        }
+        Insert: {
+          free_speed_mbps?: number
+          id?: boolean
+          updated_at?: string
+        }
+        Update: {
+          free_speed_mbps?: number
+          id?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       game_downloads: {
         Row: {
           downloaded_at: string
@@ -477,6 +495,10 @@ export type Database = {
     }
     Functions: {
       deactivate_pro: { Args: never; Returns: boolean }
+      desktop_download_policy: {
+        Args: { _game_id: string; _tier: string }
+        Returns: Json
+      }
       game_download_counts: {
         Args: never
         Returns: {
@@ -490,6 +512,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      manage_pro_by_email: {
+        Args: { _action: string; _email: string; _expires_at?: string }
+        Returns: Json
       }
       public_profile_games: {
         Args: { _user_id: string }
