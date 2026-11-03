@@ -1,6 +1,7 @@
 // Bridge between the web UI and the Python desktop app (pywebview js_api).
 // When running inside the desktop app, downloads are handled natively:
 // folder picker -> Python downloader -> in-app progress.
+import { supabase } from "@/integrations/supabase/client";
 
 export interface DesktopDownload {
   id: string;
@@ -29,6 +30,7 @@ export interface DesktopGame {
 
 type PyApi = {
   ping: () => Promise<unknown>;
+  start_managed_download?: (gameId: string, tier: "free" | "pro", token: string, publicKey: string) => Promise<{ id?: string; cancelled?: boolean; error?: string }>;
   get_library_root: () => Promise<{ root?: string }>;
   choose_folder: () => Promise<{ folder?: string | null; error?: string }>;
   start_download: (
@@ -82,6 +84,8 @@ const insideDesktopShell = () => {
 export const startDesktopDownload = async (
   url: string,
   title: string,
+  gameId: string,
+  tier: "free" | "pro",
 ): Promise<"started" | "cancelled" | "unavailable"> => {
   // Inside the PC app the bridge can take a moment to appear — never fall
   // back to a browser download there (that saves Gofile's page as a 4 KB file).
@@ -92,9 +96,10 @@ export const startDesktopDownload = async (
     if (!api) throw new Error("PC app is still loading — please click Download again.");
   }
   if (!api) return "unavailable";
-  const folder = await chooseFolder();
-  if (!folder) return "cancelled";
-  const res = await api.start_download(url, title, folder);
+  if (!api.start_managed_download) throw new Error("Update the Double79 PC app to use managed Free and Pro downloads.");
+  const { data } = await supabase.auth.getSession();
+  if (!data.session) throw new Error("Please sign in");
+  const res = await api.start_managed_download(gameId, tier, data.session.access_token, import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
   if (res?.cancelled) return "cancelled";
   if (res?.error) throw new Error(res.error);
   window.dispatchEvent(new CustomEvent("d79:download-started"));

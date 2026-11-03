@@ -27,6 +27,7 @@ import webview
 APP_NAME = "Double79 Game Store"
 SITE_URL = "https://double79-game-store1.lovable.app"
 LIBRARY_FOLDER_NAME = "Double79 Store"
+POLICY_URL = "https://tgbskrfbyvbigpxcbyim.supabase.co/rest/v1/rpc/desktop_download_policy"
 
 # ---------------------------------------------------------------- app data
 def _data_dir() -> str:
@@ -302,6 +303,16 @@ def _public_job(job: dict) -> dict:
     )}
 
 
+def throttle_download(job: dict, received: int, started: float) -> None:
+    limit = job.get("speed_limit_mbps", 0) * 1024 * 1024
+    if not limit:
+        return
+    deadline = started + received / limit
+    while time.monotonic() < deadline:
+        _check_cancelled(job)
+        time.sleep(max(0, min(0.1, deadline - time.monotonic())))
+
+
 def _download_worker(job: dict) -> None:
     url, title, dest_folder = job["url"], job["title"], job["folder"]
     archive_path = ""
@@ -337,6 +348,7 @@ def _download_worker(job: dict) -> None:
                 job["status"] = "downloading"
                 mode = "ab" if have else "wb"
                 last_t, last_b = time.time(), have
+                transfer_started, transfer_bytes = time.monotonic(), 0
                 with open(part, mode) as f:
                     first_chunk = True
                     for chunk in res.iter_content(chunk_size=1024 * 512):
@@ -351,6 +363,8 @@ def _download_worker(job: dict) -> None:
                             first_chunk = False
                         f.write(chunk)
                         have += len(chunk)
+                        transfer_bytes += len(chunk)
+                        throttle_download(job, transfer_bytes, transfer_started)
                         job["receivedBytes"] = have
                         now = time.time()
                         if now - last_t >= 0.5:
@@ -447,7 +461,32 @@ class Api:
         return {"folder": chosen}
 
     # ----- downloads -----
-    def start_download(self, url: str, title: str, folder: str | None = None):
+    def start_managed_download(self, game_id: str, tier: str, access_token: str, public_key: str):
+        """Resolve tier and speed on the server; never trust a UI-provided cap."""
+        if tier not in ("free", "pro"):
+            return {"error": "Invalid download tier"}
+        try:
+            res = requests.post(POLICY_URL, headers={
+                "Authorization": f"Bearer {access_token}", "apikey": public_key,
+                "Content-Type": "application/json",
+            }, json={"_game_id": game_id, "_tier": tier}, timeout=30)
+            policy = res.json()
+            if not res.ok:
+                return {"error": policy.get("message", "Could not check download access")}
+            return self._start_download(policy["url"], self._game_title(game_id, access_token, public_key),
+                                       speed_limit_mbps=float(policy["speed_limit_mbps"]))
+        except Exception:
+            return {"error": "Could not load download settings. Please try again."}
+
+    def _game_title(self, game_id: str, token: str, key: str):
+        res = requests.get(POLICY_URL.split("/rpc/")[0] + "/games",
+                           headers={"Authorization": f"Bearer {token}", "apikey": key},
+                           params={"id": f"eq.{game_id}", "select": "title"}, timeout=30)
+        res.raise_for_status()
+        rows = res.json()
+        return rows[0]["title"] if rows else "game"
+
+    def _start_download(self, url: str, title: str, folder: str | None = None, speed_limit_mbps: float = 0):
         if not folder:
             picked = self.choose_folder()
             folder = picked.get("folder")
@@ -469,6 +508,7 @@ class Api:
             "timeLeft": 0,
             "error": "",
             "cancel": False,
+            "speed_limit_mbps": speed_limit_mbps,
         }
         with _lock:
             DOWNLOADS[job["id"]] = job

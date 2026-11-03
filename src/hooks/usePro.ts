@@ -1,11 +1,13 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { calculateProStatus } from "@/lib/proStatus";
 
 export interface ProStatus {
   isPro: boolean;
   expiresAt: string | null;
   daysLeft: number;
+  isLifetime: boolean;
 }
 
 export const useProStatus = () => {
@@ -15,19 +17,14 @@ export const useProStatus = () => {
     enabled: !!user,
     staleTime: 30_000,
     queryFn: async () => {
+      if (!user) return calculateProStatus(null);
       const { data, error } = await supabase
         .from("pro_subscriptions")
         .select("expires_at")
-        .eq("user_id", user!.id)
+        .eq("user_id", user.id)
         .maybeSingle();
       if (error) throw error;
-      const exp = data?.expires_at ?? null;
-      const active = !!exp && new Date(exp).getTime() > Date.now();
-      return {
-        isPro: active,
-        expiresAt: exp,
-        daysLeft: active ? Math.max(0, Math.ceil((new Date(exp!).getTime() - Date.now()) / 86400000)) : 0,
-      };
+      return calculateProStatus(data?.expires_at ?? null);
     },
   });
 };

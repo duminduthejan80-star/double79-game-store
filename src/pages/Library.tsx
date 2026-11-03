@@ -50,15 +50,13 @@ const Library = () => {
 
   const startDownload = async (game: Game, url: string, tier: "free" | "pro") => {
     try {
-      if (tier === "free") {
-        window.open(url, "_blank", "noopener,noreferrer");
-      } else {
-        const res = await startDesktopDownload(url, game.title);
+      {
+        const res = await startDesktopDownload(url, game.title, game.id, tier);
         if (res === "cancelled") return;
         if (res === "unavailable") {
           const mode = directBrowserDownload(url, game.title);
           if (mode === "tab") toast.info("Opened the download in a new tab. For one-click direct downloads with progress, use the Double79 PC app.");
-          else toast.success(`Pro download started: ${game.title}`);
+          else toast.success(`Download started: ${game.title}`);
         } else {
           toast.success(`Downloading ${game.title}`);
         }
