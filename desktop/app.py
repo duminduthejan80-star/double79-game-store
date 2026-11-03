@@ -473,7 +473,7 @@ class Api:
             policy = res.json()
             if not res.ok:
                 return {"error": policy.get("message", "Could not check download access")}
-            return self.start_download(policy["url"], self._game_title(game_id, access_token, public_key),
+            return self._start_download(policy["url"], self._game_title(game_id, access_token, public_key),
                                        speed_limit_mbps=float(policy["speed_limit_mbps"]))
         except Exception:
             return {"error": "Could not load download settings. Please try again."}
@@ -486,7 +486,7 @@ class Api:
         rows = res.json()
         return rows[0]["title"] if rows else "game"
 
-    def start_download(self, url: str, title: str, folder: str | None = None, speed_limit_mbps: float = 0):
+    def _start_download(self, url: str, title: str, folder: str | None = None, speed_limit_mbps: float = 0):
         if not folder:
             picked = self.choose_folder()
             folder = picked.get("folder")
