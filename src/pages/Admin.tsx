@@ -16,6 +16,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Game, GameInput } from "@/types/game";
 import { GAME_CATEGORIES } from "@/lib/categories";
+import AdminDownloadSettings from "@/components/AdminDownloadSettings";
+import AdminProManager from "@/components/AdminProManager";
 
 const ADMIN_CODE = "4998";
 const SESSION_KEY = "d79_admin_ok";
@@ -326,6 +328,7 @@ const Admin = () => {
             <TabsTrigger value="games">Games</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="pro">Pro</TabsTrigger>
+            <TabsTrigger value="downloads">Downloads</TabsTrigger>
             <TabsTrigger value="email">Email Test</TabsTrigger>
           </TabsList>
 
@@ -380,6 +383,9 @@ const Admin = () => {
           <TabsContent value="pro">
             <ProPanel />
           </TabsContent>
+          <TabsContent value="downloads">
+            <AdminDownloadSettings />
+          </TabsContent>
 
           <TabsContent value="email">
             <EmailTestPanel />
@@ -410,7 +416,7 @@ const ProPanel = () => {
       setUsers(res?.users ?? []);
       const { data: rec } = await (supabase as any)
         .from("pro_receipts")
-        .select("id, user_id, status, amount, reference_no, rejection_reason, created_at")
+        .select("id, user_id, status, amount, ref_no, reason, created_at")
         .order("created_at", { ascending: false })
         .limit(50);
       setReceipts(rec ?? []);
@@ -419,8 +425,6 @@ const ProPanel = () => {
   };
 
   useEffect(() => { load(); }, []);
-  if (loading) return <div className="p-10 text-center text-muted-foreground">Loading Pro data...</div>;
-  if (err) return <div className="p-10 text-center text-destructive">{err}</div>;
 
   const proUsers = users.filter((u) => u.is_pro);
   const freeUsers = users.filter((u) => !u.is_pro);
@@ -448,7 +452,7 @@ const ProPanel = () => {
             <div className="text-muted-foreground">
               {u.library_count} lib · {u.download_count} dl
               {u.is_pro && u.pro_expires_at
-                ? ` · until ${new Date(u.pro_expires_at).toLocaleDateString()}`
+                ? u.pro_expires_at === "infinity" ? " · Lifetime" : ` · until ${new Date(u.pro_expires_at).toLocaleDateString()}`
                 : ""}
             </div>
           </div>
@@ -459,6 +463,9 @@ const ProPanel = () => {
 
   return (
     <div className="space-y-4">
+      <AdminProManager onSaved={() => void load()} />
+      {loading && <p className="text-muted-foreground">Loading Pro data…</p>}
+      {err && <p role="alert" className="text-destructive">{err}</p>}
       <div className="grid gap-4 lg:grid-cols-2">
         <List title="Pro users" list={proUsers} tone="text-amber-300" />
         <List title="Free users" list={freeUsers} tone="text-emerald-400" />
@@ -470,7 +477,7 @@ const ProPanel = () => {
         {receipts.map((r) => (
           <div key={r.id} className="flex items-center gap-3 border-t border-border/50 p-3 text-sm">
             <div className="min-w-0 flex-1 truncate">{nameOf(r.user_id)}</div>
-            <div className="text-xs text-muted-foreground">{r.reference_no || "—"}</div>
+            <div className="text-xs text-muted-foreground">{r.ref_no || "—"}</div>
             <div className="text-xs">Rs.{r.amount ?? "—"}</div>
             <div className={`text-xs font-bold ${r.status === "accepted" ? "text-emerald-400" : "text-destructive"}`}>
               {String(r.status).toUpperCase()}

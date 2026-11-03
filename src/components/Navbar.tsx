@@ -142,7 +142,7 @@ const Navbar = () => {
                       "text-[9px] font-bold uppercase tracking-[0.2em]",
                       pro?.isPro ? "text-amber-300" : "text-emerald-400"
                     )}>
-                      {pro?.isPro ? `Pro · ${pro.daysLeft}d` : "Free"}
+                      {pro?.isPro ? pro.isLifetime ? "Pro · Lifetime" : `Pro · ${pro.daysLeft}d` : "Free"}
                     </span>
                   </span>
                   <span className="relative">

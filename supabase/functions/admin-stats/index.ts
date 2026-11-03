@@ -90,7 +90,7 @@ Deno.serve(async (req) => {
       return true;
     });
     const sub = proMap.get(String(p.id));
-    const proActive = !!sub && new Date(sub.expires_at).getTime() > Date.now();
+    const proActive = !!sub && (sub.expires_at === "infinity" || new Date(sub.expires_at).getTime() > Date.now());
     return {
       id: p.id,
       email: p.email,
@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
       avatar_url: p.avatar_url,
       phone: (p as any).phone ?? null,
       is_pro: proActive,
-      pro_expires_at: proActive ? sub!.expires_at : null,
+      pro_expires_at: proActive ? sub?.expires_at ?? null : null,
       joined_at: p.created_at,
       library_count: libs.length,
       download_count: dls.length,
