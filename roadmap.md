@@ -1,4 +1,5 @@
 # Tasks
+- [ ] Reduce PC app startup and UI stalls without changing browser appearance; test polling and native listing regressions.
 - [x] Give Free and Pro the same native download/install/play lifecycle with an admin-controlled Free speed limit.
 - [x] Add admin Pro management by email with expiry, lifetime, and revocation.
 - [x] Test download tier rules, speed limits, and Pro lifetime status; verify speed saves in signed-in admin UI.
