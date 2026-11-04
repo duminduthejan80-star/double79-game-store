@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
+import { createDesktopPoller } from "@/lib/desktopPoller";
 import {
   listDesktopDownloads,
   listDesktopGames,
@@ -7,62 +8,45 @@ import {
   type DesktopGame,
 } from "@/lib/desktopBridge";
 
-/** Live list of downloads running inside the PC app (polled every 500ms). */
-export const useDesktopDownloads = () => {
-  const [available, setAvailable] = useState(false);
-  const [items, setItems] = useState<DesktopDownload[]>([]);
+const downloadsStore = createDesktopPoller<DesktopDownload>(listDesktopDownloads, (items) =>
+  items.some((item) => ["resolving", "downloading", "extracting"].includes(item.status)) ? 750 : 3000,
+);
+const gamesStore = createDesktopPoller<DesktopGame>(listDesktopGames, () => 5000);
+const noSubscription = () => () => {};
 
+const useDesktopAvailable = () => {
+  const [available, setAvailable] = useState(false);
   useEffect(() => {
     let cancelled = false;
+    const ready = () => !cancelled && setAvailable(true);
+    window.addEventListener("pywebviewready", ready);
     waitForDesktop().then((ok) => !cancelled && setAvailable(ok));
-    return () => { cancelled = true; };
+    return () => { cancelled = true; window.removeEventListener("pywebviewready", ready); };
   }, []);
+  return available;
+};
 
+/** Shared, non-overlapping native polling; unchanged lists don't rerender. */
+export const useDesktopDownloads = () => {
+  const available = useDesktopAvailable();
+  const items = useSyncExternalStore(available ? downloadsStore.subscribe : noSubscription, downloadsStore.getSnapshot);
   useEffect(() => {
     if (!available) return;
-    let stop = false;
-    const tick = async () => {
-      const list = await listDesktopDownloads();
-      if (!stop) setItems(list);
-    };
-    tick();
-    const id = window.setInterval(tick, 500);
-    window.addEventListener("d79:download-started", tick);
-    return () => {
-      stop = true;
-      window.clearInterval(id);
-      window.removeEventListener("d79:download-started", tick);
-    };
+    window.addEventListener("d79:download-started", downloadsStore.refresh);
+    return () => window.removeEventListener("d79:download-started", downloadsStore.refresh);
   }, [available]);
-
   return { available, items };
 };
 
 /** Live list of games installed by the PC app (polled every 2s). */
 export const useDesktopGames = () => {
-  const [available, setAvailable] = useState(false);
-  const [games, setGames] = useState<DesktopGame[]>([]);
-
-  useEffect(() => {
-    let cancelled = false;
-    waitForDesktop().then((ok) => !cancelled && setAvailable(ok));
-    return () => { cancelled = true; };
-  }, []);
-
+  const available = useDesktopAvailable();
+  const games = useSyncExternalStore(available ? gamesStore.subscribe : noSubscription, gamesStore.getSnapshot);
   useEffect(() => {
     if (!available) return;
-    let stop = false;
-    const tick = async () => {
-      const list = await listDesktopGames();
-      if (!stop) setGames(list);
-    };
-    tick();
-    const id = window.setInterval(tick, 2000);
-    window.addEventListener("d79:download-started", tick);
+    window.addEventListener("d79:games-changed", gamesStore.refresh);
     return () => {
-      stop = true;
-      window.clearInterval(id);
-      window.removeEventListener("d79:download-started", tick);
+      window.removeEventListener("d79:games-changed", gamesStore.refresh);
     };
   }, [available]);
 

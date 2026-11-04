@@ -16,7 +16,7 @@ ArchitecturesInstallIn64BitMode=x64compatible
 WizardStyle=modern
 
 [Files]
-Source: "..\dist\Double79GameStore.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\dist\Double79GameStore\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "bin\UnRAR.exe"; DestDir: "{app}"; Flags: ignoreversion skipifdoesntexist
 
 [Icons]

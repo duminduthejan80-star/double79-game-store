@@ -542,15 +542,13 @@ class Api:
     # ----- installed games -----
     def list_games(self):
         with _lock:
-            out = []
-            for g in GAMES.values():
-                g = dict(g)
-                g["missing"] = not os.path.isdir(g.get("folder", ""))
-                if g.get("exe") and not os.path.exists(g["exe"]):
-                    g["exe"] = find_game_exe(g["folder"]) if not g["missing"] else None
-                out.append(g)
-            out.sort(key=lambda g: g.get("installedAt", 0), reverse=True)
-            return out
+            out = [dict(game) for game in GAMES.values()]
+        # Never recursively scan game folders while holding the download lock.
+        # Executable recovery belongs to Play, not every UI refresh.
+        for game in out:
+            game["missing"] = not os.path.isdir(game.get("folder", ""))
+        out.sort(key=lambda game: game.get("installedAt", 0), reverse=True)
+        return out
 
     def play_game(self, id: str):
         g = GAMES.get(id)
@@ -604,13 +602,16 @@ def main():
 
     def mark_desktop():
         try:
-            window.evaluate_js("window.__D79_DESKTOP__ = true;")
+            window.evaluate_js("window.__D79_DESKTOP__ = true; document.documentElement.classList.add('desktop-runtime'); window.dispatchEvent(new Event('d79:desktop-ready'));")
         except Exception:
             pass
 
     window.events.loaded += mark_desktop
     # private_mode=False keeps site storage (login session) between launches.
-    webview.start(private_mode=False, storage_path=DATA_DIR, debug=False)
+    # Edge Chromium avoids the legacy Windows renderer; keep the same login store.
+    webview.start(gui="edgechromium" if sys.platform == "win32" else None,
+                  private_mode=False, storage_path=DATA_DIR, debug=False,
+                  user_agent=UA + " Double79Desktop/3.0")
 
 
 if __name__ == "__main__":

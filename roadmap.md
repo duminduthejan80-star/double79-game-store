@@ -1,4 +1,6 @@
 # Tasks
+- [x] Reduce PC startup overhead, share non-overlapping UI polling, and remove library scan stalls; native and polling tests pass, browser/desktop-mode checks pass.
+- [ ] Measure startup and responsiveness in the rebuilt Windows installer on the user's PC; blocked by no Windows runtime in this sandbox.
 - [x] Give Free and Pro the same native download/install/play lifecycle with an admin-controlled Free speed limit.
 - [x] Add admin Pro management by email with expiry, lifetime, and revocation.
 - [x] Test download tier rules, speed limits, and Pro lifetime status; verify speed saves in signed-in admin UI.

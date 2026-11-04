@@ -19,11 +19,17 @@ A Steam-like desktop shell for the Double79 website.
 ```bat
 pip install -r requirements.txt
 :: Put UnRAR.exe (from rarlab.com) into desktop\bin\ so RAR extraction works offline.
-pyinstaller --onefile --windowed --name Double79GameStore --add-binary "bin/UnRAR.exe;bin" app.py
+pyinstaller --onedir --windowed --name Double79GameStore --add-binary "bin/UnRAR.exe;bin" app.py
 ```
 
 The GitHub Actions workflow in `.github/workflows/build-desktop.yml` builds the
 .exe and the installer automatically on every push that changes `desktop/`.
+
+Install `Double79_Setup.exe` or extract all of `Double79_Portable.zip` before
+launching `Double79GameStore.exe`. Keep `_internal` beside the executable.
+The folder-based build avoids unpacking Python and native libraries into a
+temporary folder on every launch. Windows uses Microsoft Edge WebView2; install
+the WebView2 Runtime if it is missing. Login storage stays in `%APPDATA%/Double79`.
 
 ## Bridge contract
 
