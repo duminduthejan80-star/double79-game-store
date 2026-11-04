@@ -484,3 +484,18 @@ h1, h2 { text-shadow: 0 0 30px hsl(var(--primary) / 0.15); }
   .aurora, .orb, .grid-floor-inner, .float-3d, .neon-pulse { animation: none !important; }
   .reveal-on-scroll { opacity: 1; transform: none; transition: none; }
 }
+
+/* Keep the PC storefront intact while avoiding large animated GPU layers. */
+.desktop-runtime body { background-attachment: scroll; }
+.desktop-runtime .cinematic-bg .aurora,
+.desktop-runtime .cinematic-bg .orb { display: none; }
+.desktop-runtime .grid-floor-inner,
+.desktop-runtime .float-3d,
+.desktop-runtime .neon-pulse { animation: none; will-change: auto; }
+.desktop-runtime :is(.glass, .glass-strong, .liquid-glass, .lg-panel, .lg-strong, .lg-field, .glass-chip, .lg-btn, .lg-primary) {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background-color: hsl(var(--surface-1) / 0.95);
+}
+.desktop-runtime .game-hero-bg::after { backdrop-filter: none; -webkit-backdrop-filter: none; }
+.desktop-runtime :is(.reveal-on-scroll, .reveal-3d) { opacity: 1; transform: none; transition: none; will-change: auto; }

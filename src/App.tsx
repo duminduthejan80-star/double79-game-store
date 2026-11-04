@@ -24,6 +24,9 @@ import LoginStreakTracker from "@/components/LoginStreakTracker";
 import DesktopDownloadManager from "@/components/DesktopDownloadManager";
 import AiSupportChat from "@/components/AiSupportChat";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
+import { initializeDesktopRuntime } from "@/lib/desktopRuntime";
+
+initializeDesktopRuntime();
 
 const queryClient = new QueryClient();
 

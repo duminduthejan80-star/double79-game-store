@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { isDesktopRuntime } from "@/lib/desktopRuntime";
 
 /**
  * Site-wide cinematic 3D background:
@@ -12,7 +13,7 @@ const CinematicBackground = () => {
 
   useEffect(() => {
     const el = ref.current;
-    if (!el) return;
+    if (!el || isDesktopRuntime() || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     let raf = 0;
     let tx = 0, ty = 0, cx = 0, cy = 0;
     const onMove = (e: MouseEvent) => {
@@ -28,7 +29,14 @@ const CinematicBackground = () => {
     };
     window.addEventListener("mousemove", onMove);
     raf = requestAnimationFrame(tick);
+    const stopDesktopMotion = () => {
+      if (!isDesktopRuntime()) return;
+      window.removeEventListener("mousemove", onMove);
+      cancelAnimationFrame(raf);
+    };
+    window.addEventListener("pywebviewready", stopDesktopMotion);
     return () => {
+      window.removeEventListener("pywebviewready", stopDesktopMotion);
       window.removeEventListener("mousemove", onMove);
       cancelAnimationFrame(raf);
     };

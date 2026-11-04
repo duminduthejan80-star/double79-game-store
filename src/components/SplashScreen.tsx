@@ -1,9 +1,20 @@
 import { useEffect, useState } from "react";
 import logo from "@/assets/logo.png";
+import { isDesktopRuntime } from "@/lib/desktopRuntime";
 
 const SplashScreen = () => {
-  const [show, setShow] = useState(() => !sessionStorage.getItem("splashShown"));
+  const [show, setShow] = useState(() => !isDesktopRuntime() && !sessionStorage.getItem("splashShown"));
   const [fadeOut, setFadeOut] = useState(false);
+
+  useEffect(() => {
+    const ready = () => { if (isDesktopRuntime()) setShow(false); };
+    window.addEventListener("pywebviewready", ready);
+    window.addEventListener("d79:desktop-ready", ready);
+    return () => {
+      window.removeEventListener("pywebviewready", ready);
+      window.removeEventListener("d79:desktop-ready", ready);
+    };
+  }, []);
 
   useEffect(() => {
     if (!show) return;

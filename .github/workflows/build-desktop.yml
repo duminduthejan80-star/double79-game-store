@@ -29,7 +29,7 @@ jobs:
 
       - name: Build exe with PyInstaller
         run: |
-          pyinstaller --onefile --windowed --name Double79GameStore `
+          pyinstaller --onedir --windowed --name Double79GameStore `
             --add-binary "desktop/bin/UnRAR.exe;bin" `
             --distpath dist desktop/app.py
 
@@ -39,12 +39,15 @@ jobs:
       - name: Build installer
         run: iscc desktop/installer.iss
 
+      - name: Package portable app with its runtime
+        run: Compress-Archive -Path dist/Double79GameStore/* -DestinationPath dist/Double79_Portable.zip
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: double79-pc-app
           path: |
-            dist/Double79GameStore.exe
+            dist/Double79_Portable.zip
             dist/Double79_Setup.exe
 
       - name: Publish release
@@ -53,5 +56,5 @@ jobs:
           tag_name: pc-app-${{ github.run_number }}
           name: Double79 PC app ${{ github.run_number }}
           files: |
-            dist/Double79GameStore.exe
+            dist/Double79_Portable.zip
             dist/Double79_Setup.exe

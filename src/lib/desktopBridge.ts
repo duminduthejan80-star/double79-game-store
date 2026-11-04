@@ -138,6 +138,7 @@ export const playDesktopGame = async (id: string): Promise<string | null> => {
 
 export const uninstallDesktopGame = async (id: string): Promise<string | null> => {
   const res = await getApi()?.uninstall_game(id);
+  if (!res?.error) window.dispatchEvent(new Event("d79:games-changed"));
   return res?.error ?? null;
 };
 
