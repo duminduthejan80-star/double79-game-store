@@ -17,6 +17,17 @@ app = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(app)
 
 class DownloadRules(unittest.TestCase):
+    def test_library_refresh_never_scans_executables_or_blocks_on_disk_under_lock(self):
+        game = {"id": "missing-exe", "folder": "GameFolder", "exe": "GameFolder/old.exe", "installedAt": 1}
+        def directory_exists(_path):
+            self.assertFalse(app._lock.locked())
+            return True
+        with patch.dict(app.GAMES, {game["id"]: game}, clear=True), patch.object(app.os.path, "isdir", side_effect=directory_exists), patch.object(app, "find_game_exe") as scan:
+            result = app.Api().list_games()
+            self.assertEqual(result[0]["id"], "missing-exe")
+            self.assertFalse(result[0]["missing"])
+            scan.assert_not_called()
+
     def test_free_limit_waits_and_pro_does_not(self):
         with patch.object(app.time, "monotonic", side_effect=[0, 0, 1]), patch.object(app.time, "sleep") as sleep:
             app.throttle_download({"speed_limit_mbps": 1}, 1024 * 1024, 0)
