@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Download, Wifi, WifiOff, Check, Calendar, User, Building2 } from "lucide-react";
-import { startDesktopDownload } from "@/lib/desktopBridge";
-import { directBrowserDownload } from "@/hooks/useDesktopDownloads";
+import { ArrowLeft, Download, Wifi, WifiOff, Calendar, User, Building2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import MediaGallery from "@/components/MediaGallery";
 import { useGame } from "@/hooks/useGames";
@@ -10,12 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import CanIRunIt from "@/components/CanIRunIt";
-import GameReviews from "@/components/GameReviews";
-import { useLibrary, useAddToLibrary } from "@/hooks/useLibrary";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuthGate } from "@/components/AuthGate";
-import DownloadChoiceDialog from "@/components/DownloadChoiceDialog";
+import AppDownloadDialog from "@/components/AppDownloadDialog";
 
 const Row = ({ label, value }: { label: string; value: string | null }) =>
   value ? (
@@ -28,74 +21,13 @@ const Row = ({ label, value }: { label: string; value: string | null }) =>
 const GameDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { data: game, isLoading } = useGame(id);
-  const { data: ownedIds = [] } = useLibrary();
-  const addLib = useAddToLibrary();
-  const { requireAuth } = useAuthGate();
+  const { data: game, isLoading, error } = useGame(id);
   const [dlOpen, setDlOpen] = useState(false);
-  const owned = id ? ownedIds.includes(id) : false;
 
   const heroImage = game?.image_url || game?.screenshots?.[0] || null;
 
   if (isLoading) return <div className="min-h-screen"><Navbar /><div className="container mx-auto p-10">Loading...</div></div>;
-  if (!game) return <div className="min-h-screen"><Navbar /><div className="container mx-auto p-10">Game not found.</div></div>;
-
-  const handleGet = async () => {
-    if (!requireAuth(game.id)) return;
-    try {
-      await addLib.mutateAsync(game.id);
-      toast.success(`${game.title} added to your library`);
-    } catch (e: any) {
-      toast.error(e.message);
-    }
-  };
-
-  const handleDownload = () => {
-    if (!game.download_url && !game.download_url_pro) {
-      toast.error("No download link available");
-      return;
-    }
-    setDlOpen(true);
-  };
-
-  const startDownload = async (url: string, tier: "free" | "pro") => {
-    try {
-      {
-        const res = await startDesktopDownload(url, game.title, game.id, tier);
-        if (res === "cancelled") return;
-        if (res === "unavailable") {
-          const mode = directBrowserDownload(url, game.title);
-          if (mode === "tab") toast.info("Opened the download in a new tab. For one-click direct downloads with progress, use the Double79 PC app.");
-          else toast.success(`Download started: ${game.title}`);
-        } else {
-          toast.success(`Downloading ${game.title}`);
-        }
-      }
-    } catch (e: any) {
-      toast.error(e?.message || "Download failed to start");
-      return;
-    }
-
-    // Record download → 24h follow-up email will be triggered by cron
-    try {
-      const { data: auth } = await supabase.auth.getUser();
-      const u = auth?.user;
-      if (u) {
-        const userName = (u.user_metadata?.full_name as string) ||
-                         (u.user_metadata?.name as string) ||
-                         u.email?.split("@")[0] || "Player";
-        await supabase.from("game_downloads").insert({
-          user_id: u.id,
-          user_email: u.email!,
-          user_name: userName,
-          game_id: game.id,
-          game_title: game.title,
-        });
-      }
-    } catch (e) {
-      console.warn("Failed to record download", e);
-    }
-  };
+  if (!game) return <div className="min-h-screen"><Navbar /><div className="container mx-auto p-10">{error ? "Game විස්තර පෙන්වීමට Firebase සම්බන්ධ කළ යුතුයි." : "Game not found."}</div></div>;
 
   return (
     <div className="min-h-screen relative">
@@ -108,13 +40,13 @@ const GameDetail = () => {
       )}
       <Navbar />
       <div className="container mx-auto px-4 py-8">
-        <button
+        <Button variant="ghost"
           type="button"
           onClick={() => navigate(-1)}
           className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"
         >
           <ArrowLeft className="h-4 w-4" /> Back to store
-        </button>
+        </Button>
 
         <div className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
@@ -164,20 +96,7 @@ const GameDetail = () => {
               <div className="text-sm text-muted-foreground mb-1">Price</div>
               <div className="text-3xl font-bold mb-4 text-accent">Free</div>
 
-              {!owned ? (
-                <Button onClick={handleGet} className="w-full bg-primary-gradient text-primary-foreground hover:opacity-90" size="lg">
-                  Add to Library
-                </Button>
-              ) : (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-center gap-2 text-accent text-sm font-medium py-2">
-                    <Check className="h-4 w-4" /> In your library
-                  </div>
-                  <Button onClick={handleDownload} className="w-full" size="lg">
-                    <Download className="h-4 w-4 mr-2" /> Download
-                  </Button>
-                </div>
-              )}
+              <Button id="downloadBtn" onClick={() => setDlOpen(true)} className="w-full" size="lg"><Download className="h-4 w-4 mr-2" />Download</Button>
 
               <Separator className="my-5" />
               <div className="space-y-3 text-sm">
@@ -189,16 +108,10 @@ const GameDetail = () => {
           </aside>
         </div>
 
-        <GameReviews gameId={game.id} />
+
       </div>
 
-      <DownloadChoiceDialog
-        open={dlOpen}
-        onOpenChange={setDlOpen}
-        freeUrl={game.download_url}
-        proUrl={game.download_url_pro}
-        onPick={(url, tier) => { void startDownload(url, tier); }}
-      />
+      <AppDownloadDialog open={dlOpen} onOpenChange={setDlOpen} />
     </div>
   );
 };

@@ -1,4 +1,7 @@
 # Tasks
+- [ ] Replace the public website with an anonymous Firebase catalog and PC-app download popup; remove account and native-download pages.
+- [ ] Replace website administration with protected Google Drive app-link editing only.
+- [ ] Verify catalog-to-popup and removed routes; connect live Firebase after receiving its exact Realtime Database URL and schema.
 - [x] Reduce PC startup overhead, share non-overlapping UI polling, and remove library scan stalls; native and polling tests pass, browser/desktop-mode checks pass.
 - [ ] Measure startup and responsiveness in the rebuilt Windows installer on the user's PC; blocked by no Windows runtime in this sandbox.
 - [x] Give Free and Pro the same native download/install/play lifecycle with an admin-controlled Free speed limit.
