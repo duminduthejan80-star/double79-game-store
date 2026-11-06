@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 import { GAME_CATEGORIES } from "@/lib/categories";
 
 const Index = () => {
-  const { data: games, isLoading } = useGames();
+  const { data: games, isLoading, error } = useGames();
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState("all");
   const [flash, setFlash] = useState(false);
@@ -87,7 +87,7 @@ const Index = () => {
           </Tabs>
         </div>
 
-        {isLoading ? (
+        {error ? <div role="alert" className="py-12 text-center text-muted-foreground" lang="si">Games පෙන්වීමට Firebase Realtime Database එක සම්බන්ධ කළ යුතුයි.</div> : isLoading ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
             {Array.from({ length: 8 }).map((_, i) => (
               <Skeleton key={i} className="aspect-[16/12] rounded-lg" />
@@ -97,7 +97,7 @@ const Index = () => {
           <div className="rounded-lg border border-dashed border-border p-16 text-center text-muted-foreground">
             {voiceQuery && q === voiceQuery
               ? `Could not find a match for "${voiceQuery}"`
-              : "No games found. Add some from the Admin panel."}
+              : "No games found."}
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">

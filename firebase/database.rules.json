@@ -1,0 +1,14 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "games": { ".read": true },
+    "websiteSettings": {
+      "appDownloadUrl": {
+        ".read": true,
+        ".write": "auth != null && auth.token.admin === true",
+        ".validate": "newData.isString() && newData.val().matches(/^https:\/\/drive\.google\.com\/(file\/d\/|uc\?|open\?).+/)"
+      }
+    }
+  }
+}
